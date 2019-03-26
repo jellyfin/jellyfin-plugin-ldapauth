@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Jellyfin.LDAP-Auth</title>
+</head>
+<body>
+    <div data-role="page" class="page type-interior pluginConfigurationPage esqConfigurationPage">
+
+        <div data-role="content">
+            <div class="content-primary">
+                <form class="esqConfigurationForm">
+
+                    <ul class="ulForm" data-role="listview">
+                        <li>
+                            <label for="txtLDAPServer">
+                                LDAP Server:
+                            </label>
+                            <input type="text" id="txtLDAPServer" name="txtLDAPServer" />
+                            <div class="fieldDescription">
+                                The Servername for the LDAP server you wish to use for Authentications
+                            </div>
+                        </li>
+                        <li>
+                            <label for="txtLDAPBaseDN">
+                                LDAP Base DN for searches:
+                            </label>
+                            <input type="text" id="txtLDAPBaseDN" name="txtLDAPBaseDN" />
+                            <div class="fieldDescription">
+                                The base DN structure for your LDAP query
+                            </div>
+                        </li>
+                        <li>
+                            <label for="intLDAPPort">
+                                LDAP Port:
+                            </label>
+                            <input type="text" id="txtLDAPPort" name="txtLDAPPort" />
+                            <div class="fieldDescription">
+                                The port to communicate with LDAP on
+                            </div>
+                        </li>
+                        <li>
+                            <button type="submit" data-theme="b">Save</button>
+                            <button type="button" onclick="history.back();">Cancel</button>
+                        </li>                        
+                    </ul>
+
+                </form>
+            </div>
+        </div>
+
+
+        <script type="text/javascript">
+
+            var SyncConfigurationPage = {
+                pluginUniqueId: "958aad66-3784-4d2a-b89a-a7b6fab6e25c"
+            };
+
+            $('.esqConfigurationPage').on('pageshow', function (event) {
+
+                Dashboard.showLoadingMsg();
+
+                var page = this;
+
+                ApiClient.getPluginConfiguration(SyncConfigurationPage.pluginUniqueId).then(function (config) {
+
+                    $('#txtLDAPServer', page).val(config.LDAPServer || "exampleserver");
+                    $('#txtApprovedUsers', page).val(config.ApprovedUsers || "user1;user2");
+                    $('#txtApprovedGroups', page).val(config.ApprovedGroups || "group1;group2");
+                    Dashboard.hideLoadingMsg();
+                });
+            });
+
+            $('.esqConfigurationForm').on('submit', function (e) {
+
+                Dashboard.showLoadingMsg();
+           
+                var form = this;
+
+                ApiClient.getPluginConfiguration(SyncConfigurationPage.pluginUniqueId).then(function (config) {
+                    config.LDAPServer = $('#txtLDAPServer',form).val();
+                    config.ApprovedUsers = $('#txtApprovedUsers',form).val();
+                    config.ApprovedGroups = $('#txtApprovedGroups',form).val();
+                    ApiClient.updatePluginConfiguration(SyncConfigurationPage.pluginUniqueId, config).then(Dashboard.processPluginConfigurationUpdateResult);              
+                });
+
+                // Disable default form submission
+                return false;
+            });
+        </script>
+    </div>
+</body>
+</html>
