@@ -1,26 +1,24 @@
-﻿using System;
+using System;
 using MediaBrowser.Controller.Authentication;
-using MediaBrowser.Common;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Entities;
-using MediaBrowser.Model;
 using System.Threading.Tasks;
 using Novell.Directory.Ldap;
 using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.LDAP_Auth
 {
-    public class LDAPAuthenticationProviderPlugin : IAuthenticationProvider
+    public class LdapAuthenticationProviderPlugin : IAuthenticationProvider
     {
         private readonly string[] _attrs = new string[]{
             "uid",
             "CN",
             "displayName"
         };
-        private PluginConfiguration _config;
-        private ILogger _logger;
-        private IUserManager _userManager;
-        public LDAPAuthenticationProviderPlugin(IUserManager userManager)
+        private readonly PluginConfiguration _config;
+        private readonly ILogger _logger;
+        private readonly IUserManager _userManager;
+        public LdapAuthenticationProviderPlugin(IUserManager userManager)
         {
             _config = Plugin.Instance.Configuration;
             _logger = Plugin.Logger;
@@ -41,8 +39,8 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 ldapClient.SecureSocketLayer = true;
                 try
                 {
-                    ldapClient.Connect(_config.LDAPServer,_config.LDAPPort);
-                    ldapClient.Bind(_config.LDAPBindUser,_config.LDAPBindPassword);
+                    ldapClient.Connect(_config.LdapServer,_config.LdapPort);
+                    ldapClient.Bind(_config.LdapBindUser,_config.LdapBindPassword);
                 }
                 catch(Exception e)
                 {
@@ -51,7 +49,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 }
                 if(ldapClient.Bound)
                 {
-                    LdapSearchResults ldapUsers = ldapClient.Search(_config.LDAPBaseDN,0,_config.LDAPQuery,_attrs,false);
+                    LdapSearchResults ldapUsers = ldapClient.Search(_config.LdapBaseDn,0,_config.LdapQuery,_attrs,false);
                     if (ldapUsers == null || ldapUsers.Count == 0)
                     {
                         _logger.LogWarning("No approved LDAP Users found from query");
@@ -64,7 +62,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                         foreach(string attr in _attrs)
                         {
                             var toCheck = currentUser.getAttribute(attr);
-                            if(toCheck != null && toCheck.StringValueArray != null)
+                            if(toCheck?.StringValueArray != null)
                             {
                                 foreach (string name in toCheck.StringValueArray)
                                 {
@@ -94,7 +92,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 ldapClient.SecureSocketLayer = true;
                 try
                 {
-                    ldapClient.Connect(_config.LDAPServer,_config.LDAPPort);
+                    ldapClient.Connect(_config.LdapServer,_config.LdapPort);
                     ldapClient.Bind(ldapUser.DN,password);
                 }
                 catch(Exception e)
@@ -106,10 +104,10 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 {
                     if(user == null)
                     {
-                        if(_config.CreateUsersFromLDAP)
+                        if(_config.CreateUsersFromLdap)
                         {
                             user = await _userManager.CreateUser(ldapUser.getAttribute("uid").StringValue);
-                            user.Policy.AuthenticationProviderId = this.GetType().Name;
+                            user.Policy.AuthenticationProviderId = GetType().Name;
                             _userManager.UpdateUserPolicy(user.Id,user.Policy);
                         }
                         else
@@ -129,7 +127,6 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     throw new Exception("Error completing LDAP login. Invalid username or password.");
                 }
             }
-            throw new NotImplementedException();
         }
 
         public Task ChangePassword(User user, string newPassword)

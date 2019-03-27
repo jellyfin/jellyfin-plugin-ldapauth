@@ -3,3 +3,6 @@
 ################################################################################
 
 /.vs/LDAP-Auth/v15/Server/sqlite3
+/obj
+/LDAP-Auth.sln.DotSettings.user
+/bin/Debug/netstandard2.0
