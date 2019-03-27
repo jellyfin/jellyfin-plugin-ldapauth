@@ -30,13 +30,46 @@
                             </div>
                         </li>
                         <li>
-                            <label for="intLDAPPort">
+                            <label for="txtLDAPPort">
                                 LDAP Port:
                             </label>
                             <input type="text" id="txtLDAPPort" name="txtLDAPPort" />
                             <div class="fieldDescription">
                                 The port to communicate with LDAP on
                             </div>
+                        </li>
+                        <li>
+                            <label for="txtLdapQuery">
+                                LDAP Query:
+                            </label>
+                            <input type="text" id="txtLdapQuery" name="txtLdapQuery" />
+                            <div class="fieldDescription">
+                                The LDAP query used to lookup an authorized user for Jellyfin
+                            </div>
+                        </li>
+                        <li>
+                            <label for="txtLDAPBindUser">
+                                LDAP Bind User:
+                            </label>
+                            <input type="text" id="txtLDAPBindUser" name="txtBindLDAPUser" />
+                            <div class="fieldDescription">
+                                A user to use for LDAP queries
+                            </div>
+                        </li>
+                        <li>
+                            <label for="txtLDAPBindPassword">
+                                LDAP Bind User Password:
+                            </label>
+                            <input type="password" id="txtLDAPBindPassword" name="txtLDAPBindPassword" />
+                            <div class="fieldDescription">
+                                Your LDAP query user password
+                            </div>
+                        </li>
+                        <li>
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="chkEnableUserCreation" />
+                                <span>Enable on first Login creation of Authorized Users from LDAP</span>
+                            </label>
                         </li>
                         <li>
                             <button type="submit" data-theme="b">Save</button>
@@ -63,9 +96,13 @@
 
                 ApiClient.getPluginConfiguration(SyncConfigurationPage.pluginUniqueId).then(function (config) {
 
-                    $('#txtLDAPServer', page).val(config.LDAPServer || "exampleserver");
-                    $('#txtApprovedUsers', page).val(config.ApprovedUsers || "user1;user2");
-                    $('#txtApprovedGroups', page).val(config.ApprovedGroups || "group1;group2");
+                    $('#txtLDAPServer', page).val(config.LdapServer || "ldap-server.contoso.com");
+                    $('#txtLDAPBaseDn', page).val(config.LdapBaseDn || "o=domains,dc=contoso,dc=com");
+                    $('#txtLDAPPort', page).val(config.LdapPort || "389");
+                    $('#txtLDAPQuery', page).val(config.LdapQuery || "(memberOf=CN=JellyfinUsers,DC=contoso,DC=com)");
+                    $('#txtLDAPBindUser', page).val(config.LdapBindUser || "CN=BindUser,DC=contoso,DC=com");
+                    $('#txtLDAPBindPassword', page).val(config.LdapBindPassword || "");
+                    $("#chkEnableUserCreation", page).checked(config.CreateUsersFromLdap);
                     Dashboard.hideLoadingMsg();
                 });
             });
@@ -78,8 +115,12 @@
 
                 ApiClient.getPluginConfiguration(SyncConfigurationPage.pluginUniqueId).then(function (config) {
                     config.LDAPServer = $('#txtLDAPServer',form).val();
-                    config.ApprovedUsers = $('#txtApprovedUsers',form).val();
-                    config.ApprovedGroups = $('#txtApprovedGroups',form).val();
+                    config.LdapBaseDn = $('#txtLDAPBaseDn',form).val();
+                    config.LdapQuery = $('#txtLDAPQuery',form).val();
+                    config.LdapBindUser = $('#txtLDAPBindUser',form).val();
+                    config.LdapBindPassword = $('#txtLDAPBindPassword',form).val();
+                    config.CreateUsersFromLdap = $("#chkEnableUserCreation", page).checked();
+                    config.LdapPort = parseInt($("#txtLdapPort", page).val() || "389");
                     ApiClient.updatePluginConfiguration(SyncConfigurationPage.pluginUniqueId, config).then(Dashboard.processPluginConfigurationUpdateResult);              
                 });
 
