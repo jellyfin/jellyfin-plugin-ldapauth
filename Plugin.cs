@@ -27,7 +27,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 new PluginPageInfo
                 {
                     Name = this.Name,
-                    EmbeddedResourcePath = $"{GetType().Namespace}.Configuration.configPage.html"
+                    EmbeddedResourcePath = $"{GetType().Namespace}.Config.configPage.html"
                 }
             };
         }
