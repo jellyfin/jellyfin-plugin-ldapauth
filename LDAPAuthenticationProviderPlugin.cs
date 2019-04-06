@@ -89,7 +89,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
             
             using (var ldapClient = new LdapConnection())
             {
-                ldapClient.SecureSocketLayer = true;
+                ldapClient.SecureSocketLayer = _config.UseSsl;
                 try
                 {
                     ldapClient.Connect(_config.LdapServer,_config.LdapPort);
