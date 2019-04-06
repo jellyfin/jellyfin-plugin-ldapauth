@@ -114,13 +114,13 @@
                 var form = this;
 
                 ApiClient.getPluginConfiguration(SyncConfigurationPage.pluginUniqueId).then(function (config) {
-                    config.LDAPServer = $('#txtLdapServer',form).val();
-                    config.LdapBaseDn = $('#txtLdapBaseDn',form).val();
-                    config.LdapQuery = $('#txtLdapQuery',form).val();
-                    config.LdapBindUser = $('#txtLdapBindUser',form).val();
-                    config.LdapBindPassword = $('#txtLdapBindPassword',form).val();
-                    config.CreateUsersFromLdap = $("#chkEnableUserCreation", page).checked();
-                    config.LdapPort = parseInt($("#txtLdapPort", page).val() || "389");
+                    config.LDAPServer = $('#txtLdapServer').val();
+                    config.LdapBaseDn = $('#txtLdapBaseDn').val();
+                    config.LdapQuery = $('#txtLdapQuery').val();
+                    config.LdapBindUser = $('#txtLdapBindUser').val();
+                    config.LdapBindPassword = $('#txtLdapBindPassword').val();
+                    config.CreateUsersFromLdap = $("#chkEnableUserCreation").checked();
+                    config.LdapPort = parseInt($("#txtLdapPort").val() || "389");
                     ApiClient.updatePluginConfiguration(SyncConfigurationPage.pluginUniqueId, config).then(Dashboard.processPluginConfigurationUpdateResult);              
                 });
 
