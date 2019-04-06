@@ -12,28 +12,28 @@
 
                     <ul class="ulForm" data-role="listview">
                         <li>
-                            <label for="txtLDAPServer">
+                            <label for="txtLdapServer">
                                 LDAP Server:
                             </label>
-                            <input type="text" id="txtLDAPServer" name="txtLDAPServer" />
+                            <input type="text" id="txtLdapServer" name="txtLdapServer" />
                             <div class="fieldDescription">
                                 The Servername for the LDAP server you wish to use for Authentications
                             </div>
                         </li>
                         <li>
-                            <label for="txtLDAPBaseDN">
+                            <label for="txtLdapBaseDN">
                                 LDAP Base DN for searches:
                             </label>
-                            <input type="text" id="txtLDAPBaseDN" name="txtLDAPBaseDN" />
+                            <input type="text" id="txtLdapBaseDN" name="txtLdapBaseDN" />
                             <div class="fieldDescription">
                                 The base DN structure for your LDAP query
                             </div>
                         </li>
                         <li>
-                            <label for="txtLDAPPort">
+                            <label for="txtLdapPort">
                                 LDAP Port:
                             </label>
-                            <input type="text" id="txtLDAPPort" name="txtLDAPPort" />
+                            <input type="text" id="txtLdapPort" name="txtLdapPort" />
                             <div class="fieldDescription">
                                 The port to communicate with LDAP on
                             </div>
@@ -48,19 +48,19 @@
                             </div>
                         </li>
                         <li>
-                            <label for="txtLDAPBindUser">
+                            <label for="txtLdapBindUser">
                                 LDAP Bind User:
                             </label>
-                            <input type="text" id="txtLDAPBindUser" name="txtBindLDAPUser" />
+                            <input type="text" id="txtLdapBindUser" name="txtBindLdapUser" />
                             <div class="fieldDescription">
                                 A user to use for LDAP queries
                             </div>
                         </li>
                         <li>
-                            <label for="txtLDAPBindPassword">
+                            <label for="txtLdapBindPassword">
                                 LDAP Bind User Password:
                             </label>
-                            <input type="password" id="txtLDAPBindPassword" name="txtLDAPBindPassword" />
+                            <input type="password" id="txtLdapBindPassword" name="txtLdapBindPassword" />
                             <div class="fieldDescription">
                                 Your LDAP query user password
                             </div>
@@ -96,12 +96,12 @@
 
                 ApiClient.getPluginConfiguration(SyncConfigurationPage.pluginUniqueId).then(function (config) {
 
-                    $('#txtLDAPServer', page).val(config.LdapServer || "ldap-server.contoso.com");
-                    $('#txtLDAPBaseDn', page).val(config.LdapBaseDn || "o=domains,dc=contoso,dc=com");
-                    $('#txtLDAPPort', page).val(config.LdapPort || "389");
-                    $('#txtLDAPQuery', page).val(config.LdapQuery || "(memberOf=CN=JellyfinUsers,DC=contoso,DC=com)");
-                    $('#txtLDAPBindUser', page).val(config.LdapBindUser || "CN=BindUser,DC=contoso,DC=com");
-                    $('#txtLDAPBindPassword', page).val(config.LdapBindPassword || "");
+                    $('#txtLdapServer', page).val(config.LdapServer || "ldap-server.contoso.com");
+                    $('#txtLdapBaseDn', page).val(config.LdapBaseDn || "o=domains,dc=contoso,dc=com");
+                    $('#txtLdapPort', page).val(config.LdapPort || "389");
+                    $('#txtLdapQuery', page).val(config.LdapQuery || "(memberOf=CN=JellyfinUsers,DC=contoso,DC=com)");
+                    $('#txtLdapBindUser', page).val(config.LdapBindUser || "CN=BindUser,DC=contoso,DC=com");
+                    $('#txtLdapBindPassword', page).val(config.LdapBindPassword || "");
                     $("#chkEnableUserCreation", page).checked(config.CreateUsersFromLdap);
                     Dashboard.hideLoadingMsg();
                 });
@@ -114,11 +114,11 @@
                 var form = this;
 
                 ApiClient.getPluginConfiguration(SyncConfigurationPage.pluginUniqueId).then(function (config) {
-                    config.LDAPServer = $('#txtLDAPServer',form).val();
-                    config.LdapBaseDn = $('#txtLDAPBaseDn',form).val();
-                    config.LdapQuery = $('#txtLDAPQuery',form).val();
-                    config.LdapBindUser = $('#txtLDAPBindUser',form).val();
-                    config.LdapBindPassword = $('#txtLDAPBindPassword',form).val();
+                    config.LDAPServer = $('#txtLdapServer',form).val();
+                    config.LdapBaseDn = $('#txtLdapBaseDn',form).val();
+                    config.LdapQuery = $('#txtLdapQuery',form).val();
+                    config.LdapBindUser = $('#txtLdapBindUser',form).val();
+                    config.LdapBindPassword = $('#txtLdapBindPassword',form).val();
                     config.CreateUsersFromLdap = $("#chkEnableUserCreation", page).checked();
                     config.LdapPort = parseInt($("#txtLdapPort", page).val() || "389");
                     ApiClient.updatePluginConfiguration(SyncConfigurationPage.pluginUniqueId, config).then(Dashboard.processPluginConfigurationUpdateResult);              
