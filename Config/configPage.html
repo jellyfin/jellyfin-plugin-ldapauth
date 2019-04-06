@@ -21,6 +21,12 @@
                             </div>
                         </li>
                         <li>
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="chkUseSsl" />
+                                <span>Use SSL for the LDAP connection</span>
+                            </label>
+                        </li>
+                        <li>
                             <label for="txtLdapBaseDn">
                                 LDAP Base DN for searches:
                             </label>
@@ -74,7 +80,7 @@
                         <li>
                             <button type="submit" data-theme="b">Save</button>
                             <button type="button" onclick="history.back();">Cancel</button>
-                        </li>                        
+                        </li>
                     </ul>
 
                 </form>
@@ -97,6 +103,7 @@
                 ApiClient.getPluginConfiguration(SyncConfigurationPage.pluginUniqueId).then(function (config) {
 
                     $('#txtLdapServer', page).val(config.LdapServer || "ldap-server.contoso.com");
+                    $("#chkUseSsl", page).checked(config.UseSsl);
                     $('#txtLdapBaseDn', page).val(config.LdapBaseDn || "o=domains,dc=contoso,dc=com");
                     $('#txtLdapPort', page).val(config.LdapPort || "389");
                     $('#txtLdapQuery', page).val(config.LdapQuery || "(memberOf=CN=JellyfinUsers,DC=contoso,DC=com)");
@@ -115,6 +122,7 @@
 
                 ApiClient.getPluginConfiguration(SyncConfigurationPage.pluginUniqueId).then(function (config) {
                     config.LDAPServer = $('#txtLdapServer').val();
+                    config.UseSsl = $("#chkUseSsl").checked();
                     config.LdapBaseDn = $('#txtLdapBaseDn').val();
                     config.LdapQuery = $('#txtLdapQuery').val();
                     config.LdapBindUser = $('#txtLdapBindUser').val();
