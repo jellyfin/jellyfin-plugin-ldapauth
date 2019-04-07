@@ -79,9 +79,10 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 }
             }
             
+            string ldap_username = ldapUser.getAttribute("uid").StringValue;
             try
             {
-                user = _userManager.GetUserByName(ldapUser.getAttribute("uid").StringValue);
+                user = _userManager.GetUserByName(ldap_username);
             }
             catch(Exception e)
             {
@@ -95,8 +96,8 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 _logger.LogDebug("Trying bind as user {1}", ldapUser.DN);
                 try
                 {
-                    ldapClient.Connect(_config.LdapServer,_config.LdapPort);
-                    ldapClient.Bind(ldapUser.DN,password);
+                    ldapClient.Connect(_config.LdapServer, _config.LdapPort);
+                    ldapClient.Bind(ldapUser.DN, password);
                 }
                 catch(Exception e)
                 {
@@ -107,16 +108,17 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 {
                     if(user == null)
                     {
+                        _logger.LogDebug("Creating new user {1}", ldap_username);
                         if(_config.CreateUsersFromLdap)
                         {
-                            user = await _userManager.CreateUser(ldapUser.getAttribute("uid").StringValue);
+                            user = await _userManager.CreateUser(ldap_username);
                             user.Policy.AuthenticationProviderId = GetType().Name;
-                            _userManager.UpdateUserPolicy(user.Id,user.Policy);
+                            _userManager.UpdateUserPolicy(user.Id, user.Policy);
                         }
                         else
                         {
-                            _logger.LogError($"User not configured for LDAP Uid: {ldapUser.getAttribute("uid").StringValue}");
-                            throw new Exception($"Automatic User Creation is disabled and there is no Jellyfin user for authorized Uid: {ldapUser.getAttribute("uid").StringValue}");
+                            _logger.LogError($"User not configured for LDAP Uid: {ldap_username}");
+                            throw new Exception($"Automatic User Creation is disabled and there is no Jellyfin user for authorized Uid: {ldap_username}");
                         }
                     }
                     return new ProviderAuthenticationResult
