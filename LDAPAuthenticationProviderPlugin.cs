@@ -121,9 +121,10 @@ namespace Jellyfin.Plugin.LDAP_Auth
                             throw new Exception($"Automatic User Creation is disabled and there is no Jellyfin user for authorized Uid: {ldap_username}");
                         }
                     }
+                    _logger.LogDebug("Setting username: {1}", user.Name);
                     return new ProviderAuthenticationResult
                     {
-                        Username = user.Name
+                        Username = ldap_username
                     };
                 }
                 else
