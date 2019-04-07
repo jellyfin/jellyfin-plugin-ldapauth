@@ -12,7 +12,8 @@ namespace Jellyfin.Plugin.LDAP_Auth
     {
         private readonly string[] _attrs = new string[]{
             "uid",
-            "CN",
+            "cn",
+            "mail",
             "displayName"
         };
         private readonly PluginConfiguration _config;
@@ -34,9 +35,8 @@ namespace Jellyfin.Plugin.LDAP_Auth
             User user = null;    
             bool foundUser = false;
             LdapEntry ldapUser = null;        
-            using (var ldapClient = new LdapConnection())
+            using (var ldapClient = new LdapConnection() { SecureSocketLayer = _config.UseSsl })
             {
-                ldapClient.SecureSocketLayer = _config.UseSsl;
                 try
                 {
                     ldapClient.Connect(_config.LdapServer,_config.LdapPort);
@@ -49,12 +49,13 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 }
                 if(ldapClient.Bound)
                 {
-                    LdapSearchResults ldapUsers = ldapClient.Search(_config.LdapBaseDn,2,_config.LdapQuery,_attrs,false);
+                    LdapSearchResults ldapUsers = ldapClient.Search(_config.LdapBaseDn, 2, _config.LdapQuery, _attrs, false);
                     if (ldapUsers == null)
                     {
                         _logger.LogWarning("No approved LDAP Users found from query");
                         throw new UnauthorizedAccessException("No users found in LDAP Query");
                     }
+                    _logger.LogDebug("Search: {1} {2} @ {3} | Found: {4}", _config.LdapBaseDn, _config.LdapQuery, _config.LdapServer, ldapUsers.Count);
                     
                     while(ldapUsers.hasMore() && foundUser == false)
                     {
@@ -86,10 +87,12 @@ namespace Jellyfin.Plugin.LDAP_Auth
             {
                 _logger.LogWarning("User Manager could not find a user for LDAP User, this may not be fatal",e);
             }
+
+            //System.Threading.Thread.Sleep(3000);
             
-            using (var ldapClient = new LdapConnection())
+            using (var ldapClient = new LdapConnection() { SecureSocketLayer = _config.UseSsl })
             {
-                ldapClient.SecureSocketLayer = _config.UseSsl;
+                _logger.LogDebug("Trying bind as user {1}", ldapUser.DN);
                 try
                 {
                     ldapClient.Connect(_config.LdapServer,_config.LdapPort);
@@ -97,7 +100,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 }
                 catch(Exception e)
                 {
-                    _logger.LogError(e,"Failed to Connect or Bind to server");
+                    _logger.LogError(e,"Failed to Connect or Bind to server as user {1}", ldapUser.DN);
                     throw e;
                 }
                 if(ldapClient.Bound)
