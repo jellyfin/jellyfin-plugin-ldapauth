@@ -50,7 +50,8 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 if(ldapClient.Bound)
                 {
                     LdapSearchResults ldapUsers = ldapClient.Search(_config.LdapBaseDn, 2, _config.LdapQuery, _attrs, false);
-                    if (ldapUsers == null)
+                    var hasMore = ldapUsers.hasMore();
+                    if (ldapUsers == null || !hasMore)
                     {
                         _logger.LogWarning("No approved LDAP Users found from query");
                         throw new UnauthorizedAccessException("No users found in LDAP Query");
@@ -121,7 +122,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                             throw new Exception($"Automatic User Creation is disabled and there is no Jellyfin user for authorized Uid: {ldap_username}");
                         }
                     }
-                    _logger.LogDebug("Setting username: {1}", user.Name);
+                    _logger.LogDebug("Setting username: {1}", ldap_username);
                     return new ProviderAuthenticationResult
                     {
                         Username = ldap_username
