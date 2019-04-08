@@ -20,7 +20,9 @@ namespace Jellyfin.Plugin.LDAP_Auth
             _userManager = userManager;
         }
 
-        private string[] _attrs = _config.LdapSearchAttributes.Split(',').ToList<string>();
+        private string[] ldapAttrs = _config.LdapSearchAttributes.Split(',').ToList<string>();
+
+        private string searchFilter = _config.LdapSearchFilter;
 
         public string Name => "LDAP-Authentication";
 
@@ -45,19 +47,19 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 }
                 if(ldapClient.Bound)
                 {
-                    LdapSearchResults ldapUsers = ldapClient.Search(_config.LdapBaseDn, 2, _config.LdapSearchFilter, _attrs, false);
+                    LdapSearchResults ldapUsers = ldapClient.Search(_config.LdapBaseDn, 2, searchFilter, ldapAttrs, false);
                     var hasMore = ldapUsers.hasMore();
                     if (ldapUsers == null || !hasMore)
                     {
                         _logger.LogWarning("No approved LDAP Users found from query");
                         throw new UnauthorizedAccessException("No users found in LDAP Query");
                     }
-                    _logger.LogDebug("Search: {1} {2} @ {3} | Found: {4}", _config.LdapBaseDn, _config.LdapSearchFilter, _config.LdapServer, ldapUsers.Count);
+                    _logger.LogDebug("Search: {1} {2} @ {3} | Found: {4}", _config.LdapBaseDn, searchFilter _config.LdapServer, ldapUsers.Count);
                     
                     while(ldapUsers.hasMore() && foundUser == false)
                     {
                         var currentUser = ldapUsers.next();
-                        foreach(string attr in _attrs)
+                        foreach(string attr in ldapAttrs)
                         {
                             var toCheck = currentUser.getAttribute(attr);
                             if(toCheck?.StringValueArray != null)
