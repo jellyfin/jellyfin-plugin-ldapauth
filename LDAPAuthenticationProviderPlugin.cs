@@ -21,6 +21,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
         }
 
         private string[] ldapAttrs = _config.LdapSearchAttributes.Split(',').ToList<string>();
+        private string usernameAttr = _config.LdapUsernameAttribute;
 
         private string searchFilter = _config.LdapSearchFilter;
 
@@ -78,7 +79,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 }
             }
             
-            string ldap_username = ldapUser.getAttribute("uid").StringValue;
+            string ldap_username = ldapUser.getAttribute(usernameAttr).StringValue;
             try
             {
                 user = _userManager.GetUserByName(ldap_username);
