@@ -8,8 +8,8 @@
 
         <div data-role="content">
             <div class="content-primary">
+                <p><i>Note:</i> Making changes to this configurationr requires a restart of Jellyfin.</p>
                 <form class="esqConfigurationForm">
-
                     <ul class="ulForm" data-role="listview">
                         <li>
                             <label for="txtLdapServer">
@@ -45,12 +45,39 @@
                             </div>
                         </li>
                         <li>
-                            <label for="txtLdapQuery">
-                                LDAP Query:
+                            <label for="txtLdapSearchAttributes">
+                                LDAP Attributes:
                             </label>
-                            <input type="text" id="txtLdapQuery" name="txtLdapQuery" />
+                            <input type="text" id="txtLdapSearchAttributes" name="txtLdapSearchAttributes" />
                             <div class="fieldDescription">
-                                The LDAP query used to lookup an authorized user for Jellyfin
+                                The comma-separated list of LDAP attributes to compare entered usernames to
+                            </div>
+                        </li>
+                        <li>
+                            <label for="txtLdapUsernameAttribute">
+                                LDAP Name Attribute:
+                            </label>
+                            <input type="text" id="txtLdapUsernameAttribute" name="txtLdapUsernameAttribute" />
+                            <div class="fieldDescription">
+                                The LDAP attribute to create Jellyfin usernames from
+                            </div>
+                        </li>
+                        <li>
+                            <label for="txtLdapSearchFilter">
+                                LDAP User Filter:
+                            </label>
+                            <input type="text" id="txtLdapSearchFilter" name="txtLdapSearchFilter" />
+                            <div class="fieldDescription">
+                                The LDAP query used to find authorized users for Jellyfin
+                            </div>
+                        </li>
+                        <li>
+                            <label for="txtLdapAdminFilter">
+                                LDAP Admin Filter:
+                            </label>
+                            <input type="text" id="txtLdapAdminFilter" name="txtLdapAdminFilter" />
+                            <div class="fieldDescription">
+                                The LDAP query used to find administrative users for Jellyfin
                             </div>
                         </li>
                         <li>
@@ -106,7 +133,10 @@
                     $("#chkUseSsl", page).checked(config.UseSsl);
                     $('#txtLdapBaseDn', page).val(config.LdapBaseDn || "o=domains,dc=contoso,dc=com");
                     $('#txtLdapPort', page).val(config.LdapPort || "389");
-                    $('#txtLdapQuery', page).val(config.LdapQuery || "(memberOf=CN=JellyfinUsers,DC=contoso,DC=com)");
+                    $('#txtLdapSearchAttributes', page).val(config.LdapSearchAttributes || "uid, cn, mail, displayName");
+                    $('#txtLdapUsernameAttribute', page).val(config.LdapUsernameAttribute || "uid");
+                    $('#txtLdapSearchFilter', page).val(config.LdapSearchFilter || "(memberOf=CN=JellyfinUsers,DC=contoso,DC=com)");
+                    $('#txtLdapAdminFilter', page).val(config.LdapAdminFilter || "(enabledService=JellyfinAdministrator");
                     $('#txtLdapBindUser', page).val(config.LdapBindUser || "CN=BindUser,DC=contoso,DC=com");
                     $('#txtLdapBindPassword', page).val(config.LdapBindPassword || "");
                     $("#chkEnableUserCreation", page).checked(config.CreateUsersFromLdap);
@@ -124,7 +154,10 @@
                     config.LDAPServer = $('#txtLdapServer').val();
                     config.UseSsl = $("#chkUseSsl").checked();
                     config.LdapBaseDn = $('#txtLdapBaseDn').val();
-                    config.LdapQuery = $('#txtLdapQuery').val();
+                    config.LdapSearchAttributes = $('#txtLdapSearchAttributes').val();
+                    config.LdapUsernameAttribute = $('#txtLdapUsernameAttribute').val();
+                    config.LdapSearchFilter = $('#txtLdapSearchFilter').val();
+                    config.LdapAdminFilter = $('#txtLdapAdminFilter').val();
                     config.LdapBindUser = $('#txtLdapBindUser').val();
                     config.LdapBindPassword = $('#txtLdapBindPassword').val();
                     config.CreateUsersFromLdap = $("#chkEnableUserCreation").checked();
