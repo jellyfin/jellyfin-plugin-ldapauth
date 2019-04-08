@@ -49,14 +49,14 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 }
                 if(ldapClient.Bound)
                 {
-                    LdapSearchResults ldapUsers = ldapClient.Search(_config.LdapBaseDn, 2, _config.LdapQuery, _attrs, false);
+                    LdapSearchResults ldapUsers = ldapClient.Search(_config.LdapBaseDn, 2, _config.LdapSearchFilter, _attrs, false);
                     var hasMore = ldapUsers.hasMore();
                     if (ldapUsers == null || !hasMore)
                     {
                         _logger.LogWarning("No approved LDAP Users found from query");
                         throw new UnauthorizedAccessException("No users found in LDAP Query");
                     }
-                    _logger.LogDebug("Search: {1} {2} @ {3} | Found: {4}", _config.LdapBaseDn, _config.LdapQuery, _config.LdapServer, ldapUsers.Count);
+                    _logger.LogDebug("Search: {1} {2} @ {3} | Found: {4}", _config.LdapBaseDn, _config.LdapSearchFilter, _config.LdapServer, ldapUsers.Count);
                     
                     while(ldapUsers.hasMore() && foundUser == false)
                     {
