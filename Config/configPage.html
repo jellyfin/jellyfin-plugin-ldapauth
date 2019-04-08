@@ -8,8 +8,8 @@
 
         <div data-role="content">
             <div class="content-primary">
+                <p><i>Note:</i> Making changes to this configurationr requires a restart of Jellyfin.</p>
                 <form class="esqConfigurationForm">
-
                     <ul class="ulForm" data-role="listview">
                         <li>
                             <label for="txtLdapServer">
@@ -136,7 +136,7 @@
                     $('#txtLdapSearchAttributes', page).val(config.LdapSearchAttributes || "uid, cn, mail, displayName");
                     $('#txtLdapUsernameAttribute', page).val(config.LdapUsernameAttribute || "uid");
                     $('#txtLdapSearchFilter', page).val(config.LdapSearchFilter || "(memberOf=CN=JellyfinUsers,DC=contoso,DC=com)");
-                    $('#txtLdapAdminFilter', page).val(config.LdapAdminFilter || "(&(memberOf=CN=JellyfinUsers,DC=contoso,DC=com)(isJellyfinAdmin=true))");
+                    $('#txtLdapAdminFilter', page).val(config.LdapAdminFilter || "(enabledService=JellyfinAdministrator");
                     $('#txtLdapBindUser', page).val(config.LdapBindUser || "CN=BindUser,DC=contoso,DC=com");
                     $('#txtLdapBindPassword', page).val(config.LdapBindPassword || "");
                     $("#chkEnableUserCreation", page).checked(config.CreateUsersFromLdap);

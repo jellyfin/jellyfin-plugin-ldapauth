@@ -5,8 +5,8 @@ namespace Jellyfin.Plugin.LDAP_Auth
         public string LdapServer { get; set; }
         public string LdapBaseDn { get; set; }
         public int LdapPort { get; set; }
-        public int LdapSearchAttributes { get; set; }
-        public int LdapUsernameAttribute { get; set; }
+        public string LdapSearchAttributes { get; set; }
+        public string LdapUsernameAttribute { get; set; }
         public string LdapSearchFilter { get; set; }
         public string LdapAdminFilter { get; set; }
         public string LdapBindUser { get; set; }
@@ -21,7 +21,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
             LdapSearchAttributes = "uid, cn, mail, displayName";
             LdapUsernameAttribute = "uid";
             LdapSearchFilter = "(memberOf=CN=JellyfinUsers,DC=contoso,DC=com)";
-            LdapAdminFilter = "(&(memberOf=CN=JellyfinUsers,DC=contoso,DC=com)(isJellyfinAdmin=true))";
+            LdapAdminFilter = "(enabledService=JellyfinAdministrator)";
             LdapBindUser = "CN=BindUser,DC=contoso,DC=com";
             LdapBindPassword = "password";
             CreateUsersFromLdap = true;

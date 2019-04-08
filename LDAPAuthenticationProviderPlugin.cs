@@ -20,10 +20,10 @@ namespace Jellyfin.Plugin.LDAP_Auth
             _userManager = userManager;
         }
 
-        private string[] ldapAttrs = _config.LdapSearchAttributes.Split(',').ToList<string>();
-        private string usernameAttr = _config.LdapUsernameAttribute;
-
-        private string searchFilter = _config.LdapSearchFilter;
+        private string[] ldapAttrs => _config.LdapSearchAttributes.Replace(" ", "").Split(',');
+        private string usernameAttr => _config.LdapUsernameAttribute;
+        private string searchFilter => _config.LdapSearchFilter;
+        private string adminFilter => _config.LdapAdminFilter;
 
         public string Name => "LDAP-Authentication";
 
@@ -55,7 +55,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                         _logger.LogWarning("No approved LDAP Users found from query");
                         throw new UnauthorizedAccessException("No users found in LDAP Query");
                     }
-                    _logger.LogDebug("Search: {1} {2} @ {3} | Found: {4}", _config.LdapBaseDn, searchFilter _config.LdapServer, ldapUsers.Count);
+                    _logger.LogDebug("Search: {1} {2} @ {3} | Found: {4}", _config.LdapBaseDn, searchFilter, _config.LdapServer, ldapUsers.Count);
                     
                     while(ldapUsers.hasMore() && foundUser == false)
                     {
@@ -80,6 +80,8 @@ namespace Jellyfin.Plugin.LDAP_Auth
             }
             
             string ldap_username = ldapUser.getAttribute(usernameAttr).StringValue;
+            _logger.LogDebug("Setting username: {1}", ldap_username);
+
             try
             {
                 user = _userManager.GetUserByName(ldap_username);
@@ -106,11 +108,23 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 {
                     if(user == null)
                     {
-                        _logger.LogDebug("Creating new user {1}", ldap_username);
+                        // Determine if the user should be an administrator
+                        bool ldap_isAdmin = false;
+                        // Search the current user DN with the adminFilter
+                        LdapSearchResults ldapUsers = ldapClient.Search(ldapUser.DN, 0, adminFilter, ldapAttrs, false);
+                        var hasMore = ldapUsers.hasMore();
+                        // If we got non-zero, then the filter matched and the user is an admin
+                        if(ldapUsers.Count != 0)
+                        {
+                            ldap_isAdmin = true;
+                        }
+
+                        _logger.LogDebug("Creating new user {1} - is admin? {2}", ldap_username, ldap_isAdmin);
                         if(_config.CreateUsersFromLdap)
                         {
                             user = await _userManager.CreateUser(ldap_username);
                             user.Policy.AuthenticationProviderId = GetType().Name;
+                            user.Policy.IsAdministrator = ldap_isAdmin;
                             _userManager.UpdateUserPolicy(user.Id, user.Policy);
                         }
                         else
@@ -119,7 +133,6 @@ namespace Jellyfin.Plugin.LDAP_Auth
                             throw new Exception($"Automatic User Creation is disabled and there is no Jellyfin user for authorized Uid: {ldap_username}");
                         }
                     }
-                    _logger.LogDebug("Setting username: {1}", ldap_username);
                     return new ProviderAuthenticationResult
                     {
                         Username = ldap_username
