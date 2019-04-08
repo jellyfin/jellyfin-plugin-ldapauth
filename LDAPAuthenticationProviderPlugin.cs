@@ -10,12 +10,6 @@ namespace Jellyfin.Plugin.LDAP_Auth
 {
     public class LdapAuthenticationProviderPlugin : IAuthenticationProvider
     {
-        private readonly string[] _attrs = new string[]{
-            "uid",
-            "cn",
-            "mail",
-            "displayName"
-        };
         private readonly PluginConfiguration _config;
         private readonly ILogger _logger;
         private readonly IUserManager _userManager;
@@ -25,6 +19,8 @@ namespace Jellyfin.Plugin.LDAP_Auth
             _logger = Plugin.Logger;
             _userManager = userManager;
         }
+
+        private string[] _attrs = _config.LdapSearchAttributes.Split(',').ToList<string>();
 
         public string Name => "LDAP-Authentication";
 
