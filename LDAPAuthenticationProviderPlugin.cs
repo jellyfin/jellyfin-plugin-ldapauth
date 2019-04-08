@@ -90,8 +90,6 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 _logger.LogWarning("User Manager could not find a user for LDAP User, this may not be fatal",e);
             }
 
-            //System.Threading.Thread.Sleep(3000);
-            
             using (var ldapClient = new LdapConnection() { SecureSocketLayer = _config.UseSsl })
             {
                 _logger.LogDebug("Trying bind as user {1}", ldapUser.DN);
