@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.168
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LDAP-Auth", "LDAP-Auth.csproj", "{5984E9A5-63C7-4FC6-9C96-F82EF9841A95}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LDAP-Auth", "LDAP-Auth/LDAP-Auth.csproj", "{5984E9A5-63C7-4FC6-9C96-F82EF9841A95}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -1,2 +1,3 @@
-# jellyfin-ldap-plugin
-LDAP authentication for Jellyfin Media Server
+# jellyfin-plugin-ldapauth
+
+LDAP authentication for Jellyfin Media Server. JelLDAP, if you will.
