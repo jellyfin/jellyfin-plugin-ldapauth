@@ -1,0 +1,19 @@
+---
+name: "jellyfin-plugin-ldapauth"
+guid: "958aad66-3784-4d2a-b89a-a7b6fab6e25c"
+version: "1" # Please increment with each pull request
+jellyfin_version: "10.3.0-rc1" # The earliest binary-compatable version
+nicename: "LDAP Authentication"
+owner: "jellyfin"
+description: "Authenticate users against an LDAP database"
+overview: >
+  Authenticate your Jellyfin users against an LDAP database, and optionally create users who do not yet exist automatically.
+
+  Allows the administrator to customize most aspects of the LDAP authentication process, including customizable search attributes, username attribute, and a search filter for administrative users (set on user creation). The user, via the "Manual Login" process, can enter any valid attribute value, which will be mapped back to the specified username attribute automatically as well.
+category: "Authentication"
+build_type: "dotnet"
+dotnet_configuration: "Release"
+dotnet_framework: "netstandard2.0"
+artifacts:
+  - "LDAP-Auth.dll"
+  - "Novell.Directory.Ldap.NETStandard.dll"
