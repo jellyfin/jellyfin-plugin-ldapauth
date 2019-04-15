@@ -75,6 +75,12 @@ namespace Jellyfin.Plugin.LDAP_Auth
                             }
                         }
                     }
+
+                    if (foundUser == false)
+                    {
+                        _logger.LogError("Found no users matching {1} in LDAP search.", username);
+                        throw new Exception("Found no LDAP users matching provided username.");
+                    }
                 }
             }
             
