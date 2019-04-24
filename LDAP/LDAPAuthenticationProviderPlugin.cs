@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Novell.Directory.Ldap;
 using Microsoft.Extensions.Logging;
 
-namespace Jellyfin.Plugin.LDAP_Auth
+namespace Jellyfin.Plugin.LDAP
 {
     public class LdapAuthenticationProviderPlugin : IAuthenticationProvider
     {
@@ -25,7 +25,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
         private string searchFilter => _config.LdapSearchFilter;
         private string adminFilter => _config.LdapAdminFilter;
 
-        public string Name => "LDAP-Authentication";
+        public string Name => "LDAP";
 
         public bool IsEnabled => true;
 

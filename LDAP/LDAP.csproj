@@ -1,11 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <RootNamespace>Jellyfin.Plugin.LDAP_Auth</RootNamespace>
+    <RootNamespace>Jellyfin.Plugin.LDAP</RootNamespace>
+    <AssemblyVersion>2.0.0</AssemblyVersion>
+    <FileVersion>2.0.0</FileVersion>
   </PropertyGroup>
+
   <ItemGroup>
     <None Remove="Config\configPage.html" />
   </ItemGroup>
+
   <ItemGroup>
     <EmbeddedResource Include="Config\configPage.html" />
   </ItemGroup>

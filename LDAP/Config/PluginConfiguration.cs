@@ -1,4 +1,4 @@
-namespace Jellyfin.Plugin.LDAP_Auth
+namespace Jellyfin.Plugin.LDAP
 {
     public class PluginConfiguration :  MediaBrowser.Model.Plugins.BasePluginConfiguration
     {
@@ -13,6 +13,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
         public string LdapBindPassword { get; set; }
         public bool CreateUsersFromLdap { get; set; }
         public bool UseSsl { get; set; }
+
         public PluginConfiguration()
         {
             LdapServer = "ldap-server.contoso.com";
