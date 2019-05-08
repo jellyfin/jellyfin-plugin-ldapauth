@@ -8,108 +8,74 @@
 
         <div data-role="content">
             <div class="content-primary">
-                <p><i>Note:</i> Making changes to this configurationr requires a restart of Jellyfin.</p>
                 <form class="esqConfigurationForm">
-                    <ul class="ulForm" data-role="listview">
-                        <li>
-                            <label for="txtLdapServer">
-                                LDAP Server:
-                            </label>
-                            <input type="text" id="txtLdapServer" name="txtLdapServer" />
-                            <div class="fieldDescription">
-                                The Servername for the LDAP server you wish to use for Authentications
+                    <div class="verticalSection verticalSection-extrabottompadding">
+                        <div class="sectionTitleContainer flex align-items-center">
+                            <h2 class="sectionTitle">LDAP Settings:</h2>
+                            <a is="emby-button" class="raised button-alt headerHelpButton" target="_blank" href="https://github.com/jellyfin/jellyfin-plugin-ldapauth">${Help}</a>
+                        </div>
+                        <p><i>Note:</i> Making changes to this configuration requires a restart of Jellyfin.</p>
+                        <div class="verticalSection verticalSection-extrabottompadding">
+                            <div class="inputContainer">
+                                <input is="emby-input" type="text" id="txtLdapServer" label="LDAP Server:" />
+                                <div class="fieldDescription">The server name for the LDAP server you wish to use for Authentication.</div>
                             </div>
-                        </li>
-                        <li>
-                            <label>
-                                <input type="checkbox" is="emby-checkbox" id="chkUseSsl" />
-                                <span>Use SSL for the LDAP connection</span>
-                            </label>
-                        </li>
-                        <li>
-                            <label for="txtLdapBaseDn">
-                                LDAP Base DN for searches:
-                            </label>
-                            <input type="text" id="txtLdapBaseDn" name="txtLdapBaseDn" />
-                            <div class="fieldDescription">
-                                The base DN structure for your LDAP query
+                            <div class="checkboxContainer checkboxContainer-withDescription">
+                                <label>
+                                    <input type="checkbox" is="emby-checkbox" id="chkUseSsl" />
+                                    <span>Secure LDAP:</span>
+                                </label>
+                                <div class="fieldDescription checkboxFieldDescription">Use SSL for the LDAP connection.</div>
                             </div>
-                        </li>
-                        <li>
-                            <label for="txtLdapPort">
-                                LDAP Port:
-                            </label>
-                            <input type="text" id="txtLdapPort" name="txtLdapPort" />
-                            <div class="fieldDescription">
-                                The port to communicate with LDAP on
+                            <div class="inputContainer fldExternalAddressFilter">
+                                <input is="emby-input" type="text" id="txtLdapBaseDn" label="LDAP Base DN for searches:" />
+                                <div class="fieldDescription">The base DN structure for your LDAP query.</div>
                             </div>
-                        </li>
-                        <li>
-                            <label for="txtLdapSearchAttributes">
-                                LDAP Attributes:
-                            </label>
-                            <input type="text" id="txtLdapSearchAttributes" name="txtLdapSearchAttributes" />
-                            <div class="fieldDescription">
-                                The comma-separated list of LDAP attributes to compare entered usernames to
+                            <div class="inputContainer fldExternalAddressFilter">
+                                <input is="emby-input" type="number" id="txtLdapPort" label="LDAP Port:" />
+                                <div class="fieldDescription">The port to communicate with LDAP on.</div>
                             </div>
-                        </li>
-                        <li>
-                            <label for="txtLdapUsernameAttribute">
-                                LDAP Name Attribute:
-                            </label>
-                            <input type="text" id="txtLdapUsernameAttribute" name="txtLdapUsernameAttribute" />
-                            <div class="fieldDescription">
-                                The LDAP attribute to create Jellyfin usernames from
+                            <div class="inputContainer fldExternalAddressFilter">
+                                <input is="emby-input" type="text" id="txtLdapSearchAttributes" label="LDAP Attributes:" />
+                                <div class="fieldDescription">The comma-separated list of LDAP attributes to compare entered usernames to.</div>
                             </div>
-                        </li>
-                        <li>
-                            <label for="txtLdapSearchFilter">
-                                LDAP User Filter:
-                            </label>
-                            <input type="text" id="txtLdapSearchFilter" name="txtLdapSearchFilter" />
-                            <div class="fieldDescription">
-                                The LDAP query used to find authorized users for Jellyfin
+                            <div class="inputContainer fldExternalAddressFilter">
+                                <input is="emby-input" type="text" id="txtLdapUsernameAttribute" label="LDAP Name Attribute:" />
+                                <div class="fieldDescription">The LDAP attribute to create Jellyfin user names from.</div>
                             </div>
-                        </li>
-                        <li>
-                            <label for="txtLdapAdminFilter">
-                                LDAP Admin Filter:
-                            </label>
-                            <input type="text" id="txtLdapAdminFilter" name="txtLdapAdminFilter" />
-                            <div class="fieldDescription">
-                                The LDAP query used to find administrative users for Jellyfin
+                            <div class="inputContainer fldExternalAddressFilter">
+                                <input is="emby-input" type="text" id="txtLdapSearchFilter" label="LDAP User Filter:" />
+                                <div class="fieldDescription">The LDAP query used to find authorized users for Jellyfin.</div>
                             </div>
-                        </li>
-                        <li>
-                            <label for="txtLdapBindUser">
-                                LDAP Bind User:
-                            </label>
-                            <input type="text" id="txtLdapBindUser" name="txtBindLdapUser" />
-                            <div class="fieldDescription">
-                                A user to use for LDAP queries
+                            <div class="inputContainer fldExternalAddressFilter">
+                                <input is="emby-input" type="text" id="txtLdapAdminFilter" label="LDAP Admin Filter:" />
+                                <div class="fieldDescription">The LDAP query used to find administrative users for Jellyfin.</div>
                             </div>
-                        </li>
-                        <li>
-                            <label for="txtLdapBindPassword">
-                                LDAP Bind User Password:
-                            </label>
-                            <input type="password" id="txtLdapBindPassword" name="txtLdapBindPassword" />
-                            <div class="fieldDescription">
-                                Your LDAP query user password
+                            <div class="inputContainer fldExternalAddressFilter">
+                                <input is="emby-input" type="text" id="txtLdapBindUser" label="LDAP Bind User:" />
+                                <div class="fieldDescription">A user to use for LDAP queries.</div>
                             </div>
-                        </li>
-                        <li>
-                            <label>
-                                <input type="checkbox" is="emby-checkbox" id="chkEnableUserCreation" />
-                                <span>Enable on first Login creation of Authorized Users from LDAP</span>
-                            </label>
-                        </li>
-                        <li>
-                            <button type="submit" data-theme="b">Save</button>
-                            <button type="button" onclick="history.back();">Cancel</button>
-                        </li>
-                    </ul>
-
+                            <div class="inputContainer fldExternalAddressFilter">
+                                <input is="emby-input" type="password" id="txtLdapBindPassword" label="LDAP Bind User Password:" />
+                                <div class="fieldDescription">Your LDAP query user password.</div>
+                            </div>
+                            <div class="checkboxContainer checkboxContainer-withDescription">
+                                <label>
+                                    <input type="checkbox" is="emby-checkbox" id="chkEnableUserCreation" />
+                                    <span>Enable User Creation</span>
+                                </label>
+                                <div class="fieldDescription checkboxFieldDescription">Enable on first login creation of authorized users from LDAP</div>
+                            </div>
+                        </div>
+                        <div>
+                            <button is="emby-button" type="submit" data-theme="b" class="raised button-submit block">
+                                <span>${ButtonSave}</span>
+                            </button>
+                            <button is="emby-button" type="button" class="raised button-cancel block btnCancel" onclick="history.back();">
+                                <span>${ButtonCancel}</span>
+                            </button>
+                        </div>
+                    </div>
                 </form>
             </div>
         </div>
@@ -147,7 +113,7 @@
             $('.esqConfigurationForm').on('submit', function (e) {
 
                 Dashboard.showLoadingMsg();
-           
+
                 var form = this;
 
                 ApiClient.getPluginConfiguration(SyncConfigurationPage.pluginUniqueId).then(function (config) {
@@ -162,7 +128,7 @@
                     config.LdapBindPassword = $('#txtLdapBindPassword').val();
                     config.CreateUsersFromLdap = $("#chkEnableUserCreation").checked();
                     config.LdapPort = parseInt($("#txtLdapPort").val() || "389");
-                    ApiClient.updatePluginConfiguration(SyncConfigurationPage.pluginUniqueId, config).then(Dashboard.processPluginConfigurationUpdateResult);              
+                    ApiClient.updatePluginConfiguration(SyncConfigurationPage.pluginUniqueId, config).then(Dashboard.processPluginConfigurationUpdateResult);
                 });
 
                 // Disable default form submission
