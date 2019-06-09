@@ -151,14 +151,19 @@ namespace Jellyfin.Plugin.LDAP_Auth
             }
         }
 
+        public Task<bool> HasPassword(User user)
+        {
+            return Task.FromResult(true);
+        }
+
         public Task ChangePassword(User user, string newPassword)
         {
             throw new NotImplementedException("Changing LDAP passwords currently unsupported");
         }
 
-        public Task<bool> HasPassword(User user)
+        public void ChangeEasyPassword(User user, string newPassword, string newPasswordHash)
         {
-            return Task.FromResult(true);
+            throw new NotImplementedException("EasyPin passwords for LDAP users are currently unsupported");
         }
     }
 }
