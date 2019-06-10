@@ -156,6 +156,16 @@ namespace Jellyfin.Plugin.LDAP_Auth
             return Task.FromResult(true);
         }
 
+        public string GetPasswordHash(User user)
+        {
+            return String.Empty;
+        }
+
+        public string GetEasyPasswordHash(User user)
+        {
+            return String.Empty;
+        }
+
         public Task ChangePassword(User user, string newPassword)
         {
             throw new NotImplementedException("Changing LDAP passwords currently unsupported");
