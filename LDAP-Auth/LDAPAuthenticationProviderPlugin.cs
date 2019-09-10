@@ -127,7 +127,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                         _logger.LogDebug("Creating new user {1} - is admin? {2}", ldap_username, ldap_isAdmin);
                         if(_config.CreateUsersFromLdap)
                         {
-                            user = await _userManager.CreateUser(ldap_username);
+                            user = _userManager.CreateUser(ldap_username);
                             user.Policy.AuthenticationProviderId = GetType().Name;
                             user.Policy.IsAdministrator = ldap_isAdmin;
                             _userManager.UpdateUserPolicy(user.Id, user.Policy);
@@ -151,9 +151,9 @@ namespace Jellyfin.Plugin.LDAP_Auth
             }
         }
 
-        public Task<bool> HasPassword(User user)
+        public bool HasPassword(User user)
         {
-            return Task.FromResult(true);
+            return true;
         }
 
         public string GetPasswordHash(User user)
