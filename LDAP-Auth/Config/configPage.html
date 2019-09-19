@@ -29,15 +29,15 @@
                             </div>
                             <div class="inputContainer fldExternalAddressFilter">
                                 <input is="emby-input" type="text" id="txtLdapBaseDn" label="LDAP Base DN for searches:" />
-                                <div class="fieldDescription">The base DN structure for your LDAP query.</div>
+                                <div class="fieldDescription">The base DN for your LDAP query.</div>
                             </div>
                             <div class="inputContainer fldExternalAddressFilter">
                                 <input is="emby-input" type="number" id="txtLdapPort" label="LDAP Port:" />
-                                <div class="fieldDescription">The port to communicate with LDAP on.</div>
+                                <div class="fieldDescription">The port to communicate with LDAP.</div>
                             </div>
                             <div class="inputContainer fldExternalAddressFilter">
                                 <input is="emby-input" type="text" id="txtLdapSearchAttributes" label="LDAP Attributes:" />
-                                <div class="fieldDescription">The comma-separated list of LDAP attributes to compare entered usernames to.</div>
+                                <div class="fieldDescription">A comma-separated list of LDAP attributes to compare entered usernames to.</div>
                             </div>
                             <div class="inputContainer fldExternalAddressFilter">
                                 <input is="emby-input" type="text" id="txtLdapUsernameAttribute" label="LDAP Name Attribute:" />
@@ -45,19 +45,19 @@
                             </div>
                             <div class="inputContainer fldExternalAddressFilter">
                                 <input is="emby-input" type="text" id="txtLdapSearchFilter" label="LDAP User Filter:" />
-                                <div class="fieldDescription">The LDAP query used to find authorized users for Jellyfin.</div>
+                                <div class="fieldDescription">The LDAP search filter to find users for Jellyfin, e.g. (objectClass=inetOrgPerson).</div>
                             </div>
                             <div class="inputContainer fldExternalAddressFilter">
                                 <input is="emby-input" type="text" id="txtLdapAdminFilter" label="LDAP Admin Filter:" />
-                                <div class="fieldDescription">The LDAP query used to find administrative users for Jellyfin.</div>
+                                <div class="fieldDescription">The LDAP search filter to find administrative users for Jellyfin, e.g. (objectClass=JellyfinAdministrator).</div>
                             </div>
                             <div class="inputContainer fldExternalAddressFilter">
                                 <input is="emby-input" type="text" id="txtLdapBindUser" label="LDAP Bind User:" />
-                                <div class="fieldDescription">A user to use for LDAP queries.</div>
+                                <div class="fieldDescription">A bind user for LDAP search queries, required if your LDAP doesn't support anonymous bind.</div>
                             </div>
                             <div class="inputContainer fldExternalAddressFilter">
                                 <input is="emby-input" type="password" id="txtLdapBindPassword" label="LDAP Bind User Password:" />
-                                <div class="fieldDescription">Your LDAP query user password.</div>
+                                <div class="fieldDescription">The password for the LDAP search query user.</div>
                             </div>
                             <div class="checkboxContainer checkboxContainer-withDescription">
                                 <label>
