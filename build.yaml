@@ -1,7 +1,7 @@
 ---
 name: "jellyfin-plugin-ldapauth"
 guid: "958aad66-3784-4d2a-b89a-a7b6fab6e25c"
-version: "4" # Please increment with each pull request
+version: "5" # Please increment with each pull request
 jellyfin_version: "10.4.0" # The earliest binary-compatable version
 nicename: "LDAP Authentication"
 owner: "jellyfin"
