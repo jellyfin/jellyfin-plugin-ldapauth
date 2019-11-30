@@ -129,8 +129,6 @@
                     config.CreateUsersFromLdap = $("#chkEnableUserCreation", form).checked();
                     config.LdapPort = parseInt($("#txtLdapPort", form).val() || "389");
 
-                    console.log(config);
-
                     ApiClient.updatePluginConfiguration(SyncConfigurationPage.pluginUniqueId, config).then(Dashboard.processPluginConfigurationUpdateResult);
                 });
 
