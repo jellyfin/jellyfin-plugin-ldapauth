@@ -117,17 +117,18 @@
                 var form = this;
 
                 ApiClient.getPluginConfiguration(SyncConfigurationPage.pluginUniqueId).then(function (config) {
-                    config.LDAPServer = $('#txtLdapServer').val();
-                    config.UseSsl = $("#chkUseSsl").checked();
-                    config.LdapBaseDn = $('#txtLdapBaseDn').val();
-                    config.LdapSearchAttributes = $('#txtLdapSearchAttributes').val();
-                    config.LdapUsernameAttribute = $('#txtLdapUsernameAttribute').val();
-                    config.LdapSearchFilter = $('#txtLdapSearchFilter').val();
-                    config.LdapAdminFilter = $('#txtLdapAdminFilter').val();
-                    config.LdapBindUser = $('#txtLdapBindUser').val();
-                    config.LdapBindPassword = $('#txtLdapBindPassword').val();
-                    config.CreateUsersFromLdap = $("#chkEnableUserCreation").checked();
-                    config.LdapPort = parseInt($("#txtLdapPort").val() || "389");
+                    config.LDAPServer = $('#txtLdapServer', form).val();
+                    config.UseSsl = $("#chkUseSsl", form).checked();
+                    config.LdapBaseDn = $('#txtLdapBaseDn', form).val();
+                    config.LdapSearchAttributes = $('#txtLdapSearchAttributes', form).val();
+                    config.LdapUsernameAttribute = $('#txtLdapUsernameAttribute', form).val();
+                    config.LdapSearchFilter = $('#txtLdapSearchFilter', form).val();
+                    config.LdapAdminFilter = $('#txtLdapAdminFilter', form).val();
+                    config.LdapBindUser = $('#txtLdapBindUser', form).val();
+                    config.LdapBindPassword = $('#txtLdapBindPassword', form).val();
+                    config.CreateUsersFromLdap = $("#chkEnableUserCreation", form).checked();
+                    config.LdapPort = parseInt($("#txtLdapPort", form).val() || "389");
+
                     ApiClient.updatePluginConfiguration(SyncConfigurationPage.pluginUniqueId, config).then(Dashboard.processPluginConfigurationUpdateResult);
                 });
 
