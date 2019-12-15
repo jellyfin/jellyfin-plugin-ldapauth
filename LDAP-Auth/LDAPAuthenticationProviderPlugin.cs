@@ -38,7 +38,16 @@ namespace Jellyfin.Plugin.LDAP_Auth
             {
                 try
                 {
+                    if (_config.SkipSslVerify)
+                    {
+                        ldapClient.UserDefinedServerCertValidationDelegate += LdapClient_UserDefinedServerCertValidationDelegate;
+                    }
+
                     ldapClient.Connect(_config.LdapServer,_config.LdapPort);
+                    if (_config.UseStartTls)
+                    {
+                        ldapClient.StartTls();
+                    }
                     ldapClient.Bind(_config.LdapBindUser,_config.LdapBindPassword);
                 }
                 catch(Exception e)
@@ -46,6 +55,11 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     _logger.LogError(e,"Failed to Connect or Bind to server");
                     throw e;
                 }
+                finally
+                {
+                    ldapClient.UserDefinedServerCertValidationDelegate -= LdapClient_UserDefinedServerCertValidationDelegate;
+                }
+
                 if(ldapClient.Bound)
                 {
                     LdapSearchResults ldapUsers = ldapClient.Search(_config.LdapBaseDn, 2, searchFilter, ldapAttrs, false);
@@ -101,7 +115,16 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 _logger.LogDebug("Trying bind as user {1}", ldapUser.DN);
                 try
                 {
+                    if(_config.SkipSslVerify)
+                    {
+                        ldapClient.UserDefinedServerCertValidationDelegate += LdapClient_UserDefinedServerCertValidationDelegate;
+                    }
+
                     ldapClient.Connect(_config.LdapServer, _config.LdapPort);
+                    if(_config.UseStartTls)
+                    {
+                        ldapClient.StartTls();
+                    }
                     ldapClient.Bind(ldapUser.DN, password);
                 }
                 catch(Exception e)
@@ -109,6 +132,11 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     _logger.LogError(e,"Failed to Connect or Bind to server as user {1}", ldapUser.DN);
                     throw e;
                 }
+                finally
+                {
+                    ldapClient.UserDefinedServerCertValidationDelegate -= LdapClient_UserDefinedServerCertValidationDelegate;
+                }
+
                 if(ldapClient.Bound)
                 {
                     if(user == null)
@@ -150,6 +178,13 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 }
             }
         }
+
+        private bool LdapClient_UserDefinedServerCertValidationDelegate(
+            object sender,
+            System.Security.Cryptography.X509Certificates.X509Certificate certificate,
+            System.Security.Cryptography.X509Certificates.X509Chain chain,
+            System.Net.Security.SslPolicyErrors sslPolicyErrors)
+            => true;
 
         public bool HasPassword(User user)
         {
