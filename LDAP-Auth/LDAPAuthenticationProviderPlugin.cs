@@ -53,7 +53,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 catch(Exception e)
                 {
                     _logger.LogError(e,"Failed to Connect or Bind to server");
-                    throw e;
+                    throw new AuthenticationException("Failed to Connect or Bind to server");
                 }
                 finally
                 {
@@ -66,7 +66,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     if (ldapUsers == null)
                     {
                         _logger.LogWarning("No LDAP users found from query");
-                        throw new UnauthorizedAccessException("No users found in LDAP Query");
+                        throw new AuthenticationException("No users found in LDAP Query");
                     }
                     _logger.LogDebug("Search: {1} {2} @ {3}", _config.LdapBaseDn, searchFilter, _config.LdapServer);
                    
@@ -93,7 +93,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     if (foundUser == false)
                     {
                         _logger.LogError("Found no users matching {1} in LDAP search.", username);
-                        throw new Exception("Found no LDAP users matching provided username.");
+                        throw new AuthenticationException("Found no LDAP users matching provided username.");
                     }
                 }
             }
@@ -130,7 +130,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 catch(Exception e)
                 {
                     _logger.LogError(e,"Failed to Connect or Bind to server as user {1}", ldapUser.DN);
-                    throw e;
+                    throw new AuthenticationException("Failed to Connect or Bind to server as user");
                 }
                 finally
                 {
@@ -163,7 +163,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                         else
                         {
                             _logger.LogError($"User not configured for LDAP Uid: {ldap_username}");
-                            throw new Exception($"Automatic User Creation is disabled and there is no Jellyfin user for authorized Uid: {ldap_username}");
+                            throw new AuthenticationException($"Automatic User Creation is disabled and there is no Jellyfin user for authorized Uid: {ldap_username}");
                         }
                     }
                     return new ProviderAuthenticationResult
@@ -174,7 +174,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 else
                 {
                     _logger.LogError("Error logging in, invalid LDAP username or password");
-                    throw new Exception("Error completing LDAP login. Invalid username or password.");
+                    throw new AuthenticationException("Error completing LDAP login. Invalid username or password.");
                 }
             }
         }
