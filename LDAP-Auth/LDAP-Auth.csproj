@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <RootNamespace>Jellyfin.Plugin.LDAP_Auth</RootNamespace>
-    <AssemblyVersion>6.0.0</AssemblyVersion>
-    <FileVersion>6.0.0</FileVersion>
+    <AssemblyVersion>7.0.0</AssemblyVersion>
+    <FileVersion>7.0.0</FileVersion>
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Config\configPage.html" />
@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Jellyfin.Controller" Version="10.4-*" />
-    <PackageReference Include="Novell.Directory.Ldap.NETStandard" Version="2.3.8" />
+    <PackageReference Include="Jellyfin.Controller" Version="10.5-*" />
+    <PackageReference Include="Novell.Directory.Ldap.NETStandard" Version="3.0.3" />
   </ItemGroup>
 </Project>
