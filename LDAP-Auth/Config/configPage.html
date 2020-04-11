@@ -27,6 +27,20 @@
                                 </label>
                                 <div class="fieldDescription checkboxFieldDescription">Use SSL for the LDAP connection.</div>
                             </div>
+                            <div class="checkboxContainer checkboxContainer-withDescription">
+                                <label>
+                                    <input type="checkbox" is="emby-checkbox" id="chkUseStartTls" />
+                                    <span>STARTTLS:</span>
+                                </label>
+                                <div class="fieldDescription checkboxFieldDescription">Use STARTTLS for the LDAP connection.</div>
+                            </div>
+                            <div class="checkboxContainer checkboxContainer-withDescription">
+                                <label>
+                                    <input type="checkbox" is="emby-checkbox" id="chkSkipSslVerify" />
+                                    <span>Skip SSL/TLS Verification:</span>
+                                </label>
+                                <div class="fieldDescription checkboxFieldDescription">Skip verification of connection certificate when using SSL/STARTTLS.</div>
+                            </div>
                             <div class="inputContainer fldExternalAddressFilter">
                                 <input is="emby-input" type="text" id="txtLdapBaseDn" label="LDAP Base DN for searches:" />
                                 <div class="fieldDescription">The base DN for your LDAP query.</div>
@@ -58,6 +72,10 @@
                             <div class="inputContainer fldExternalAddressFilter">
                                 <input is="emby-input" type="password" id="txtLdapBindPassword" label="LDAP Bind User Password:" />
                                 <div class="fieldDescription">The password for the LDAP search query user.</div>
+                            </div>
+                            <div class="inputContainer fldExternalAddressFilter">
+                                <input is="emby-input" type="text" id="txtLdapEasyPasswordAttr" label="LDAP Easy Password Attribute:" />
+                                <div class="fieldDescription">The attribute to store the Easy Password in.</div>
                             </div>
                             <div class="checkboxContainer checkboxContainer-withDescription">
                                 <label>
@@ -97,6 +115,8 @@
 
                     $('#txtLdapServer', page).val(config.LdapServer || "ldap-server.contoso.com");
                     $("#chkUseSsl", page).checked(config.UseSsl);
+                    $("#chkUseStartTls", page).checked(config.UseStartTls);
+                    $("#chkSkipSslVerify", page).checked(config.SkipSslVerify);
                     $('#txtLdapBaseDn', page).val(config.LdapBaseDn || "o=domains,dc=contoso,dc=com");
                     $('#txtLdapPort', page).val(config.LdapPort || "389");
                     $('#txtLdapSearchAttributes', page).val(config.LdapSearchAttributes || "uid, cn, mail, displayName");
@@ -105,6 +125,7 @@
                     $('#txtLdapAdminFilter', page).val(config.LdapAdminFilter || "(enabledService=JellyfinAdministrator");
                     $('#txtLdapBindUser', page).val(config.LdapBindUser || "CN=BindUser,DC=contoso,DC=com");
                     $('#txtLdapBindPassword', page).val(config.LdapBindPassword || "");
+                    $('#txtLdapEasyPasswordAttr', page).val(config.EasyPasswordField || "");
                     $("#chkEnableUserCreation", page).checked(config.CreateUsersFromLdap);
                     Dashboard.hideLoadingMsg();
                 });
@@ -119,6 +140,8 @@
                 ApiClient.getPluginConfiguration(SyncConfigurationPage.pluginUniqueId).then(function (config) {
                     config.LDAPServer = $('#txtLdapServer', form).val();
                     config.UseSsl = $("#chkUseSsl", form).checked();
+                    config.UseStartTls = $("#chkUseStartTls", form).checked();
+                    config.SkipSslVerify = $("#chkSkipSslVerify", form).checked();
                     config.LdapBaseDn = $('#txtLdapBaseDn', form).val();
                     config.LdapSearchAttributes = $('#txtLdapSearchAttributes', form).val();
                     config.LdapUsernameAttribute = $('#txtLdapUsernameAttribute', form).val();
@@ -126,6 +149,7 @@
                     config.LdapAdminFilter = $('#txtLdapAdminFilter', form).val();
                     config.LdapBindUser = $('#txtLdapBindUser', form).val();
                     config.LdapBindPassword = $('#txtLdapBindPassword', form).val();
+                    config.EasyPasswordField = $('#txtLdapEasyPasswordAttr', form).val();
                     config.CreateUsersFromLdap = $("#chkEnableUserCreation", form).checked();
                     config.LdapPort = parseInt($("#txtLdapPort", form).val() || "389");
 
