@@ -13,6 +13,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
         public string LdapBindPassword { get; set; }
         public bool CreateUsersFromLdap { get; set; }
         public bool UseSsl { get; set; }
+        public string EasyPasswordField { get; set; }
         public bool UseStartTls { get; set; }
         public bool SkipSslVerify { get; set; }
 
@@ -27,6 +28,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
             LdapAdminFilter = "(enabledService=JellyfinAdministrator)";
             LdapBindUser = "CN=BindUser,DC=contoso,DC=com";
             LdapBindPassword = "password";
+            EasyPasswordField = string.Empty;
             CreateUsersFromLdap = true;
             UseSsl = true;
             UseStartTls = false;
