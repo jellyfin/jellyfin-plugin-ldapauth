@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Jellyfin.LDAP-Auth</title>
+    <title>LDAP</title>
 </head>
 <body>
     <div data-role="page" class="page type-interior pluginConfigurationPage esqConfigurationPage">
-
         <div data-role="content">
             <div class="content-primary">
                 <form class="esqConfigurationForm">
@@ -100,23 +99,19 @@
 
 
         <script type="text/javascript">
-
             var SyncConfigurationPage = {
                 pluginUniqueId: "958aad66-3784-4d2a-b89a-a7b6fab6e25c"
             };
 
             $('.esqConfigurationPage').on('pageshow', function (event) {
-
                 Dashboard.showLoadingMsg();
-
                 var page = this;
 
                 ApiClient.getPluginConfiguration(SyncConfigurationPage.pluginUniqueId).then(function (config) {
-
                     $('#txtLdapServer', page).val(config.LdapServer || "ldap-server.contoso.com");
-                    $("#chkUseSsl", page).checked(config.UseSsl);
-                    $("#chkUseStartTls", page).checked(config.UseStartTls);
-                    $("#chkSkipSslVerify", page).checked(config.SkipSslVerify);
+                    $("#chkUseSsl", page).checked = config.UseSsl;
+                    $("#chkUseStartTls", page).checked = config.UseStartTls;
+                    $("#chkSkipSslVerify", page).checked = config.SkipSslVerify;
                     $('#txtLdapBaseDn', page).val(config.LdapBaseDn || "o=domains,dc=contoso,dc=com");
                     $('#txtLdapPort', page).val(config.LdapPort || "389");
                     $('#txtLdapSearchAttributes', page).val(config.LdapSearchAttributes || "uid, cn, mail, displayName");
@@ -126,22 +121,20 @@
                     $('#txtLdapBindUser', page).val(config.LdapBindUser || "CN=BindUser,DC=contoso,DC=com");
                     $('#txtLdapBindPassword', page).val(config.LdapBindPassword || "");
                     $('#txtLdapEasyPasswordAttr', page).val(config.EasyPasswordField || "");
-                    $("#chkEnableUserCreation", page).checked(config.CreateUsersFromLdap);
+                    $("#chkEnableUserCreation", page).checked = config.CreateUsersFromLdap;
                     Dashboard.hideLoadingMsg();
                 });
             });
 
             $('.esqConfigurationForm').on('submit', function (e) {
-
                 Dashboard.showLoadingMsg();
-
                 var form = this;
 
                 ApiClient.getPluginConfiguration(SyncConfigurationPage.pluginUniqueId).then(function (config) {
                     config.LDAPServer = $('#txtLdapServer', form).val();
-                    config.UseSsl = $("#chkUseSsl", form).checked();
-                    config.UseStartTls = $("#chkUseStartTls", form).checked();
-                    config.SkipSslVerify = $("#chkSkipSslVerify", form).checked();
+                    config.UseSsl = $("#chkUseSsl", form).checked;
+                    config.UseStartTls = $("#chkUseStartTls", form).checked;
+                    config.SkipSslVerify = $("#chkSkipSslVerify", form).checked;
                     config.LdapBaseDn = $('#txtLdapBaseDn', form).val();
                     config.LdapSearchAttributes = $('#txtLdapSearchAttributes', form).val();
                     config.LdapUsernameAttribute = $('#txtLdapUsernameAttribute', form).val();
@@ -150,7 +143,7 @@
                     config.LdapBindUser = $('#txtLdapBindUser', form).val();
                     config.LdapBindPassword = $('#txtLdapBindPassword', form).val();
                     config.EasyPasswordField = $('#txtLdapEasyPasswordAttr', form).val();
-                    config.CreateUsersFromLdap = $("#chkEnableUserCreation", form).checked();
+                    config.CreateUsersFromLdap = $("#chkEnableUserCreation", form).checked;
                     config.LdapPort = parseInt($("#txtLdapPort", form).val() || "389");
 
                     ApiClient.updatePluginConfiguration(SyncConfigurationPage.pluginUniqueId, config).then(Dashboard.processPluginConfigurationUpdateResult);
