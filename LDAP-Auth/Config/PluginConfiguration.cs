@@ -1,22 +1,13 @@
-namespace Jellyfin.Plugin.LDAP_Auth
+namespace Jellyfin.Plugin.LDAP_Auth.Config
 {
-    public class PluginConfiguration :  MediaBrowser.Model.Plugins.BasePluginConfiguration
+    /// <summary>
+    /// Plugin Configuration.
+    /// </summary>
+    public class PluginConfiguration : MediaBrowser.Model.Plugins.BasePluginConfiguration
     {
-        public string LdapServer { get; set; }
-        public string LdapBaseDn { get; set; }
-        public int LdapPort { get; set; }
-        public string LdapSearchAttributes { get; set; }
-        public string LdapUsernameAttribute { get; set; }
-        public string LdapSearchFilter { get; set; }
-        public string LdapAdminFilter { get; set; }
-        public string LdapBindUser { get; set; }
-        public string LdapBindPassword { get; set; }
-        public bool CreateUsersFromLdap { get; set; }
-        public bool UseSsl { get; set; }
-        public string EasyPasswordField { get; set; }
-        public bool UseStartTls { get; set; }
-        public bool SkipSslVerify { get; set; }
-
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PluginConfiguration"/> class.
+        /// </summary>
         public PluginConfiguration()
         {
             LdapServer = "ldap-server.contoso.com";
@@ -28,11 +19,75 @@ namespace Jellyfin.Plugin.LDAP_Auth
             LdapAdminFilter = "(enabledService=JellyfinAdministrator)";
             LdapBindUser = "CN=BindUser,DC=contoso,DC=com";
             LdapBindPassword = "password";
-            EasyPasswordField = string.Empty;
             CreateUsersFromLdap = true;
             UseSsl = true;
             UseStartTls = false;
             SkipSslVerify = false;
         }
+
+        /// <summary>
+        /// Gets or sets the ldap server ip or url.
+        /// </summary>
+        public string LdapServer { get; set; }
+
+        /// <summary>
+        /// Gets or sets the ldap base search dn.
+        /// </summary>
+        public string LdapBaseDn { get; set; }
+
+        /// <summary>
+        /// Gets or sets the ldap port.
+        /// </summary>
+        public int LdapPort { get; set; }
+
+        /// <summary>
+        /// Gets or sets the ldap search attributes.
+        /// </summary>
+        public string LdapSearchAttributes { get; set; }
+
+        /// <summary>
+        /// Gets or sets the ldap username attribute.
+        /// </summary>
+        public string LdapUsernameAttribute { get; set; }
+
+        /// <summary>
+        /// Gets or sets the ldap user search filter.
+        /// </summary>
+        public string LdapSearchFilter { get; set; }
+
+        /// <summary>
+        /// Gets or sets the ldap admin search filter.
+        /// </summary>
+        public string LdapAdminFilter { get; set; }
+
+        /// <summary>
+        /// Gets or sets the ldap bind user dn.
+        /// </summary>
+        public string LdapBindUser { get; set; }
+
+        /// <summary>
+        /// Gets or sets the ldap bind user password.
+        /// </summary>
+        public string LdapBindPassword { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to create Jellyfin users from ldap.
+        /// </summary>
+        public bool CreateUsersFromLdap { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to use ssl when connecting to the ldap server.
+        /// </summary>
+        public bool UseSsl { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to use StartTls when connecting to the ldap server.
+        /// </summary>
+        public bool UseStartTls { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to skip ssl verification.
+        /// </summary>
+        public bool SkipSslVerify { get; set; }
     }
 }

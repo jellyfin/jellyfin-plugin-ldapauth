@@ -1,50 +1,58 @@
 using System;
-using System.Linq;
+using System.Threading.Tasks;
+using Jellyfin.Data.Entities;
+using Jellyfin.Data.Enums;
+using Jellyfin.Plugin.LDAP_Auth.Config;
 using MediaBrowser.Controller.Authentication;
 using MediaBrowser.Controller.Library;
-using MediaBrowser.Controller.Entities;
-using System.Threading.Tasks;
-using MediaBrowser.Common;
-using MediaBrowser.Common.Cryptography;
-using MediaBrowser.Model.Cryptography;
-using Novell.Directory.Ldap;
 using Microsoft.Extensions.Logging;
+using Novell.Directory.Ldap;
 
 namespace Jellyfin.Plugin.LDAP_Auth
 {
+    /// <summary>
+    /// Ldap Authentication Provider Plugin.
+    /// </summary>
     public class LdapAuthenticationProviderPlugin : IAuthenticationProvider
     {
         private readonly PluginConfiguration _config;
         private readonly ILogger _logger;
         private readonly IUserManager _userManager;
-        private readonly ICryptoProvider _cryptoProvider;
 
-        public LdapAuthenticationProviderPlugin(IUserManager userManager, ICryptoProvider cryptoProvider)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LdapAuthenticationProviderPlugin"/> class.
+        /// </summary>
+        /// <param name="userManager">Instance of the <see cref="IUserManager"/> interface.</param>
+        public LdapAuthenticationProviderPlugin(IUserManager userManager)
         {
-            _config = Plugin.Instance.Configuration;
-            _logger = Plugin.Logger;
+            _config = LdapPlugin.Instance.Configuration;
+            _logger = LdapPlugin.Logger;
             _userManager = userManager;
-            _cryptoProvider = cryptoProvider;
         }
 
-        private string[] ldapUsernameAttributes => _config.LdapSearchAttributes.Replace(" ", string.Empty).Split(',');
+        private string[] LdapUsernameAttributes => _config.LdapSearchAttributes.Replace(" ", string.Empty, StringComparison.Ordinal).Split(',');
 
-        private string[] ldapAttributes => ldapUsernameAttributes.Append(easyPasswordAttr).ToArray();
+        private string UsernameAttr => _config.LdapUsernameAttribute;
 
-        private string usernameAttr => _config.LdapUsernameAttribute;
-        private string searchFilter => _config.LdapSearchFilter;
-        private string adminFilter => _config.LdapAdminFilter;
-        private string easyPasswordAttr => _config.EasyPasswordField;
+        private string SearchFilter => _config.LdapSearchFilter;
 
+        private string AdminFilter => _config.LdapAdminFilter;
+
+        /// <summary>
+        /// Gets plugin name.
+        /// </summary>
         public string Name => "LDAP-Authentication";
 
+        /// <summary>
+        /// Gets a value indicating whether gets plugin enabled.
+        /// </summary>
         public bool IsEnabled => true;
 
         private LdapEntry LocateLdapUser(string username)
         {
             var foundUser = false;
             LdapEntry ldapUser = null;
-            using (var ldapClient = new LdapConnection {SecureSocketLayer = _config.UseSsl})
+            using (var ldapClient = new LdapConnection { SecureSocketLayer = _config.UseSsl })
             {
                 try
                 {
@@ -56,7 +64,9 @@ namespace Jellyfin.Plugin.LDAP_Auth
 
                     ldapClient.Connect(_config.LdapServer, _config.LdapPort);
                     if (_config.UseStartTls)
+                    {
                         ldapClient.StartTls();
+                    }
 
                     ldapClient.Bind(_config.LdapBindUser, _config.LdapBindPassword);
                 }
@@ -71,22 +81,24 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 }
 
                 if (!ldapClient.Bound)
+                {
                     return null;
+                }
 
                 var ldapUsers =
-                    ldapClient.Search(_config.LdapBaseDn, 2, searchFilter, ldapAttributes, false);
+                    ldapClient.Search(_config.LdapBaseDn, 2, SearchFilter, LdapUsernameAttributes, false);
                 if (ldapUsers == null)
                 {
                     _logger.LogWarning("No LDAP users found from query");
                     throw new UnauthorizedAccessException("No users found in LDAP Query");
                 }
 
-                _logger.LogDebug("Search: {1} {2} @ {3}", _config.LdapBaseDn, searchFilter, _config.LdapServer);
+                _logger.LogDebug("Search: {1} {2} @ {3}", _config.LdapBaseDn, SearchFilter, _config.LdapServer);
 
                 while (ldapUsers.HasMore() && foundUser == false)
                 {
                     var currentUser = ldapUsers.Next();
-                    foreach (var attr in ldapUsernameAttributes)
+                    foreach (var attr in LdapUsernameAttributes)
                     {
                         var toCheck = GetAttribute(currentUser, attr);
                         if (toCheck?.StringValueArray != null)
@@ -113,46 +125,6 @@ namespace Jellyfin.Plugin.LDAP_Auth
             return ldapUser;
         }
 
-        private void SetAttribute(LdapEntry userEntry, string attr, string attrValue)
-        {
-            using (var ldapClient = new LdapConnection {SecureSocketLayer = _config.UseSsl})
-            {
-                try
-                {
-                    if (_config.SkipSslVerify)
-                    {
-                        ldapClient.UserDefinedServerCertValidationDelegate +=
-                            LdapClient_UserDefinedServerCertValidationDelegate;
-                    }
-
-                    ldapClient.Connect(_config.LdapServer, _config.LdapPort);
-                    if (_config.UseStartTls)
-                        ldapClient.StartTls();
-
-                    ldapClient.Bind(_config.LdapBindUser, _config.LdapBindPassword);
-                }
-                catch (Exception e)
-                {
-                    _logger.LogError(e, "Failed to Connect or Bind to server");
-                    throw new AuthenticationException("Failed to Connect or Bind to server");
-                }
-                finally
-                {
-                    ldapClient.UserDefinedServerCertValidationDelegate -=
-                        LdapClient_UserDefinedServerCertValidationDelegate;
-                }
-
-                var existingAttr = GetAttribute(userEntry, attr);
-                var ldapModType = existingAttr == null ? LdapModification.Add : LdapModification.Replace;
-                var modification = new LdapModification(
-                    ldapModType,
-                    new LdapAttribute(attr, attrValue ?? string.Empty)
-                );
-                ldapClient.Modify(userEntry.Dn, modification);
-
-            }
-        }
-
         private LdapAttribute GetAttribute(LdapEntry userEntry, string attr)
         {
             try
@@ -166,12 +138,19 @@ namespace Jellyfin.Plugin.LDAP_Auth
             }
         }
 
+        /// <summary>
+        /// Authenticate user against the ldap server.
+        /// </summary>
+        /// <param name="username">Username to authenticate.</param>
+        /// <param name="password">Password to authenticate.</param>
+        /// <returns>A <see cref="ProviderAuthenticationResult"/> with the authentication result.</returns>
+        /// <exception cref="AuthenticationException">Exception when failing to authenticate.</exception>
         public Task<ProviderAuthenticationResult> Authenticate(string username, string password)
         {
             User user = null;
             var ldapUser = LocateLdapUser(username);
 
-            var ldapUsername = GetAttribute(ldapUser, usernameAttr)?.StringValue;
+            var ldapUsername = GetAttribute(ldapUser, UsernameAttr)?.StringValue;
             _logger.LogDebug("Setting username: {1}", ldapUsername);
 
             try
@@ -183,7 +162,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 _logger.LogWarning("User Manager could not find a user for LDAP User, this may not be fatal", e);
             }
 
-            using (var ldapClient = new LdapConnection {SecureSocketLayer = _config.UseSsl})
+            using (var ldapClient = new LdapConnection { SecureSocketLayer = _config.UseSsl })
             {
                 _logger.LogDebug("Trying bind as user {1}", ldapUser.Dn);
                 try
@@ -204,7 +183,11 @@ namespace Jellyfin.Plugin.LDAP_Auth
                         // Determine if the user should be an administrator
                         var ldapIsAdmin = false;
                         // Search the current user DN with the adminFilter
-                        var ldapUsers = ldapClient.Search(ldapUser.Dn, 0, adminFilter, ldapUsernameAttributes,
+                        var ldapUsers = ldapClient.Search(
+                            ldapUser.Dn,
+                            0,
+                            AdminFilter,
+                            LdapUsernameAttributes,
                             false);
 
                         // If we got non-zero, then the filter matched and the user is an admin
@@ -217,9 +200,9 @@ namespace Jellyfin.Plugin.LDAP_Auth
                         if (_config.CreateUsersFromLdap)
                         {
                             user = _userManager.CreateUser(ldapUsername);
-                            user.Policy.AuthenticationProviderId = GetType().Name;
-                            user.Policy.IsAdministrator = ldapIsAdmin;
-                            _userManager.UpdateUserPolicy(user.Id, user.Policy);
+                            user.AuthenticationProviderId = GetType().FullName;
+                            user.SetPermission(PermissionKind.IsAdministrator, ldapIsAdmin);
+                            _userManager.UpdateUser(user);
                         }
                         else
                         {
@@ -229,7 +212,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                         }
                     }
 
-                    return Task.FromResult(new ProviderAuthenticationResult {Username = ldapUsername});
+                    return Task.FromResult(new ProviderAuthenticationResult { Username = ldapUsername });
                 }
 
                 _logger.LogError("Error logging in, invalid LDAP username or password");
@@ -237,57 +220,28 @@ namespace Jellyfin.Plugin.LDAP_Auth
             }
         }
 
+        /// <inheritdoc />
         public bool HasPassword(User user)
         {
             return true;
         }
 
-        /// <summary>
-        ///
-        /// </summary>
-        /// <param name="user"></param>
-        /// <returns></returns>
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public string GetEasyPasswordHash(User user)
         {
-            if (string.IsNullOrEmpty(easyPasswordAttr))
-            {
-                return string.Empty;
-            }
-
-            var ldapUser = LocateLdapUser(user.Name);
-            var hash = GetAttribute(ldapUser, easyPasswordAttr)?.StringValue;
-            return string.IsNullOrEmpty(hash)
-                ? null
-                : Hex.Encode(PasswordHash.Parse(hash).Hash);
+            throw new NotImplementedException();
         }
 
+        /// <inheritdoc />
         public Task ChangePassword(User user, string newPassword)
         {
             throw new NotImplementedException();
         }
 
-        public void ChangeEasyPassword(User user, string newPassword, string _)
+        /// <inheritdoc />
+        public void ChangeEasyPassword(User user, string newPassword, string hash)
         {
-            if (string.IsNullOrEmpty(easyPasswordAttr))
-            {
-                throw new ApplicationException("Must configure EasyPassword field");
-            }
-
-            var ldapUser = LocateLdapUser(user.Name);
-            if (ldapUser == null)
-                return;
-
-            var hashString = CreateHash(newPassword);
-            SetAttribute(ldapUser, easyPasswordAttr, hashString);
-            user.EasyPassword = hashString;
-        }
-
-        private string CreateHash(string input)
-        {
-            return input == null
-                ? null
-                : _cryptoProvider.CreatePasswordHash(input).ToString();
+            throw new NotImplementedException();
         }
 
         private static bool LdapClient_UserDefinedServerCertValidationDelegate(
