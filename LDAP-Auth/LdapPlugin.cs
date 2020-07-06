@@ -20,7 +20,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
         /// <param name="applicationPaths">Instance of the <see cref="IApplicationPaths"/> interface.</param>
         /// <param name="xmlSerializer">Instance of the <see cref="IXmlSerializer"/>interface.</param>
         /// <param name="logger">Instance of the <see cref="ILogger"/> interface.</param>
-        public LdapPlugin(IApplicationPaths applicationPaths, IXmlSerializer xmlSerializer, ILogger<LdapPlugin> logger) : base(applicationPaths, xmlSerializer)
+        public LdapPlugin(IApplicationPaths applicationPaths, IXmlSerializer xmlSerializer, ILogger<LdapAuthenticationProviderPlugin> logger) : base(applicationPaths, xmlSerializer)
         {
             Instance = this;
             Logger = logger;
@@ -34,7 +34,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
         /// <summary>
         /// Gets the logger.
         /// </summary>
-        public static ILogger<LdapPlugin> Logger { get; private set; }
+        public static ILogger<LdapAuthenticationProviderPlugin> Logger { get; private set; }
 
         /// <inheritdoc />
         public override string Name => "LDAP-Auth";

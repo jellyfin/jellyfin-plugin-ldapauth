@@ -1,9 +1,11 @@
 using System;
+using System.Security.Authentication;
 using System.Threading.Tasks;
 using Jellyfin.Data.Entities;
 using Jellyfin.Data.Enums;
 using Jellyfin.Plugin.LDAP_Auth.Config;
 using MediaBrowser.Controller.Authentication;
+using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
 using Microsoft.Extensions.Logging;
 using Novell.Directory.Ldap;
@@ -16,7 +18,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
     public class LdapAuthenticationProviderPlugin : IAuthenticationProvider
     {
         private readonly PluginConfiguration _config;
-        private readonly ILogger _logger;
+        private readonly ILogger<LdapAuthenticationProviderPlugin> _logger;
         private readonly IUserManager _userManager;
 
         /// <summary>

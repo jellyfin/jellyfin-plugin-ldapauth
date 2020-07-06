@@ -1,4 +1,4 @@
-﻿################################################################################
+################################################################################
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
 
@@ -6,6 +6,6 @@
 */obj
 */bin
 /LDAP-Auth.sln.DotSettings.user
-/bin/Debug/netstandard2.0
+/bin
 /.vs/LDAP-Auth/v15
 .idea
