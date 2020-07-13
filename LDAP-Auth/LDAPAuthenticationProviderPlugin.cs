@@ -184,6 +184,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     {
                         // Determine if the user should be an administrator
                         var ldapIsAdmin = false;
+
                         // Search the current user DN with the adminFilter
                         var ldapUsers = ldapClient.Search(
                             ldapUser.Dn,
@@ -229,19 +230,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
         }
 
         /// <inheritdoc />
-        public string GetEasyPasswordHash(User user)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <inheritdoc />
         public Task ChangePassword(User user, string newPassword)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <inheritdoc />
-        public void ChangeEasyPassword(User user, string newPassword, string hash)
         {
             throw new NotImplementedException();
         }
