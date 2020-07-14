@@ -9,6 +9,7 @@ using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
 using Microsoft.Extensions.Logging;
 using Novell.Directory.Ldap;
+using AuthenticationException = MediaBrowser.Controller.Authentication.AuthenticationException;
 
 namespace Jellyfin.Plugin.LDAP_Auth
 {
