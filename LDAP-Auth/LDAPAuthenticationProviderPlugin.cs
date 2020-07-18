@@ -90,7 +90,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 if (ldapUsers == null)
                 {
                     _logger.LogWarning("No LDAP users found from query");
-                    throw new UnauthorizedAccessException("No users found in LDAP Query");
+                    throw new AuthenticationException("No users found in LDAP Query");
                 }
 
                 _logger.LogDebug("Search: {1} {2} @ {3}", _config.LdapBaseDn, SearchFilter, _config.LdapServer);
