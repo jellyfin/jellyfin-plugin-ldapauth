@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <title>LDAP</title>
 </head>
@@ -72,10 +72,6 @@
                                 <input is="emby-input" type="password" id="txtLdapBindPassword" label="LDAP Bind User Password:" />
                                 <div class="fieldDescription">The password for the LDAP search query user.</div>
                             </div>
-                            <div class="inputContainer fldExternalAddressFilter">
-                                <input is="emby-input" type="text" id="txtLdapEasyPasswordAttr" label="LDAP Easy Password Attribute:" />
-                                <div class="fieldDescription">The attribute to store the Easy Password in.</div>
-                            </div>
                             <div class="checkboxContainer checkboxContainer-withDescription">
                                 <label>
                                     <input type="checkbox" is="emby-checkbox" id="chkEnableUserCreation" />
@@ -99,54 +95,64 @@
 
 
         <script type="text/javascript">
-            var SyncConfigurationPage = {
-                pluginUniqueId: "958aad66-3784-4d2a-b89a-a7b6fab6e25c"
+            var LdapConfigurationPage = {
+                pluginUniqueId: "958aad66-3784-4d2a-b89a-a7b6fab6e25c",
+                
+                txtLdapServer: document.getElementById("txtLdapServer"),
+                chkUseSsl: document.getElementById("chkUseSsl"),
+                chkUseStartTls: document.getElementById("chkUseStartTls"),
+                chkSkipSslVerify: document.getElementById("chkSkipSslVerify"),
+                txtLdapBaseDn: document.getElementById("txtLdapBaseDn"),
+                txtLdapPort: document.getElementById("txtLdapPort"),
+                txtLdapSearchAttributes: document.getElementById("txtLdapSearchAttributes"),
+                txtLdapUsernameAttribute: document.getElementById("txtLdapUsernameAttribute"),
+                txtLdapSearchFilter: document.getElementById("txtLdapSearchFilter"),
+                txtLdapAdminFilter: document.getElementById("txtLdapAdminFilter"),
+                txtLdapBindUser: document.getElementById("txtLdapBindUser"),
+                txtLdapBindPassword: document.getElementById("txtLdapBindPassword"),
+                chkEnableUserCreation: document.getElementById("chkEnableUserCreation")
             };
 
-            $('.esqConfigurationPage').on('pageshow', function (event) {
+            window.addEventListener("pageshow", function (_) {
                 Dashboard.showLoadingMsg();
-                var page = this;
 
-                ApiClient.getPluginConfiguration(SyncConfigurationPage.pluginUniqueId).then(function (config) {
-                    $('#txtLdapServer', page).val(config.LdapServer || "ldap-server.contoso.com");
-                    $("#chkUseSsl", page).checked = config.UseSsl;
-                    $("#chkUseStartTls", page).checked = config.UseStartTls;
-                    $("#chkSkipSslVerify", page).checked = config.SkipSslVerify;
-                    $('#txtLdapBaseDn', page).val(config.LdapBaseDn || "o=domains,dc=contoso,dc=com");
-                    $('#txtLdapPort', page).val(config.LdapPort || "389");
-                    $('#txtLdapSearchAttributes', page).val(config.LdapSearchAttributes || "uid, cn, mail, displayName");
-                    $('#txtLdapUsernameAttribute', page).val(config.LdapUsernameAttribute || "uid");
-                    $('#txtLdapSearchFilter', page).val(config.LdapSearchFilter || "(memberOf=CN=JellyfinUsers,DC=contoso,DC=com)");
-                    $('#txtLdapAdminFilter', page).val(config.LdapAdminFilter || "(enabledService=JellyfinAdministrator");
-                    $('#txtLdapBindUser', page).val(config.LdapBindUser || "CN=BindUser,DC=contoso,DC=com");
-                    $('#txtLdapBindPassword', page).val(config.LdapBindPassword || "");
-                    $('#txtLdapEasyPasswordAttr', page).val(config.EasyPasswordField || "");
-                    $("#chkEnableUserCreation", page).checked = config.CreateUsersFromLdap;
+                ApiClient.getPluginConfiguration(LdapConfigurationPage.pluginUniqueId).then(function (config) {
+                    LdapConfigurationPage.txtLdapServer.value = config.LdapServer || "ldap-server.contoso.com"; 
+                    LdapConfigurationPage.chkUseSsl.checked = config.UseSsl;
+                    LdapConfigurationPage.chkUseStartTls.checked = config.UseStartTls;
+                    LdapConfigurationPage.chkSkipSslVerify.checked = config.SkipSslVerify;
+                    LdapConfigurationPage.txtLdapBaseDn.value = config.LdapBaseDn || "o=domains,dc=contoso,dc=com";
+                    LdapConfigurationPage.txtLdapPort.value = config.LdapPort || "389";
+                    LdapConfigurationPage.txtLdapSearchAttributes.value = config.LdapSearchAttributes || "uid, cn, mail, displayName";
+                    LdapConfigurationPage.txtLdapUsernameAttribute.value = config.LdapUsernameAttribute || "uid"; 
+                    LdapConfigurationPage.txtLdapSearchFilter.value = config.LdapSearchFilter || "(memberOf=CN=JellyfinUsers,DC=contoso,DC=com)"; 
+                    LdapConfigurationPage.txtLdapAdminFilter.value = config.LdapAdminFilter || "(enabledService=JellyfinAdministrator)";
+                    LdapConfigurationPage.txtLdapBindUser.value = config.LdapBindUser || "CN=BindUser,DC=contoso,DC=com";
+                    LdapConfigurationPage.txtLdapBindPassword.value = config.LdapBindPassword || "";
+                    LdapConfigurationPage.chkEnableUserCreation.checked = config.CreateUsersFromLdap;
                     Dashboard.hideLoadingMsg();
                 });
             });
 
-            $('.esqConfigurationForm').on('submit', function (e) {
+            document.getElementById("ldapForm").addEventListener("submit", function(_){
                 Dashboard.showLoadingMsg();
-                var form = this;
 
-                ApiClient.getPluginConfiguration(SyncConfigurationPage.pluginUniqueId).then(function (config) {
-                    config.LDAPServer = $('#txtLdapServer', form).val();
-                    config.UseSsl = $("#chkUseSsl", form).checked;
-                    config.UseStartTls = $("#chkUseStartTls", form).checked;
-                    config.SkipSslVerify = $("#chkSkipSslVerify", form).checked;
-                    config.LdapBaseDn = $('#txtLdapBaseDn', form).val();
-                    config.LdapSearchAttributes = $('#txtLdapSearchAttributes', form).val();
-                    config.LdapUsernameAttribute = $('#txtLdapUsernameAttribute', form).val();
-                    config.LdapSearchFilter = $('#txtLdapSearchFilter', form).val();
-                    config.LdapAdminFilter = $('#txtLdapAdminFilter', form).val();
-                    config.LdapBindUser = $('#txtLdapBindUser', form).val();
-                    config.LdapBindPassword = $('#txtLdapBindPassword', form).val();
-                    config.EasyPasswordField = $('#txtLdapEasyPasswordAttr', form).val();
-                    config.CreateUsersFromLdap = $("#chkEnableUserCreation", form).checked;
-                    config.LdapPort = parseInt($("#txtLdapPort", form).val() || "389");
+                ApiClient.getPluginConfiguration(LdapConfigurationPage.pluginUniqueId).then(function (config) {
+                    config.LDAPServer = LdapConfigurationPage.txtLdapServer.value;
+                    config.UseSsl = LdapConfigurationPage.chkUseSsl.checked;
+                    config.UseStartTls = LdapConfigurationPage.chkUseStartTls.checked;
+                    config.SkipSslVerify = LdapConfigurationPage.chkSkipSslVerify.checked;
+                    config.LdapBaseDn = LdapConfigurationPage.txtLdapBaseDn.value;
+                    config.LdapPort = parseInt(LdapConfigurationPage.txtLdapPort.value || "389");
+                    config.LdapSearchAttributes = LdapConfigurationPage.txtLdapSearchAttributes.value;
+                    config.LdapUsernameAttribute = LdapConfigurationPage.txtLdapUsernameAttribute.value;
+                    config.LdapSearchFilter = LdapConfigurationPage.txtLdapSearchFilter.value;
+                    config.LdapAdminFilter = LdapConfigurationPage.txtLdapAdminFilter.value;
+                    config.LdapBindUser = LdapConfigurationPage.txtLdapBindUser.value;
+                    config.LdapBindPassword = LdapConfigurationPage.txtLdapBindPassword.value;
+                    config.CreateUsersFromLdap = LdapConfigurationPage.chkEnableUserCreation.checked;
 
-                    ApiClient.updatePluginConfiguration(SyncConfigurationPage.pluginUniqueId, config).then(Dashboard.processPluginConfigurationUpdateResult);
+                    ApiClient.updatePluginConfiguration(LdapConfigurationPage.pluginUniqueId, config).then(Dashboard.processPluginConfigurationUpdateResult);
                 });
 
                 // Disable default form submission
