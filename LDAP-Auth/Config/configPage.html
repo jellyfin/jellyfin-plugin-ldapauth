@@ -134,7 +134,7 @@
                 });
             });
 
-            document.getElementById("ldapForm").addEventListener("submit", function(_){
+            document.querySelector(".esqConfigurationForm").addEventListener("submit", function(e){
                 Dashboard.showLoadingMsg();
 
                 ApiClient.getPluginConfiguration(LdapConfigurationPage.pluginUniqueId).then(function (config) {
@@ -153,6 +153,7 @@
                     config.CreateUsersFromLdap = LdapConfigurationPage.chkEnableUserCreation.checked;
 
                     ApiClient.updatePluginConfiguration(LdapConfigurationPage.pluginUniqueId, config).then(Dashboard.processPluginConfigurationUpdateResult);
+                    e.preventDefault();
                 });
 
                 // Disable default form submission

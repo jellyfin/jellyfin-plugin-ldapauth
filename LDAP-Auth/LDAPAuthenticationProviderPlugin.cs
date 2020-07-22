@@ -167,13 +167,27 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 _logger.LogDebug("Trying bind as user {1}", ldapUser.Dn);
                 try
                 {
+                    if (_config.SkipSslVerify)
+                    {
+                        ldapClient.UserDefinedServerCertValidationDelegate += LdapClient_UserDefinedServerCertValidationDelegate;
+                    }
+
                     ldapClient.Connect(_config.LdapServer, _config.LdapPort);
+                    if (_config.UseStartTls)
+                    {
+                        ldapClient.StartTls();
+                    }
+
                     ldapClient.Bind(ldapUser.Dn, password);
                 }
                 catch (Exception e)
                 {
                     _logger.LogError(e, "Failed to Connect or Bind to server as user {1}", ldapUser.Dn);
                     throw new AuthenticationException("Error completing LDAP login. Invalid username or password.", e);
+                }
+                finally
+                {
+                    ldapClient.UserDefinedServerCertValidationDelegate -= LdapClient_UserDefinedServerCertValidationDelegate;
                 }
 
                 if (ldapClient.Bound)

@@ -1,7 +1,7 @@
 ---
 name: "LDAP Authentication"
 guid: "958aad66-3784-4d2a-b89a-a7b6fab6e25c"
-version: "8.0.0.0"
+version: "9.0.0.0"
 targetAbi: "10.6.0.0"
 owner: "jellyfin"
 overview: "Authenticate users against an LDAP database"
