@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Jellyfin.Data.Entities;
 using Jellyfin.Data.Enums;
 using Jellyfin.Plugin.LDAP_Auth.Config;
+using MediaBrowser.Common;
 using MediaBrowser.Controller.Authentication;
 using MediaBrowser.Controller.Library;
 using Microsoft.Extensions.Logging;
@@ -17,17 +18,17 @@ namespace Jellyfin.Plugin.LDAP_Auth
     {
         private readonly PluginConfiguration _config;
         private readonly ILogger<LdapAuthenticationProviderPlugin> _logger;
-        private readonly IUserManager _userManager;
+        private readonly IApplicationHost _applicationHost;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LdapAuthenticationProviderPlugin"/> class.
         /// </summary>
-        /// <param name="userManager">Instance of the <see cref="IUserManager"/> interface.</param>
-        public LdapAuthenticationProviderPlugin(IUserManager userManager)
+        /// <param name="applicationHost">Instance of the <see cref="IApplicationHost"/> interface.</param>
+        public LdapAuthenticationProviderPlugin(IApplicationHost applicationHost)
         {
             _config = LdapPlugin.Instance.Configuration;
             _logger = LdapPlugin.Logger;
-            _userManager = userManager;
+            _applicationHost = applicationHost;
         }
 
         private string[] LdapUsernameAttributes => _config.LdapSearchAttributes.Replace(" ", string.Empty, StringComparison.Ordinal).Split(',');
@@ -147,6 +148,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
         /// <exception cref="AuthenticationException">Exception when failing to authenticate.</exception>
         public Task<ProviderAuthenticationResult> Authenticate(string username, string password)
         {
+            var userManager = _applicationHost.Resolve<IUserManager>();
             User user = null;
             var ldapUser = LocateLdapUser(username);
 
@@ -155,7 +157,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
 
             try
             {
-                user = _userManager.GetUserByName(ldapUsername);
+                user = userManager.GetUserByName(ldapUsername);
             }
             catch (Exception e)
             {
@@ -214,10 +216,10 @@ namespace Jellyfin.Plugin.LDAP_Auth
                         _logger.LogDebug("Creating new user {1} - is admin? {2}", ldapUsername, ldapIsAdmin);
                         if (_config.CreateUsersFromLdap)
                         {
-                            user = _userManager.CreateUser(ldapUsername);
+                            user = userManager.CreateUser(ldapUsername);
                             user.AuthenticationProviderId = GetType().FullName;
                             user.SetPermission(PermissionKind.IsAdministrator, ldapIsAdmin);
-                            _userManager.UpdateUser(user);
+                            userManager.UpdateUser(user);
                         }
                         else
                         {
