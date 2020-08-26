@@ -47,96 +47,6 @@ namespace Jellyfin.Plugin.LDAP_Auth
         /// </summary>
         public bool IsEnabled => true;
 
-        private LdapEntry LocateLdapUser(string username)
-        {
-            var foundUser = false;
-            LdapEntry ldapUser = null;
-            using (var ldapClient = new LdapConnection { SecureSocketLayer = LdapPlugin.Instance.Configuration.UseSsl })
-            {
-                try
-                {
-                    if (LdapPlugin.Instance.Configuration.SkipSslVerify)
-                    {
-                        ldapClient.UserDefinedServerCertValidationDelegate +=
-                            LdapClient_UserDefinedServerCertValidationDelegate;
-                    }
-
-                    ldapClient.Connect(LdapPlugin.Instance.Configuration.LdapServer, LdapPlugin.Instance.Configuration.LdapPort);
-                    if (LdapPlugin.Instance.Configuration.UseStartTls)
-                    {
-                        ldapClient.StartTls();
-                    }
-
-                    ldapClient.Bind(LdapPlugin.Instance.Configuration.LdapBindUser, LdapPlugin.Instance.Configuration.LdapBindPassword);
-                }
-                catch (Exception e)
-                {
-                    _logger.LogError(e, "Failed to Connect or Bind to server");
-                    throw new AuthenticationException("Failed to Connect or Bind to server");
-                }
-                finally
-                {
-                    ldapClient.UserDefinedServerCertValidationDelegate -= LdapClient_UserDefinedServerCertValidationDelegate;
-                }
-
-                if (!ldapClient.Bound)
-                {
-                    return null;
-                }
-
-                var ldapUsers =
-                    ldapClient.Search(LdapPlugin.Instance.Configuration.LdapBaseDn, 2, SearchFilter, LdapUsernameAttributes, false);
-                if (ldapUsers == null)
-                {
-                    _logger.LogWarning("No LDAP users found from query");
-                    throw new AuthenticationException("No users found in LDAP Query");
-                }
-
-                _logger.LogDebug("Search: {1} {2} @ {3}", LdapPlugin.Instance.Configuration.LdapBaseDn, SearchFilter, LdapPlugin.Instance.Configuration.LdapServer);
-
-                while (ldapUsers.HasMore() && foundUser == false)
-                {
-                    var currentUser = ldapUsers.Next();
-                    foreach (var attr in LdapUsernameAttributes)
-                    {
-                        var toCheck = GetAttribute(currentUser, attr);
-                        if (toCheck?.StringValueArray != null)
-                        {
-                            foreach (var name in toCheck.StringValueArray)
-                            {
-                                if (username == name)
-                                {
-                                    ldapUser = currentUser;
-                                    foundUser = true;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (foundUser == false)
-                {
-                    _logger.LogError("Found no users matching {1} in LDAP search.", username);
-                    throw new AuthenticationException("Found no LDAP users matching provided username.");
-                }
-            }
-
-            return ldapUser;
-        }
-
-        private LdapAttribute GetAttribute(LdapEntry userEntry, string attr)
-        {
-            try
-            {
-                return userEntry.GetAttribute(attr);
-            }
-            catch (Exception e)
-            {
-                _logger.LogWarning(e, "Error getting LDAP attribute");
-                return null;
-            }
-        }
-
         /// <summary>
         /// Authenticate user against the ldap server.
         /// </summary>
@@ -245,6 +155,96 @@ namespace Jellyfin.Plugin.LDAP_Auth
         public Task ChangePassword(User user, string newPassword)
         {
             throw new NotImplementedException();
+        }
+
+        private LdapEntry LocateLdapUser(string username)
+        {
+            var foundUser = false;
+            LdapEntry ldapUser = null;
+            using (var ldapClient = new LdapConnection { SecureSocketLayer = LdapPlugin.Instance.Configuration.UseSsl })
+            {
+                try
+                {
+                    if (LdapPlugin.Instance.Configuration.SkipSslVerify)
+                    {
+                        ldapClient.UserDefinedServerCertValidationDelegate +=
+                            LdapClient_UserDefinedServerCertValidationDelegate;
+                    }
+
+                    ldapClient.Connect(LdapPlugin.Instance.Configuration.LdapServer, LdapPlugin.Instance.Configuration.LdapPort);
+                    if (LdapPlugin.Instance.Configuration.UseStartTls)
+                    {
+                        ldapClient.StartTls();
+                    }
+
+                    ldapClient.Bind(LdapPlugin.Instance.Configuration.LdapBindUser, LdapPlugin.Instance.Configuration.LdapBindPassword);
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "Failed to Connect or Bind to server");
+                    throw new AuthenticationException("Failed to Connect or Bind to server");
+                }
+                finally
+                {
+                    ldapClient.UserDefinedServerCertValidationDelegate -= LdapClient_UserDefinedServerCertValidationDelegate;
+                }
+
+                if (!ldapClient.Bound)
+                {
+                    return null;
+                }
+
+                var ldapUsers =
+                    ldapClient.Search(LdapPlugin.Instance.Configuration.LdapBaseDn, 2, SearchFilter, LdapUsernameAttributes, false);
+                if (ldapUsers == null)
+                {
+                    _logger.LogWarning("No LDAP users found from query");
+                    throw new AuthenticationException("No users found in LDAP Query");
+                }
+
+                _logger.LogDebug("Search: {1} {2} @ {3}", LdapPlugin.Instance.Configuration.LdapBaseDn, SearchFilter, LdapPlugin.Instance.Configuration.LdapServer);
+
+                while (ldapUsers.HasMore() && foundUser == false)
+                {
+                    var currentUser = ldapUsers.Next();
+                    foreach (var attr in LdapUsernameAttributes)
+                    {
+                        var toCheck = GetAttribute(currentUser, attr);
+                        if (toCheck?.StringValueArray != null)
+                        {
+                            foreach (var name in toCheck.StringValueArray)
+                            {
+                                if (username == name)
+                                {
+                                    ldapUser = currentUser;
+                                    foundUser = true;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (foundUser == false)
+                {
+                    _logger.LogError("Found no users matching {1} in LDAP search.", username);
+                    throw new AuthenticationException("Found no LDAP users matching provided username.");
+                }
+            }
+
+            return ldapUser;
+        }
+
+        private LdapAttribute GetAttribute(LdapEntry userEntry, string attr)
+        {
+            try
+            {
+                return userEntry.GetAttribute(attr);
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning(e, "Error getting LDAP attribute");
+                return null;
+            }
         }
 
         private static bool LdapClient_UserDefinedServerCertValidationDelegate(
