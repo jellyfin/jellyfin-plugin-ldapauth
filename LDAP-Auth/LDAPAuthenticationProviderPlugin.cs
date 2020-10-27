@@ -80,8 +80,9 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     ldapClient.UserDefinedServerCertValidationDelegate -= LdapClient_UserDefinedServerCertValidationDelegate;
                 }
 
-                if (!ldapClient.Bound)
+                if (!ldapClient.Connected)
                 {
+                    _logger.LogWarning("LDAP not connected");
                     return null;
                 }
 
