@@ -146,7 +146,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
         /// <param name="password">Password to authenticate.</param>
         /// <returns>A <see cref="ProviderAuthenticationResult"/> with the authentication result.</returns>
         /// <exception cref="AuthenticationException">Exception when failing to authenticate.</exception>
-        public Task<ProviderAuthenticationResult> Authenticate(string username, string password)
+        public async Task<ProviderAuthenticationResult> Authenticate(string username, string password)
         {
             User user = null;
             var ldapUser = LocateLdapUser(username);
@@ -215,7 +215,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                         _logger.LogDebug("Creating new user {1} - is admin? {2}", ldapUsername, ldapIsAdmin);
                         if (_config.CreateUsersFromLdap)
                         {
-                            user = _userManager.CreateUser(ldapUsername);
+                            user = await _userManager.CreateUserAsync(ldapUsername).ConfigureAwait(false);
                             user.AuthenticationProviderId = GetType().FullName;
                             user.SetPermission(PermissionKind.IsAdministrator, ldapIsAdmin);
                             _userManager.UpdateUser(user);
@@ -228,7 +228,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                         }
                     }
 
-                    return Task.FromResult(new ProviderAuthenticationResult { Username = ldapUsername });
+                    return new ProviderAuthenticationResult { Username = ldapUsername };
                 }
 
                 _logger.LogError("Error logging in, invalid LDAP username or password");
