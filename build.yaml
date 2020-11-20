@@ -1,8 +1,9 @@
 ---
 name: "LDAP Authentication"
 guid: "958aad66-3784-4d2a-b89a-a7b6fab6e25c"
-version: "9.0.0.0"
-targetAbi: "10.6.0.0"
+version: "10.0.0.0"
+targetAbi: "10.7.0.0"
+framework: "net5.0"
 owner: "jellyfin"
 overview: "Authenticate users against an LDAP database"
 description: >
@@ -14,4 +15,4 @@ artifacts:
 - "LDAP-Auth.dll"
 - "Novell.Directory.Ldap.NETStandard.dll"
 changelog: >
-  changelog
+  Update for 10.7 support
