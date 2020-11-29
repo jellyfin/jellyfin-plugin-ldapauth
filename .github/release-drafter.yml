@@ -46,4 +46,6 @@ exclude-labels:
 
 template: |
   <!-- Optional: add a release summary here -->
+  Packaged Zip can be downloaded [here](https://repo.jellyfin.org/releases/plugin/ldap-authentication/).
+
   $CHANGES
