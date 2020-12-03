@@ -15,21 +15,6 @@
 <a href="https://github.com/jellyfin/jellyfin-plugin-ldapauth/releases">
 <img alt="Current Release" src="https://img.shields.io/github/release/jellyfin/jellyfin-plugin-ldapauth.svg"/>
 </a>
-<a href="https://opencollective.com/jellyfin">
-<img alt="Donate" src="https://img.shields.io/opencollective/all/jellyfin.svg?label=backers"/>
-</a>
-<a href="https://features.jellyfin.org">
-<img alt="Feature Requests" src="https://img.shields.io/badge/fider-vote%20on%20features-success.svg"/>
-</a>
-<a href="https://forum.jellyfin.org">
-<img alt="Discuss on our Forum" src="https://img.shields.io/discourse/https/forum.jellyfin.org/users.svg"/>
-</a>
-<a href="https://matrix.to/#/+jellyfin:matrix.org">
-<img alt="Chat on Matrix" src="https://img.shields.io/matrix/jellyfin:matrix.org.svg?logo=matrix"/>
-</a>
-<a href="https://www.reddit.com/r/jellyfin">
-<img alt="Join our Subreddit" src="https://img.shields.io/badge/reddit-r%2Fjellyfin-%23FF5700.svg"/>
-</a>
 </p>
 
 ## Description
@@ -42,10 +27,7 @@ Allows the administrator to customize most aspects of the LDAP authentication pr
 
 ## Installation
 
-Use the Jellyfin web UI and browse the Plugin catalog to find the `LDAP Authentication` plugin, then simply install one of the version supported by your Jellyfin core.
-In the case that you are missing the default plugin repository or want to download the plugin Zip for manual installation add `https://repo.jellyfin.org/releases/plugin/manifest-stable.json` as a repository or us it to get the Zip of the plugin.
-
-For further [install instructions](https://jellyfin.org/docs/general/server/plugins/index.html#installing) or [plugin repository questions](https://jellyfin.org/docs/general/server/plugins/index.html#repositories) have a look at the [official documentation](https://jellyfin.org/docs/index.html).
+[See the official documentation for install instructions](https://jellyfin.org/docs/general/server/plugins/index.html#installing).
 
 ## Contributing
 
