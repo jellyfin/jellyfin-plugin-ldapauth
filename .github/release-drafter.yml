@@ -3,6 +3,7 @@ name-template: Version $NEXT_MAJOR_VERSION
 # Uses a more common single-digit versioning in Jellyfin plugins. Can be replaced by semver: $MAJOR.$MINOR.$PATCH
 # https://github.com/release-drafter/release-drafter#next-version-variables
 tag-template: v$NEXT_MAJOR_VERSION
+version-template: $MAJOR
 
 # Emoji reference: https://gitmoji.carloscuesta.me/
 categories:
