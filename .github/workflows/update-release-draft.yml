@@ -1,5 +1,5 @@
 # Automates creation of Release Drafts using Release Drafter
-name: Update Releas Draft
+name: Update Release Draft
 
 on:
   push:

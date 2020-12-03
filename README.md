@@ -42,7 +42,7 @@ Allows the administrator to customize most aspects of the LDAP authentication pr
 
 ## Installation
 
-Use the Jellfin web UI and brows the Plugin catalog to find the `LDAP Authentication` plugin, then simply install one of the version supported by your Jellfin core.
+Use the Jellyfin web UI and browse the Plugin catalog to find the `LDAP Authentication` plugin, then simply install one of the version supported by your Jellyfin core.
 In the case that you are missing the default plugin repository or want to download the plugin Zip for manual installation add `https://repo.jellyfin.org/releases/plugin/manifest-stable.json` as a repository or us it to get the Zip of the plugin.
 
 For further [install instructions](https://jellyfin.org/docs/general/server/plugins/index.html#installing) or [plugin repository questions](https://jellyfin.org/docs/general/server/plugins/index.html#repositories) have a look at the [official documentation](https://jellyfin.org/docs/index.html).
