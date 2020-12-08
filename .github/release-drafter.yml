@@ -33,6 +33,10 @@ categories:
   # Default label used by Dependabot
   - title: 📦 Dependency updates
     label: dependencies
+  - title: 👷 CI & build changes
+    labels:
+      - ci
+      - build
   - title: 📝 Documentation updates
     label: documentation
   - title: 🚦 Tests
