@@ -79,10 +79,17 @@
                                 </label>
                                 <div class="fieldDescription checkboxFieldDescription">Enable on first login creation of authorized users from LDAP</div>
                             </div>
+                            <div class="checkboxContainer checkboxContainer-withDescription">
+                                <label>
+                                    <input type="checkbox" is="emby-checkbox" id="chkEnableCaseInsensitiveUsername" />
+                                    <span>Enable Case Insensitive Username</span>
+                                </label>
+                                <div class="fieldDescription checkboxFieldDescription">Enable case insensitive username comparison</div>
+                            </div>
                         </div>
                         <div>
                             <button is="emby-button" type="submit" data-theme="b" class="raised button-submit block">
-                                <span>${ButtonSave}</span>
+                                <span>${Save}</span>
                             </button>
                             <button is="emby-button" type="button" class="raised button-cancel block btnCancel" onclick="history.back();">
                                 <span>${ButtonCancel}</span>
@@ -98,25 +105,26 @@
             var LdapConfigurationPage = {
                 pluginUniqueId: "958aad66-3784-4d2a-b89a-a7b6fab6e25c",
                 
-                txtLdapServer: document.getElementById("txtLdapServer"),
-                chkUseSsl: document.getElementById("chkUseSsl"),
-                chkUseStartTls: document.getElementById("chkUseStartTls"),
-                chkSkipSslVerify: document.getElementById("chkSkipSslVerify"),
-                txtLdapBaseDn: document.getElementById("txtLdapBaseDn"),
-                txtLdapPort: document.getElementById("txtLdapPort"),
-                txtLdapSearchAttributes: document.getElementById("txtLdapSearchAttributes"),
-                txtLdapUsernameAttribute: document.getElementById("txtLdapUsernameAttribute"),
-                txtLdapSearchFilter: document.getElementById("txtLdapSearchFilter"),
-                txtLdapAdminFilter: document.getElementById("txtLdapAdminFilter"),
-                txtLdapBindUser: document.getElementById("txtLdapBindUser"),
-                txtLdapBindPassword: document.getElementById("txtLdapBindPassword"),
-                chkEnableUserCreation: document.getElementById("chkEnableUserCreation")
+                txtLdapServer: document.querySelector("#txtLdapServer"),
+                chkUseSsl: document.querySelector("#chkUseSsl"),
+                chkUseStartTls: document.querySelector("#chkUseStartTls"),
+                chkSkipSslVerify: document.querySelector("#chkSkipSslVerify"),
+                txtLdapBaseDn: document.querySelector("#txtLdapBaseDn"),
+                txtLdapPort: document.querySelector("#txtLdapPort"),
+                txtLdapSearchAttributes: document.querySelector("#txtLdapSearchAttributes"),
+                txtLdapUsernameAttribute: document.querySelector("#txtLdapUsernameAttribute"),
+                txtLdapSearchFilter: document.querySelector("#txtLdapSearchFilter"),
+                txtLdapAdminFilter: document.querySelector("#txtLdapAdminFilter"),
+                txtLdapBindUser: document.querySelector("#txtLdapBindUser"),
+                txtLdapBindPassword: document.querySelector("#txtLdapBindPassword"),
+                chkEnableUserCreation: document.querySelector("#chkEnableUserCreation"),
+                chkEnableCaseInsensitiveUsername: document.querySelector("#chkEnableCaseInsensitiveUsername")
             };
 
             window.addEventListener("pageshow", function (_) {
                 Dashboard.showLoadingMsg();
 
-                ApiClient.getPluginConfiguration(LdapConfigurationPage.pluginUniqueId).then(function (config) {
+                window.ApiClient.getPluginConfiguration(LdapConfigurationPage.pluginUniqueId).then(function (config) {
                     LdapConfigurationPage.txtLdapServer.value = config.LdapServer || "ldap-server.contoso.com"; 
                     LdapConfigurationPage.chkUseSsl.checked = config.UseSsl;
                     LdapConfigurationPage.chkUseStartTls.checked = config.UseStartTls;
@@ -130,14 +138,16 @@
                     LdapConfigurationPage.txtLdapBindUser.value = config.LdapBindUser || "CN=BindUser,DC=contoso,DC=com";
                     LdapConfigurationPage.txtLdapBindPassword.value = config.LdapBindPassword || "";
                     LdapConfigurationPage.chkEnableUserCreation.checked = config.CreateUsersFromLdap;
+                    LdapConfigurationPage.chkEnableCaseInsensitiveUsername.checked = config.EnableCaseInsensitiveUsername;
                     Dashboard.hideLoadingMsg();
                 });
             });
 
             document.querySelector(".esqConfigurationForm").addEventListener("submit", function(e){
+                e.preventDefault();
                 Dashboard.showLoadingMsg();
 
-                ApiClient.getPluginConfiguration(LdapConfigurationPage.pluginUniqueId).then(function (config) {
+                window.ApiClient.getPluginConfiguration(LdapConfigurationPage.pluginUniqueId).then(function (config) {
                     config.LDAPServer = LdapConfigurationPage.txtLdapServer.value;
                     config.UseSsl = LdapConfigurationPage.chkUseSsl.checked;
                     config.UseStartTls = LdapConfigurationPage.chkUseStartTls.checked;
@@ -151,9 +161,8 @@
                     config.LdapBindUser = LdapConfigurationPage.txtLdapBindUser.value;
                     config.LdapBindPassword = LdapConfigurationPage.txtLdapBindPassword.value;
                     config.CreateUsersFromLdap = LdapConfigurationPage.chkEnableUserCreation.checked;
-
-                    ApiClient.updatePluginConfiguration(LdapConfigurationPage.pluginUniqueId, config).then(Dashboard.processPluginConfigurationUpdateResult);
-                    e.preventDefault();
+                    config.EnableCaseInsensitiveUsername = LdapConfigurationPage.chkEnableCaseInsensitiveUsername.checked;
+                    window.ApiClient.updatePluginConfiguration(LdapConfigurationPage.pluginUniqueId, config).then(Dashboard.processPluginConfigurationUpdateResult);
                 });
 
                 // Disable default form submission

@@ -23,6 +23,7 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
             UseSsl = true;
             UseStartTls = false;
             SkipSslVerify = false;
+            EnableCaseInsensitiveUsername = false;
         }
 
         /// <summary>
@@ -89,5 +90,10 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
         /// Gets or sets a value indicating whether to skip ssl verification.
         /// </summary>
         public bool SkipSslVerify { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to use case insensitive username comparison.
+        /// </summary>
+        public bool EnableCaseInsensitiveUsername { get; set; }
     }
 }
