@@ -218,7 +218,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     {
                         foreach (var name in toCheck.StringValueArray)
                         {
-                            if (username == name)
+                            if (string.Equals(username, name, StringComparison.OrdinalIgnoreCase))
                             {
                                 ldapUser = currentUser;
                                 foundUser = true;
