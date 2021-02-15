@@ -61,7 +61,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
             var ldapUser = LocateLdapUser(username);
 
             var ldapUsername = GetAttribute(ldapUser, UsernameAttr)?.StringValue;
-            _logger.LogDebug("Setting username: {1}", ldapUsername);
+            _logger.LogDebug("Setting username: {LdapUsername}", ldapUsername);
 
             try
             {
@@ -72,15 +72,10 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 _logger.LogWarning("User Manager could not find a user for LDAP User, this may not be fatal", e);
             }
 
-            using var ldapClient = new LdapConnection { SecureSocketLayer = LdapPlugin.Instance.Configuration.UseSsl };
-            _logger.LogDebug("Trying bind as user {1}", ldapUser.Dn);
+            using var ldapClient = new LdapConnection(GetConnectionOptions());
+            _logger.LogDebug("Trying bind as user {Dn}", ldapUser.Dn);
             try
             {
-                if (LdapPlugin.Instance.Configuration.SkipSslVerify)
-                {
-                    ldapClient.UserDefinedServerCertValidationDelegate += LdapClient_UserDefinedServerCertValidationDelegate;
-                }
-
                 ldapClient.Connect(LdapPlugin.Instance.Configuration.LdapServer, LdapPlugin.Instance.Configuration.LdapPort);
                 if (LdapPlugin.Instance.Configuration.UseStartTls)
                 {
@@ -91,12 +86,8 @@ namespace Jellyfin.Plugin.LDAP_Auth
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed to Connect or Bind to server as user {1}", ldapUser.Dn);
+                _logger.LogError(e, "Failed to Connect or Bind to server as user {UserDn}", ldapUser.Dn);
                 throw new AuthenticationException("Error completing LDAP login. Invalid username or password.", e);
-            }
-            finally
-            {
-                ldapClient.UserDefinedServerCertValidationDelegate -= LdapClient_UserDefinedServerCertValidationDelegate;
             }
 
             if (ldapClient.Bound)
@@ -120,7 +111,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                         ldapIsAdmin = true;
                     }
 
-                    _logger.LogDebug("Creating new user {1} - is admin? {2}", ldapUsername, ldapIsAdmin);
+                    _logger.LogDebug("Creating new user {Username} - is admin? {IsAdmin}", ldapUsername, ldapIsAdmin);
                     if (LdapPlugin.Instance.Configuration.CreateUsersFromLdap)
                     {
                         user = await userManager.CreateUserAsync(ldapUsername).ConfigureAwait(false);
@@ -130,7 +121,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     }
                     else
                     {
-                        _logger.LogError($"User not configured for LDAP Uid: {ldapUsername}");
+                        _logger.LogError("User not configured for LDAP Uid: {LdapUsername}", ldapUsername);
                         throw new AuthenticationException(
                             $"Automatic User Creation is disabled and there is no Jellyfin user for authorized Uid: {ldapUsername}");
                     }
@@ -166,15 +157,9 @@ namespace Jellyfin.Plugin.LDAP_Auth
         {
             var foundUser = false;
             LdapEntry ldapUser = null;
-            using var ldapClient = new LdapConnection { SecureSocketLayer = LdapPlugin.Instance.Configuration.UseSsl };
+            using var ldapClient = new LdapConnection(GetConnectionOptions());
             try
             {
-                if (LdapPlugin.Instance.Configuration.SkipSslVerify)
-                {
-                    ldapClient.UserDefinedServerCertValidationDelegate +=
-                        LdapClient_UserDefinedServerCertValidationDelegate;
-                }
-
                 ldapClient.Connect(LdapPlugin.Instance.Configuration.LdapServer, LdapPlugin.Instance.Configuration.LdapPort);
                 if (LdapPlugin.Instance.Configuration.UseStartTls)
                 {
@@ -187,10 +172,6 @@ namespace Jellyfin.Plugin.LDAP_Auth
             {
                 _logger.LogError(e, "Failed to Connect or Bind to server");
                 throw new AuthenticationException("Failed to Connect or Bind to server");
-            }
-            finally
-            {
-                ldapClient.UserDefinedServerCertValidationDelegate -= LdapClient_UserDefinedServerCertValidationDelegate;
             }
 
             if (!ldapClient.Connected)
@@ -206,7 +187,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 throw new AuthenticationException("No users found in LDAP Query");
             }
 
-            _logger.LogDebug("Search: {1} {2} @ {3}", LdapPlugin.Instance.Configuration.LdapBaseDn, SearchFilter, LdapPlugin.Instance.Configuration.LdapServer);
+            _logger.LogDebug("Search: {BaseDn} {SearchFilter} @ {LdapServer}", LdapPlugin.Instance.Configuration.LdapBaseDn, SearchFilter, LdapPlugin.Instance.Configuration.LdapServer);
 
             var usernameComparison = LdapPlugin.Instance.Configuration.EnableCaseInsensitiveUsername
                 ? StringComparison.OrdinalIgnoreCase
@@ -225,6 +206,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                             {
                                 ldapUser = currentUser;
                                 foundUser = true;
+                                break;
                             }
                         }
                     }
@@ -233,7 +215,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
 
             if (foundUser == false)
             {
-                _logger.LogError("Found no users matching {1} in LDAP search.", username);
+                _logger.LogError("Found no users matching {Username} in LDAP search", username);
                 throw new AuthenticationException("Found no LDAP users matching provided username.");
             }
 
@@ -251,6 +233,23 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 _logger.LogWarning(e, "Error getting LDAP attribute");
                 return null;
             }
+        }
+
+        private static LdapConnectionOptions GetConnectionOptions()
+        {
+            var connectionOptions = new LdapConnectionOptions();
+            var configuration = LdapPlugin.Instance.Configuration;
+            if (configuration.UseSsl)
+            {
+                connectionOptions.UseSsl();
+            }
+
+            if (configuration.SkipSslVerify)
+            {
+                connectionOptions.ConfigureRemoteCertificateValidationCallback(LdapClient_UserDefinedServerCertValidationDelegate);
+            }
+
+            return connectionOptions;
         }
     }
 }
