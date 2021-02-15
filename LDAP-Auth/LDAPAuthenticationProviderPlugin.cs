@@ -208,6 +208,9 @@ namespace Jellyfin.Plugin.LDAP_Auth
 
             _logger.LogDebug("Search: {1} {2} @ {3}", LdapPlugin.Instance.Configuration.LdapBaseDn, SearchFilter, LdapPlugin.Instance.Configuration.LdapServer);
 
+            var usernameComparison = LdapPlugin.Instance.Configuration.EnableCaseInsensitiveUsername
+                ? StringComparison.OrdinalIgnoreCase
+                : StringComparison.Ordinal;
             while (ldapUsers.HasMore() && foundUser == false)
             {
                 var currentUser = ldapUsers.Next();
@@ -218,7 +221,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     {
                         foreach (var name in toCheck.StringValueArray)
                         {
-                            if (username == name)
+                            if (string.Equals(username, name, usernameComparison))
                             {
                                 ldapUser = currentUser;
                                 foundUser = true;
