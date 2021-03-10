@@ -1,52 +1,9 @@
-# Configuration for Release Drafter: https://github.com/toolmantim/release-drafter
-name-template: Version $NEXT_MAJOR_VERSION
-# Uses a more common single-digit versioning in Jellyfin plugins. Can be replaced by semver: $MAJOR.$MINOR.$PATCH
-# https://github.com/release-drafter/release-drafter#next-version-variables
-tag-template: v$NEXT_MAJOR_VERSION
-version-template: $MAJOR
-
-# Emoji reference: https://gitmoji.carloscuesta.me/
-categories:
-  - title: ":boom: Breaking changes"
-    labels:
-      - breaking
-  - title: 🚨 Removed
-    label: removed
-  - title: ":tada: Major features and improvements"
-    labels:
-      - major-enhancement
-  - title: 🐛 Major bug fixes
-    labels:
-      - major-bug
-  - title: ⚠️ Deprecated
-    label: deprecated
-  - title: 🚀 New features and improvements
-    labels:
-      - enhancement
-      - feature
-  - title: 🐛 Bug Fixes
-    labels:
-      - bug
-      - fix
-      - bugfix
-      - regression
-  # Default label used by Dependabot
-  - title: 📦 Dependency updates
-    label: dependencies
-  - title: 📝 Documentation updates
-    label: documentation
-  - title: 🚦 Tests
-    labels:
-      - test
-      - tests
-exclude-labels:
-  - reverted
-  - no-changelog
-  - skip-changelog
-  - invalid
+_extends: jellyfin-meta-plugins
 
 template: |
   <!-- Optional: add a release summary here -->
   [Plugin build can be downloaded here](https://repo.jellyfin.org/releases/plugin/ldap-authentication/ldap-authentication_$NEXT_MAJOR_VERSION.0.0.0.zip).
+
+  ## :sparkles: What's New
 
   $CHANGES
