@@ -1,18 +1,19 @@
 ---
 name: "LDAP Authentication"
 guid: "958aad66-3784-4d2a-b89a-a7b6fab6e25c"
+imageUrl: "https://repo.jellyfin.org/releases/plugin/images/jellyfin-plugin-ldapauth.png"
 version: "11.0.0.0"
 targetAbi: "10.7.0.0"
 framework: "net5.0"
 owner: "jellyfin"
 overview: "Authenticate users against an LDAP database"
-description: >
+description: |
   Authenticate your Jellyfin users against an LDAP database, and optionally create users who do not yet exist automatically.
 
   Allows the administrator to customize most aspects of the LDAP authentication process, including customizable search attributes, username attribute, and a search filter for administrative users (set on user creation). The user, via the "Manual Login" process, can enter any valid attribute value, which will be mapped back to the specified username attribute automatically as well.
 category: "Authentication"
 artifacts:
-- "LDAP-Auth.dll"
-- "Novell.Directory.Ldap.NETStandard.dll"
-changelog: >
-  Fix case-sensitive username check
+  - "LDAP-Auth.dll"
+  - "Novell.Directory.Ldap.NETStandard.dll"
+changelog: |
+  - Fix case-sensitive username check
