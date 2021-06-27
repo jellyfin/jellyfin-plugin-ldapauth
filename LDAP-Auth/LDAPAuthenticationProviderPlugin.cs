@@ -106,7 +106,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                         false);
 
                     // If we got non-zero, then the filter matched and the user is an admin
-                    if (ldapUsers.Count != 0)
+                    if (ldapUsers.HasMore())
                     {
                         ldapIsAdmin = true;
                     }
