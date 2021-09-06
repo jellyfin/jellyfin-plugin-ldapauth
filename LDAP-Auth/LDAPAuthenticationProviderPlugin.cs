@@ -97,6 +97,12 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     // Determine if the user should be an administrator
                     var ldapIsAdmin = false;
 
+                    // Automatically follow referrals
+                    ldapClient.Constraints = GetSearchConstraints(
+                        ldapClient,
+                        ldapUser.Dn,
+                        password);
+
                     // Search the current user DN with the adminFilter
                     var ldapUsers = ldapClient.Search(
                         ldapUser.Dn,
@@ -179,8 +185,17 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 return null;
             }
 
-            var ldapUsers =
-                ldapClient.Search(LdapPlugin.Instance.Configuration.LdapBaseDn, 2, SearchFilter, LdapUsernameAttributes, false);
+            ldapClient.Constraints = GetSearchConstraints(
+                ldapClient,
+                LdapPlugin.Instance.Configuration.LdapBindUser,
+                LdapPlugin.Instance.Configuration.LdapBindPassword);
+
+            var ldapUsers = ldapClient.Search(
+                LdapPlugin.Instance.Configuration.LdapBaseDn,
+                2,
+                SearchFilter,
+                LdapUsernameAttributes,
+                false);
             if (ldapUsers == null)
             {
                 _logger.LogWarning("No LDAP users found from query");
@@ -250,6 +265,15 @@ namespace Jellyfin.Plugin.LDAP_Auth
             }
 
             return connectionOptions;
+        }
+
+        private LdapSearchConstraints GetSearchConstraints(
+            LdapConnection ldapClient, string dn, string password)
+        {
+            var constraints = ldapClient.SearchConstraints;
+            constraints.ReferralFollowing = true;
+            constraints.setReferralHandler(new LdapAuthHandler(_logger, dn, password));
+            return constraints;
         }
     }
 }
