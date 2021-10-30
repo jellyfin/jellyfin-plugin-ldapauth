@@ -77,7 +77,7 @@
                                     <input type="checkbox" is="emby-checkbox" id="chkEnableUserCreation" />
                                     <span>Enable User Creation</span>
                                 </label>
-                                <div class="fieldDescription checkboxFieldDescription">Enable on first login creation of authorized users from LDAP</div>
+                                <div class="fieldDescription checkboxFieldDescription">Enable user creation in Jellyfin on successful LDAP authentication. User must first exist in LDAP.</div>
                             </div>
                             <div class="checkboxContainer checkboxContainer-withDescription">
                                 <label>
@@ -86,7 +86,18 @@
                                 </label>
                                 <div class="fieldDescription checkboxFieldDescription">Enable case insensitive username comparison</div>
                             </div>
-                        </div>
+                            <div class="folderAccessContainer">
+                              <h2>${HeaderLibraryAccess}</h2>
+                              <label class="checkboxContainer">
+                                  <input type="checkbox" is="emby-checkbox" id="chkEnableAllFolders" />
+                                  <span>${OptionEnableAccessToAllLibraries}</span>
+                              </label>
+                              <div class="folderAccessListContainer">
+                                  <div class="folderAccess">
+                                  </div>
+                                  <div class="fieldDescription">${LibraryAccessHelp}</div>
+                              </div>
+                            </div>
                         <div>
                             <button is="emby-button" type="submit" data-theme="b" class="raised button-submit block">
                                 <span>${Save}</span>
@@ -118,7 +129,9 @@
                 txtLdapBindUser: document.querySelector("#txtLdapBindUser"),
                 txtLdapBindPassword: document.querySelector("#txtLdapBindPassword"),
                 chkEnableUserCreation: document.querySelector("#chkEnableUserCreation"),
-                chkEnableCaseInsensitiveUsername: document.querySelector("#chkEnableCaseInsensitiveUsername")
+                chkEnableCaseInsensitiveUsername: document.querySelector("#chkEnableCaseInsensitiveUsername"),
+                chkEnableAllFolders: document.querySelector('#chkEnableAllFolders'),
+                folderAccessList: document.querySelector('.folderAccess'),
             };
 
             if (!window.ldapInitialized) {
@@ -141,36 +154,94 @@
                         LdapConfigurationPage.txtLdapBindPassword.value = config.LdapBindPassword || "";
                         LdapConfigurationPage.chkEnableUserCreation.checked = config.CreateUsersFromLdap;
                         LdapConfigurationPage.chkEnableCaseInsensitiveUsername.checked = config.EnableCaseInsensitiveUsername;
-                        Dashboard.hideLoadingMsg();
+                        config.EnableAllFolders = config.EnableAllFolders || false;
+                        LdapConfigurationPage.chkEnableAllFolders.checked = config.EnableAllFolders;
+                        /* Default to empty array if Enabled Folders is not set */
+                        config.EnabledFolders = config.EnabledFolders || [];
+                        loadMediaFolders(config).then(() => {
+                          Dashboard.hideLoadingMsg();
+                        });
                     });
+
+                    function loadMediaFolders(config) {
+                      if (!LdapConfigurationPage.folderAccessList) {
+                        return Promise.resolve();
+                      }
+
+                      return window.ApiClient.getJSON(window.ApiClient.getUrl('Library/MediaFolders', {
+                        IsHidden: false
+                      })).then((mediaFolders) => {
+                        let html = '';
+                        html += '<h3 class="checkboxListLabel">' + 'Library Access'/*globalize.translate('HeaderLibraries')*/ + '</h3>';
+                        html += '<div id="folderList" class="checkboxList paperList checkboxList-paperList">';
+
+                        if (Array.isArray(mediaFolders.Items)) {
+                          mediaFolders.Items.forEach((folder) => {
+                            const isChecked = config.EnableAllFolders || config.EnabledFolders.indexOf(folder.Id) != -1;
+                            const checkedAttribute = isChecked ? ' checked="checked"' : '';
+                            html += '<label><input type="checkbox" is="emby-checkbox" class="chkFolder" data-id="' +
+                              folder.Id + '" ' + checkedAttribute + '><span>' + folder.Name +
+                                '</span></label>';
+                          });
+                        }
+
+                        html += '</div>';
+                        LdapConfigurationPage.folderAccessList.innerHTML = html;
+                        /* Only show these options if Jellyfin user creation is enabled on successful LDAP authentication */
+                        LdapConfigurationPage.chkEnableUserCreation.addEventListener('change', (event) => {
+                          console.log(event);
+                          document.querySelector('.folderAccessContainer').style.display = event.currentTarget.checked ? 'block' : 'none';
+                        });
+                        /* Set up event handlers for tracking folder enabling/disabling */
+                        Array.prototype.forEach.call(document.querySelectorAll('#folderList input'), (folder) => {
+                          folder.addEventListener('change', (event) => {
+                            const folders = document.querySelectorAll('#folderList input');
+                            let count = 0;
+                            Array.prototype.forEach.call(folders, folder => folder.checked && count++);
+                            LdapConfigurationPage.chkEnableAllFolders.checked = count == folders.length;
+                          });
+                        });
+                        LdapConfigurationPage.chkEnableAllFolders.addEventListener('change', (event) => {
+                          Array.prototype.forEach.call(document.querySelectorAll('#folderList input'), (folder) => {
+                            folder.checked = event.currentTarget.checked;
+                          });
+                        });
+                      });
+                    }
+                });
+
+                document.querySelector(".esqConfigurationForm").addEventListener("submit", function(e){
+                    e.preventDefault();
+                    Dashboard.showLoadingMsg();
+
+                    window.ApiClient.getPluginConfiguration(LdapConfigurationPage.pluginUniqueId).then(function (config) {
+                        config.LDAPServer = LdapConfigurationPage.txtLdapServer.value;
+                        config.UseSsl = LdapConfigurationPage.chkUseSsl.checked;
+                        config.UseStartTls = LdapConfigurationPage.chkUseStartTls.checked;
+                        config.SkipSslVerify = LdapConfigurationPage.chkSkipSslVerify.checked;
+                        config.LdapBaseDn = LdapConfigurationPage.txtLdapBaseDn.value;
+                        config.LdapPort = parseInt(LdapConfigurationPage.txtLdapPort.value || "389");
+                        config.LdapSearchAttributes = LdapConfigurationPage.txtLdapSearchAttributes.value;
+                        config.LdapUsernameAttribute = LdapConfigurationPage.txtLdapUsernameAttribute.value;
+                        config.LdapSearchFilter = LdapConfigurationPage.txtLdapSearchFilter.value;
+                        config.LdapAdminFilter = LdapConfigurationPage.txtLdapAdminFilter.value;
+                        config.LdapBindUser = LdapConfigurationPage.txtLdapBindUser.value;
+                        config.LdapBindPassword = LdapConfigurationPage.txtLdapBindPassword.value;
+                        config.CreateUsersFromLdap = LdapConfigurationPage.chkEnableUserCreation.checked;
+                        config.EnableCaseInsensitiveUsername = LdapConfigurationPage.chkEnableCaseInsensitiveUsername.checked;
+                        /* Map the set of checked input items to an array of library Id's */
+                        config.EnableAllFolders = LdapConfigurationPage.chkEnableAllFolders.checked || false;
+                        let folders = document.querySelectorAll('#folderList input[checked="checked"]');
+                        folders = Array.prototype.map.call(
+                            Array.prototype.filter.call(folders, folder => folder.checked),
+                            folder => folder.getAttribute("data-id"));
+                        window.ApiClient.updatePluginConfiguration(LdapConfigurationPage.pluginUniqueId, config).then(Dashboard.processPluginConfigurationUpdateResult);
+                    });
+
+                    // Disable default form submission
+                    return false;
                 });
             }
-
-            document.querySelector(".esqConfigurationForm").addEventListener("submit", function(e){
-                e.preventDefault();
-                Dashboard.showLoadingMsg();
-
-                window.ApiClient.getPluginConfiguration(LdapConfigurationPage.pluginUniqueId).then(function (config) {
-                    config.LDAPServer = LdapConfigurationPage.txtLdapServer.value;
-                    config.UseSsl = LdapConfigurationPage.chkUseSsl.checked;
-                    config.UseStartTls = LdapConfigurationPage.chkUseStartTls.checked;
-                    config.SkipSslVerify = LdapConfigurationPage.chkSkipSslVerify.checked;
-                    config.LdapBaseDn = LdapConfigurationPage.txtLdapBaseDn.value;
-                    config.LdapPort = parseInt(LdapConfigurationPage.txtLdapPort.value || "389");
-                    config.LdapSearchAttributes = LdapConfigurationPage.txtLdapSearchAttributes.value;
-                    config.LdapUsernameAttribute = LdapConfigurationPage.txtLdapUsernameAttribute.value;
-                    config.LdapSearchFilter = LdapConfigurationPage.txtLdapSearchFilter.value;
-                    config.LdapAdminFilter = LdapConfigurationPage.txtLdapAdminFilter.value;
-                    config.LdapBindUser = LdapConfigurationPage.txtLdapBindUser.value;
-                    config.LdapBindPassword = LdapConfigurationPage.txtLdapBindPassword.value;
-                    config.CreateUsersFromLdap = LdapConfigurationPage.chkEnableUserCreation.checked;
-                    config.EnableCaseInsensitiveUsername = LdapConfigurationPage.chkEnableCaseInsensitiveUsername.checked;
-                    window.ApiClient.updatePluginConfiguration(LdapConfigurationPage.pluginUniqueId, config).then(Dashboard.processPluginConfigurationUpdateResult);
-                });
-
-                // Disable default form submission
-                return false;
-            });
         </script>
     </div>
 </body>
