@@ -163,6 +163,11 @@
                         });
                     });
 
+                    const updateFolderListVisibility = () => {
+                        document.querySelector('.folderAccessContainer').style.display =
+                            LdapConfigurationPage.chkEnableUserCreation.checked ? 'block' : 'none';
+                    }
+
                     function loadMediaFolders(config) {
                       if (!LdapConfigurationPage.folderAccessList) {
                         return Promise.resolve();
@@ -188,9 +193,8 @@
                         html += '</div>';
                         LdapConfigurationPage.folderAccessList.innerHTML = html;
                         /* Only show these options if Jellyfin user creation is enabled on successful LDAP authentication */
-                        LdapConfigurationPage.chkEnableUserCreation.addEventListener('change', (event) => {
-                          document.querySelector('.folderAccessContainer').style.display = event.currentTarget.checked ? 'block' : 'none';
-                        });
+                        updateFolderListVisibility();
+                        LdapConfigurationPage.chkEnableUserCreation.addEventListener('change', updateFolderListVisibility);
                         /* Set up event handlers for tracking folder enabling/disabling */
                         Array.prototype.forEach.call(document.querySelectorAll('#folderList input'), (folder) => {
                           folder.addEventListener('change', (event) => {
