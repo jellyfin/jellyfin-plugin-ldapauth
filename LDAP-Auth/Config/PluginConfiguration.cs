@@ -1,3 +1,5 @@
+using System;
+
 namespace Jellyfin.Plugin.LDAP_Auth.Config
 {
     /// <summary>
@@ -25,7 +27,7 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
             SkipSslVerify = false;
             EnableCaseInsensitiveUsername = false;
             EnableAllFolders = false;
-            EnabledFolders = new string[] { };
+            EnabledFolders = Array.Empty<string>();
         }
 
         /// <summary>
