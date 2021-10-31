@@ -172,7 +172,7 @@
                         IsHidden: false
                       })).then((mediaFolders) => {
                         let html = '';
-                        html += '<h3 class="checkboxListLabel">' + 'Library Access'/*globalize.translate('HeaderLibraries')*/ + '</h3>';
+                        html += '<h3 class="checkboxListLabel">${HeaderLibraries}</h3>';
                         html += '<div id="folderList" class="checkboxList paperList checkboxList-paperList">';
 
                         if (Array.isArray(mediaFolders.Items)) {
