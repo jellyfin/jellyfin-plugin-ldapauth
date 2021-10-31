@@ -189,7 +189,6 @@
                         LdapConfigurationPage.folderAccessList.innerHTML = html;
                         /* Only show these options if Jellyfin user creation is enabled on successful LDAP authentication */
                         LdapConfigurationPage.chkEnableUserCreation.addEventListener('change', (event) => {
-                          console.log(event);
                           document.querySelector('.folderAccessContainer').style.display = event.currentTarget.checked ? 'block' : 'none';
                         });
                         /* Set up event handlers for tracking folder enabling/disabling */
