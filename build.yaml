@@ -3,7 +3,7 @@ guid: "958aad66-3784-4d2a-b89a-a7b6fab6e25c"
 imageUrl: "https://repo.jellyfin.org/releases/plugin/images/jellyfin-plugin-ldapauth.png"
 version: "12"
 targetAbi: "10.7.0.0"
-framework: "net5.0"
+framework: "net6.0"
 owner: "jellyfin"
 overview: "Authenticate users against an LDAP database"
 description: |
