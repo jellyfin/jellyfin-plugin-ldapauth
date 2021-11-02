@@ -238,6 +238,7 @@
                         folders = Array.prototype.map.call(
                             Array.prototype.filter.call(folders, folder => folder.checked),
                             folder => folder.getAttribute("data-id"));
+                        config.EnabledFolders = folders;
                         window.ApiClient.updatePluginConfiguration(LdapConfigurationPage.pluginUniqueId, config).then(Dashboard.processPluginConfigurationUpdateResult);
                     });
 
