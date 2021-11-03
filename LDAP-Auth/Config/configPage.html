@@ -137,6 +137,11 @@
             if (!window.ldapInitialized) {
                 window.ldapInitialized = true;
                 window.addEventListener("pageshow", function (_) {
+                    /* Only take action if the page being shown is 'LDAP-Auth' */
+                    if (!event.detail || !event.detail.params || !event.detail.params.name || event.detail.params.name != 'LDAP-Auth') {
+                        return;
+                    }
+ 
                     Dashboard.showLoadingMsg();
 
                     window.ApiClient.getPluginConfiguration(LdapConfigurationPage.pluginUniqueId).then(function (config) {
