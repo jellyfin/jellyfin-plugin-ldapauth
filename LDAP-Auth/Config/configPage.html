@@ -121,27 +121,30 @@
                 chkEnableCaseInsensitiveUsername: document.querySelector("#chkEnableCaseInsensitiveUsername")
             };
 
-            window.addEventListener("pageshow", function (_) {
-                Dashboard.showLoadingMsg();
+            if (!window.ldapInitialized) {
+                window.ldapInitialized = true;
+                window.addEventListener("pageshow", function (_) {
+                    Dashboard.showLoadingMsg();
 
-                window.ApiClient.getPluginConfiguration(LdapConfigurationPage.pluginUniqueId).then(function (config) {
-                    LdapConfigurationPage.txtLdapServer.value = config.LdapServer || "ldap-server.contoso.com"; 
-                    LdapConfigurationPage.chkUseSsl.checked = config.UseSsl;
-                    LdapConfigurationPage.chkUseStartTls.checked = config.UseStartTls;
-                    LdapConfigurationPage.chkSkipSslVerify.checked = config.SkipSslVerify;
-                    LdapConfigurationPage.txtLdapBaseDn.value = config.LdapBaseDn || "o=domains,dc=contoso,dc=com";
-                    LdapConfigurationPage.txtLdapPort.value = config.LdapPort || "389";
-                    LdapConfigurationPage.txtLdapSearchAttributes.value = config.LdapSearchAttributes || "uid, cn, mail, displayName";
-                    LdapConfigurationPage.txtLdapUsernameAttribute.value = config.LdapUsernameAttribute || "uid"; 
-                    LdapConfigurationPage.txtLdapSearchFilter.value = config.LdapSearchFilter || "(memberOf=CN=JellyfinUsers,DC=contoso,DC=com)"; 
-                    LdapConfigurationPage.txtLdapAdminFilter.value = config.LdapAdminFilter || "(enabledService=JellyfinAdministrator)";
-                    LdapConfigurationPage.txtLdapBindUser.value = config.LdapBindUser || "CN=BindUser,DC=contoso,DC=com";
-                    LdapConfigurationPage.txtLdapBindPassword.value = config.LdapBindPassword || "";
-                    LdapConfigurationPage.chkEnableUserCreation.checked = config.CreateUsersFromLdap;
-                    LdapConfigurationPage.chkEnableCaseInsensitiveUsername.checked = config.EnableCaseInsensitiveUsername;
-                    Dashboard.hideLoadingMsg();
+                    window.ApiClient.getPluginConfiguration(LdapConfigurationPage.pluginUniqueId).then(function (config) {
+                        LdapConfigurationPage.txtLdapServer.value = config.LdapServer || "ldap-server.contoso.com"; 
+                        LdapConfigurationPage.chkUseSsl.checked = config.UseSsl;
+                        LdapConfigurationPage.chkUseStartTls.checked = config.UseStartTls;
+                        LdapConfigurationPage.chkSkipSslVerify.checked = config.SkipSslVerify;
+                        LdapConfigurationPage.txtLdapBaseDn.value = config.LdapBaseDn || "o=domains,dc=contoso,dc=com";
+                        LdapConfigurationPage.txtLdapPort.value = config.LdapPort || "389";
+                        LdapConfigurationPage.txtLdapSearchAttributes.value = config.LdapSearchAttributes || "uid, cn, mail, displayName";
+                        LdapConfigurationPage.txtLdapUsernameAttribute.value = config.LdapUsernameAttribute || "uid"; 
+                        LdapConfigurationPage.txtLdapSearchFilter.value = config.LdapSearchFilter || "(memberOf=CN=JellyfinUsers,DC=contoso,DC=com)"; 
+                        LdapConfigurationPage.txtLdapAdminFilter.value = config.LdapAdminFilter || "(enabledService=JellyfinAdministrator)";
+                        LdapConfigurationPage.txtLdapBindUser.value = config.LdapBindUser || "CN=BindUser,DC=contoso,DC=com";
+                        LdapConfigurationPage.txtLdapBindPassword.value = config.LdapBindPassword || "";
+                        LdapConfigurationPage.chkEnableUserCreation.checked = config.CreateUsersFromLdap;
+                        LdapConfigurationPage.chkEnableCaseInsensitiveUsername.checked = config.EnableCaseInsensitiveUsername;
+                        Dashboard.hideLoadingMsg();
+                    });
                 });
-            });
+            }
 
             document.querySelector(".esqConfigurationForm").addEventListener("submit", function(e){
                 e.preventDefault();
