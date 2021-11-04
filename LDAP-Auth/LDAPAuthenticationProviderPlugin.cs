@@ -128,6 +128,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                         {
                             user.SetPreference(PreferenceKind.EnabledFolders, LdapPlugin.Instance.Configuration.EnabledFolders);
                         }
+
                         await userManager.UpdateUserAsync(user).ConfigureAwait(false);
                     }
                     else
