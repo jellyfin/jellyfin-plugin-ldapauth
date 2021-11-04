@@ -223,7 +223,7 @@
                     Dashboard.showLoadingMsg();
 
                     window.ApiClient.getPluginConfiguration(LdapConfigurationPage.pluginUniqueId).then(function (config) {
-                        config.LDAPServer = LdapConfigurationPage.txtLdapServer.value;
+                        config.LdapServer = LdapConfigurationPage.txtLdapServer.value;
                         config.UseSsl = LdapConfigurationPage.chkUseSsl.checked;
                         config.UseStartTls = LdapConfigurationPage.chkUseStartTls.checked;
                         config.SkipSslVerify = LdapConfigurationPage.chkSkipSslVerify.checked;
