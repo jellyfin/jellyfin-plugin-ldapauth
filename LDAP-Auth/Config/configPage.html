@@ -63,7 +63,9 @@
                             <div class="inputContainer fldExternalAddressFilter">
                                 <input is="emby-input" type="text" id="txtLdapAdminFilter" label="LDAP Admin Filter:" />
                                 <div class="fieldDescription">The LDAP search filter to find administrative users for Jellyfin, e.g. (objectClass=JellyfinAdministrator).
-                                  If blank, administrative state must be configured manually for each user. Applies only to new Jellyfin users on first LDAP authentication.
+                                  If left blank, administrative state must be configured manually for each user. If set, administrative access will automatically be applied
+                                  (either granting or removing administrative access) when the LDAP user next logs in. If the user is currently logged in, this filter will 
+                                  not change their active session permissions.
                                 </div>
                             </div>
                             <div class="inputContainer fldExternalAddressFilter">

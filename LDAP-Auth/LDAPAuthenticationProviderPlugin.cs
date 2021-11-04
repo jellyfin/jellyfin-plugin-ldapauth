@@ -92,34 +92,34 @@ namespace Jellyfin.Plugin.LDAP_Auth
 
             if (ldapClient.Bound)
             {
+                // Determine if the user should be an administrator
+                var ldapIsAdmin = false;
+
+                if (!string.IsNullOrEmpty(AdminFilter) && AdminFilter.CompareTo("_disabled_") != 0)
+                {
+                    // Automatically follow referrals
+                    ldapClient.Constraints = GetSearchConstraints(
+                        ldapClient,
+                        ldapUser.Dn,
+                        password);
+
+                    // Search the current user DN with the adminFilter
+                    var ldapUsers = ldapClient.Search(
+                        ldapUser.Dn,
+                        0,
+                        AdminFilter,
+                        LdapUsernameAttributes,
+                        false);
+
+                    // If we got non-zero, then the filter matched and the user is an admin
+                    if (ldapUsers.HasMore())
+                    {
+                        ldapIsAdmin = true;
+                    }
+                }
+
                 if (user == null)
                 {
-                    // Determine if the user should be an administrator
-                    var ldapIsAdmin = false;
-
-                    if (!string.IsNullOrEmpty(AdminFilter) && AdminFilter.CompareTo("_disabled_") != 0)
-                    {
-                        // Automatically follow referrals
-                        ldapClient.Constraints = GetSearchConstraints(
-                            ldapClient,
-                            ldapUser.Dn,
-                            password);
-
-                        // Search the current user DN with the adminFilter
-                        var ldapUsers = ldapClient.Search(
-                            ldapUser.Dn,
-                            0,
-                            AdminFilter,
-                            LdapUsernameAttributes,
-                            false);
-
-                        // If we got non-zero, then the filter matched and the user is an admin
-                        if (ldapUsers.HasMore())
-                        {
-                            ldapIsAdmin = true;
-                        }
-                    }
-
                     _logger.LogDebug("Creating new user {Username} - is admin? {IsAdmin}", ldapUsername, ldapIsAdmin);
                     if (LdapPlugin.Instance.Configuration.CreateUsersFromLdap)
                     {
@@ -140,6 +140,24 @@ namespace Jellyfin.Plugin.LDAP_Auth
                         throw new AuthenticationException(
                             $"Automatic User Creation is disabled and there is no Jellyfin user for authorized Uid: {ldapUsername}");
                     }
+                }
+                else
+                {
+                  // User exists; if the admin has enabled an AdminFilter, check if the user's
+                  // 'IsAdministrator' matches the LDAP configuration and update if there is a difference.
+                  //
+                  // Is the AuthenticationProviderId check necessary? Will only users with their
+                  // Authentication Provider set to LDAP be invoked through this flow?
+                  if (!string.IsNullOrEmpty(AdminFilter) && AdminFilter.CompareTo("_disabled_") != 0 && user.AuthenticationProviderId == GetType().FullName)
+                  {
+                    var isJellyfinAdmin = user.HasPermission(PermissionKind.IsAdministrator);
+                    if (isJellyfinAdmin != ldapIsAdmin)
+                    {
+                      _logger.LogDebug("Updating user {Username} admin status to: {ldapIsAdmin}.", ldapUsername, ldapIsAdmin);
+                      user.SetPermission(PermissionKind.IsAdministrator, ldapIsAdmin);
+                      await userManager.UpdateUserAsync(user).ConfigureAwait(false);
+                    }
+                  }
                 }
 
                 return new ProviderAuthenticationResult { Username = ldapUsername };
