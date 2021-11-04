@@ -62,7 +62,9 @@
                             </div>
                             <div class="inputContainer fldExternalAddressFilter">
                                 <input is="emby-input" type="text" id="txtLdapAdminFilter" label="LDAP Admin Filter:" />
-                                <div class="fieldDescription">The LDAP search filter to find administrative users for Jellyfin, e.g. (objectClass=JellyfinAdministrator).</div>
+                                <div class="fieldDescription">The LDAP search filter to find administrative users for Jellyfin, e.g. (objectClass=JellyfinAdministrator).
+                                  If blank, administrative state must be configured manually for each user. Applies only to new Jellyfin users on first LDAP authentication.
+                                </div>
                             </div>
                             <div class="inputContainer fldExternalAddressFilter">
                                 <input is="emby-input" type="text" id="txtLdapBindUser" label="LDAP Bind User:" />
@@ -154,7 +156,8 @@
                         LdapConfigurationPage.txtLdapSearchAttributes.value = config.LdapSearchAttributes || "uid, cn, mail, displayName";
                         LdapConfigurationPage.txtLdapUsernameAttribute.value = config.LdapUsernameAttribute || "uid"; 
                         LdapConfigurationPage.txtLdapSearchFilter.value = config.LdapSearchFilter || "(memberOf=CN=JellyfinUsers,DC=contoso,DC=com)"; 
-                        LdapConfigurationPage.txtLdapAdminFilter.value = config.LdapAdminFilter || "(enabledService=JellyfinAdministrator)";
+                        LdapConfigurationPage.txtLdapAdminFilter.value =
+                          (config.LdapAdminFilter == '_disabled_') ? "" : (config.LdapAdminFilter || "(enabledService=JellyfinAdministrator)");
                         LdapConfigurationPage.txtLdapBindUser.value = config.LdapBindUser || "CN=BindUser,DC=contoso,DC=com";
                         LdapConfigurationPage.txtLdapBindPassword.value = config.LdapBindPassword || "";
                         LdapConfigurationPage.chkEnableUserCreation.checked = config.CreateUsersFromLdap;
@@ -232,7 +235,9 @@
                         config.LdapSearchAttributes = LdapConfigurationPage.txtLdapSearchAttributes.value;
                         config.LdapUsernameAttribute = LdapConfigurationPage.txtLdapUsernameAttribute.value;
                         config.LdapSearchFilter = LdapConfigurationPage.txtLdapSearchFilter.value;
-                        config.LdapAdminFilter = LdapConfigurationPage.txtLdapAdminFilter.value;
+                        config.LdapAdminFilter =
+                          LdapConfigurationPage.txtLdapAdminFilter.value ?
+                          LdapConfigurationPage.txtLdapAdminFilter.value : '_disabled_';
                         config.LdapBindUser = LdapConfigurationPage.txtLdapBindUser.value;
                         config.LdapBindPassword = LdapConfigurationPage.txtLdapBindPassword.value;
                         config.CreateUsersFromLdap = LdapConfigurationPage.chkEnableUserCreation.checked;

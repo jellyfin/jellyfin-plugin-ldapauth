@@ -97,24 +97,27 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     // Determine if the user should be an administrator
                     var ldapIsAdmin = false;
 
-                    // Automatically follow referrals
-                    ldapClient.Constraints = GetSearchConstraints(
-                        ldapClient,
-                        ldapUser.Dn,
-                        password);
-
-                    // Search the current user DN with the adminFilter
-                    var ldapUsers = ldapClient.Search(
-                        ldapUser.Dn,
-                        0,
-                        AdminFilter,
-                        LdapUsernameAttributes,
-                        false);
-
-                    // If we got non-zero, then the filter matched and the user is an admin
-                    if (ldapUsers.HasMore())
+                    if (!string.IsNullOrEmpty(AdminFilter) && AdminFilter.CompareTo("_disabled_") != 0)
                     {
-                        ldapIsAdmin = true;
+                        // Automatically follow referrals
+                        ldapClient.Constraints = GetSearchConstraints(
+                            ldapClient,
+                            ldapUser.Dn,
+                            password);
+
+                        // Search the current user DN with the adminFilter
+                        var ldapUsers = ldapClient.Search(
+                            ldapUser.Dn,
+                            0,
+                            AdminFilter,
+                            LdapUsernameAttributes,
+                            false);
+
+                        // If we got non-zero, then the filter matched and the user is an admin
+                        if (ldapUsers.HasMore())
+                        {
+                            ldapIsAdmin = true;
+                        }
                     }
 
                     _logger.LogDebug("Creating new user {Username} - is admin? {IsAdmin}", ldapUsername, ldapIsAdmin);
