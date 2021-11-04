@@ -1,3 +1,5 @@
+using System;
+
 namespace Jellyfin.Plugin.LDAP_Auth.Config
 {
     /// <summary>
@@ -24,6 +26,8 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
             UseStartTls = false;
             SkipSslVerify = false;
             EnableCaseInsensitiveUsername = false;
+            EnableAllFolders = false;
+            EnabledFolders = Array.Empty<string>();
         }
 
         /// <summary>
@@ -95,5 +99,15 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
         /// Gets or sets a value indicating whether to use case insensitive username comparison.
         /// </summary>
         public bool EnableCaseInsensitiveUsername { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to enable access to all library folders.
+        /// </summary>
+        public bool EnableAllFolders { get; set; }
+
+        /// <summary>
+        /// Gets or sets a list of folder Ids which are enabled for access by default.
+        /// </summary>
+        public string[] EnabledFolders { get; set; }
     }
 }

@@ -123,6 +123,12 @@ namespace Jellyfin.Plugin.LDAP_Auth
                         user = await userManager.CreateUserAsync(ldapUsername).ConfigureAwait(false);
                         user.AuthenticationProviderId = GetType().FullName;
                         user.SetPermission(PermissionKind.IsAdministrator, ldapIsAdmin);
+                        user.SetPermission(PermissionKind.EnableAllFolders, LdapPlugin.Instance.Configuration.EnableAllFolders);
+                        if (!LdapPlugin.Instance.Configuration.EnableAllFolders)
+                        {
+                            user.SetPreference(PreferenceKind.EnabledFolders, LdapPlugin.Instance.Configuration.EnabledFolders);
+                        }
+
                         await userManager.UpdateUserAsync(user).ConfigureAwait(false);
                     }
                     else
