@@ -188,7 +188,7 @@
                         if (Array.isArray(mediaFolders.Items)) {
                           mediaFolders.Items.forEach((folder) => {
                             const isChecked = config.EnableAllFolders || config.EnabledFolders.indexOf(folder.Id) != -1;
-                            const checkedAttribute = isChecked ? ' checked="checked"' : '';
+                            const checkedAttribute = isChecked ? ' checked' : '';
                             html += '<label><input type="checkbox" is="emby-checkbox" class="chkFolder" data-id="' +
                               folder.Id + '" ' + checkedAttribute + '><span>' + folder.Name +
                                 '</span></label>';
@@ -239,10 +239,9 @@
                         config.EnableCaseInsensitiveUsername = LdapConfigurationPage.chkEnableCaseInsensitiveUsername.checked;
                         /* Map the set of checked input items to an array of library Id's */
                         config.EnableAllFolders = LdapConfigurationPage.chkEnableAllFolders.checked || false;
-                        let folders = document.querySelectorAll('#folderList input[checked="checked"]');
-                        folders = Array.prototype.map.call(
-                            Array.prototype.filter.call(folders, folder => folder.checked),
-                            folder => folder.getAttribute("data-id"));
+                        let folders = document.querySelectorAll('#folderList input');
+                        folders = Array.prototype.filter.call(folders, folder => folder.checked)
+                          .map(folder => folder.getAttribute("data-id"));
                         config.EnabledFolders = folders;
                         window.ApiClient.updatePluginConfiguration(LdapConfigurationPage.pluginUniqueId, config).then(Dashboard.processPluginConfigurationUpdateResult);
                     });
