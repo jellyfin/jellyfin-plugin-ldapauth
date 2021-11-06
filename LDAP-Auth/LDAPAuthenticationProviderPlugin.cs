@@ -95,7 +95,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 // Determine if the user should be an administrator
                 var ldapIsAdmin = false;
 
-                if (!string.IsNullOrEmpty(AdminFilter) && AdminFilter.CompareTo("_disabled_") != 0)
+                if (!string.IsNullOrEmpty(AdminFilter) && !string.Equals(AdminFilter, "_disabled_", StringComparison.Ordinal))
                 {
                     // Automatically follow referrals
                     ldapClient.Constraints = GetSearchConstraints(
