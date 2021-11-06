@@ -145,9 +145,6 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 {
                     // User exists; if the admin has enabled an AdminFilter, check if the user's
                     // 'IsAdministrator' matches the LDAP configuration and update if there is a difference.
-                    //
-                    // Is the AuthenticationProviderId check necessary? Will only users with their
-                    // Authentication Provider set to LDAP be invoked through this flow?
                     if (!string.IsNullOrEmpty(AdminFilter) && !string.Equals(AdminFilter, "_disabled_", StringComparison.Ordinal))
                     {
                         var isJellyfinAdmin = user.HasPermission(PermissionKind.IsAdministrator);
