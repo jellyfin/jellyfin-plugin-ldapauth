@@ -153,7 +153,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     var isJellyfinAdmin = user.HasPermission(PermissionKind.IsAdministrator);
                     if (isJellyfinAdmin != ldapIsAdmin)
                     {
-                      _logger.LogDebug("Updating user {Username} admin status to: {ldapIsAdmin}.", ldapUsername, ldapIsAdmin);
+                      _logger.LogDebug("Updating user {Username} admin status to: {LdapIsAdmin}.", ldapUsername, ldapIsAdmin);
                       user.SetPermission(PermissionKind.IsAdministrator, ldapIsAdmin);
                       await userManager.UpdateUserAsync(user).ConfigureAwait(false);
                     }
