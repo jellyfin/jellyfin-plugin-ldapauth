@@ -92,11 +92,11 @@ namespace Jellyfin.Plugin.LDAP_Auth
 
             if (ldapClient.Bound)
             {
-                if (user == null)
-                {
-                    // Determine if the user should be an administrator
-                    var ldapIsAdmin = false;
+                // Determine if the user should be an administrator
+                var ldapIsAdmin = false;
 
+                if (!string.IsNullOrEmpty(AdminFilter) && !string.Equals(AdminFilter, "_disabled_", StringComparison.Ordinal))
+                {
                     // Automatically follow referrals
                     ldapClient.Constraints = GetSearchConstraints(
                         ldapClient,
@@ -116,7 +116,10 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     {
                         ldapIsAdmin = true;
                     }
+                }
 
+                if (user == null)
+                {
                     _logger.LogDebug("Creating new user {Username} - is admin? {IsAdmin}", ldapUsername, ldapIsAdmin);
                     if (LdapPlugin.Instance.Configuration.CreateUsersFromLdap)
                     {
@@ -136,6 +139,21 @@ namespace Jellyfin.Plugin.LDAP_Auth
                         _logger.LogError("User not configured for LDAP Uid: {LdapUsername}", ldapUsername);
                         throw new AuthenticationException(
                             $"Automatic User Creation is disabled and there is no Jellyfin user for authorized Uid: {ldapUsername}");
+                    }
+                }
+                else
+                {
+                    // User exists; if the admin has enabled an AdminFilter, check if the user's
+                    // 'IsAdministrator' matches the LDAP configuration and update if there is a difference.
+                    if (!string.IsNullOrEmpty(AdminFilter) && !string.Equals(AdminFilter, "_disabled_", StringComparison.Ordinal))
+                    {
+                        var isJellyfinAdmin = user.HasPermission(PermissionKind.IsAdministrator);
+                        if (isJellyfinAdmin != ldapIsAdmin)
+                        {
+                            _logger.LogDebug("Updating user {Username} admin status to: {LdapIsAdmin}.", ldapUsername, ldapIsAdmin);
+                            user.SetPermission(PermissionKind.IsAdministrator, ldapIsAdmin);
+                            await userManager.UpdateUserAsync(user).ConfigureAwait(false);
+                        }
                     }
                 }
 
