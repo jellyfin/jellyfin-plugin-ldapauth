@@ -57,6 +57,10 @@
                                     <input is="emby-input" type="text" id="txtLdapBaseDn" required placeholder="o=domains,dc=contoso,dc=com" label="LDAP Base DN for searches:" />
                                     <div class="fieldDescription">The base DN for your LDAP query.</div>
                                 </div>
+                                <button id="btnTestServer" is="emby-button" type="button" class="raised button block">
+                                    <span>Save and Test LDAP Server Settings</span>
+                                </button>
+                                <div id="divServerTestResults"></div>
                             </div>
                         </div>
                         <div class="verticalSection" is="emby-collapse" title="LDAP User Settings">
@@ -139,6 +143,7 @@
                 txtLdapBindUser: document.querySelector("#txtLdapBindUser"),
                 txtLdapBindPassword: document.querySelector("#txtLdapBindPassword"),
                 txtLdapBaseDn: document.querySelector("#txtLdapBaseDn"),
+                divServerTestResults: document.querySelector("#divServerTestResults"),
                 txtLdapSearchFilter: document.querySelector("#txtLdapSearchFilter"),
                 txtLdapAdminFilter: document.querySelector("#txtLdapAdminFilter"),
                 txtLdapSearchAttributes: document.querySelector("#txtLdapSearchAttributes"),
@@ -230,7 +235,8 @@
                 }
             });
 
-            document.querySelector(".esqConfigurationForm").addEventListener("submit", function(e){
+            let form = document.querySelector(".esqConfigurationForm");
+            form.addEventListener("submit", function(e){
                 e.preventDefault();
                 Dashboard.showLoadingMsg();
 
@@ -262,6 +268,40 @@
 
                 // Disable default form submission
                 return false;
+            });
+
+            document.querySelector("#btnTestServer").addEventListener("click", function (e) {
+                if (!form.reportValidity()) {
+                    return;
+                }
+
+                Dashboard.showLoadingMsg();
+                LdapConfigurationPage.divServerTestResults.innerText = "";
+
+                const serverConfig = {
+                    LdapServer: LdapConfigurationPage.txtLdapServer.value,
+                    LdapPort: parseInt(LdapConfigurationPage.txtLdapPort.value),
+                    UseSsl: LdapConfigurationPage.chkUseSsl.checked,
+                    UseStartTls: LdapConfigurationPage.chkUseStartTls.checked,
+                    SkipSslVerify: LdapConfigurationPage.chkSkipSslVerify.checked,
+                    LdapBindUser: LdapConfigurationPage.txtLdapBindUser.value,
+                    LdapBindPassword: LdapConfigurationPage.txtLdapBindPassword.value,
+                    LdapBaseDn: LdapConfigurationPage.txtLdapBaseDn.value,
+                }
+
+                const handler = response => response.text().then(message => {
+                    message = message.replace(/^"|"$/g, "");
+                    if (response.ok) {
+                        LdapConfigurationPage.divServerTestResults.innerText = message;
+                    } else {
+                        LdapConfigurationPage.divServerTestResults.innerText = "Failure: " + message;
+                    }
+                    Dashboard.hideLoadingMsg();
+                });
+
+                let url = ApiClient.getUrl('ldap/TestServerBind');
+                let data = JSON.stringify(serverConfig);
+                ApiClient.ajax({ type: 'POST', url, data, contentType: 'application/json' }).then(handler).catch(handler);
             });
         </script>
     </div>

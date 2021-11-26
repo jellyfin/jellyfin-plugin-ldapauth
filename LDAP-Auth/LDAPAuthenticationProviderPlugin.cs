@@ -106,7 +106,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     // Search the current user DN with the adminFilter
                     var ldapUsers = ldapClient.Search(
                         ldapUser.Dn,
-                        0,
+                        LdapConnection.ScopeBase,
                         AdminFilter,
                         LdapUsernameAttributes,
                         false);
@@ -216,7 +216,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
 
             var ldapUsers = ldapClient.Search(
                 LdapPlugin.Instance.Configuration.LdapBaseDn,
-                2,
+                LdapConnection.ScopeSub,
                 SearchFilter,
                 LdapUsernameAttributes,
                 false);
@@ -274,7 +274,11 @@ namespace Jellyfin.Plugin.LDAP_Auth
             }
         }
 
-        private static LdapConnectionOptions GetConnectionOptions()
+        /// <summary>
+        /// Bundles the relevant plugin options to connect to the server.
+        /// </summary>
+        /// <returns>The <see cref="LdapConnectionOptions"/> to use for connecting.</returns>
+        public static LdapConnectionOptions GetConnectionOptions()
         {
             var connectionOptions = new LdapConnectionOptions();
             var configuration = LdapPlugin.Instance.Configuration;
