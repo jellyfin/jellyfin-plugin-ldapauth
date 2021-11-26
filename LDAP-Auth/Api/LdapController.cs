@@ -1,12 +1,8 @@
-using System;
 using System.Net.Mime;
-using System.Text;
 using Jellyfin.Plugin.LDAP_Auth.Api.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using Novell.Directory.Ldap;
 
 namespace Jellyfin.Plugin.LDAP_Auth.Api
 {
@@ -19,17 +15,6 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api
     [Produces(MediaTypeNames.Application.Json)]
     public class LdapController : ControllerBase
     {
-        private readonly ILogger<LdapController> _logger;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="LdapController"/> class.
-        /// </summary>
-        /// <param name="logger">The logger.</param>
-        public LdapController(ILogger<LdapController> logger)
-        {
-            _logger = logger;
-        }
-
         /// <summary>
         /// Tests the server connection and bind settings.
         /// </summary>
@@ -59,53 +44,9 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api
             configuration.LdapBaseDn = body.LdapBaseDn;
             LdapPlugin.Instance.UpdateConfiguration(configuration);
 
-            var connectionOptions = LdapAuthenticationProviderPlugin.GetConnectionOptions();
+            var result = LdapAuthenticationProviderPlugin.TestServerBind();
 
-            var response = new StringBuilder();
-
-            try
-            {
-                response.Append("Connect (");
-                using var ldapClient = new LdapConnection(connectionOptions);
-                ldapClient.Connect(configuration.LdapServer, configuration.LdapPort);
-                response.Append("Success)");
-
-                if (configuration.UseStartTls)
-                {
-                    response.Append("; Set StartTLS (");
-                    ldapClient.StartTls();
-                    response.Append("Success)");
-                }
-
-                response.Append("; Bind (");
-                ldapClient.Bind(configuration.LdapBindUser, configuration.LdapBindPassword);
-                response.Append("Success)");
-
-                response.Append("; Base Search (");
-                var entries = ldapClient.Search(
-                    configuration.LdapBaseDn,
-                    LdapConnection.ScopeSub,
-                    string.Empty,
-                    Array.Empty<string>(),
-                    false);
-
-                // entries.Count is unreliable (timing issue?), iterate to count
-                var count = 0;
-                while (entries.HasMore())
-                {
-                    entries.Next();
-                    count++;
-                }
-
-                response.Append("Found ").Append(count).Append(" Entities)");
-            }
-            catch (Exception e)
-            {
-                _logger.LogWarning(e, "Ldap Test Failed to Connect or Bind to server");
-                response.Append("Error: ").Append(e.Message).Append(')');
-            }
-
-            return Ok(response.ToString());
+            return Ok(result);
         }
     }
 }
