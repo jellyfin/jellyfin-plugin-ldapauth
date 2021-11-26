@@ -17,11 +17,11 @@
                         <div class="verticalSection" is="emby-collapse" title="LDAP Server Settings">
                             <div class="collapseContent">
                                 <div class="inputContainer">
-                                    <input is="emby-input" type="text" id="txtLdapServer" label="LDAP Server:" />
+                                    <input is="emby-input" type="text" id="txtLdapServer" required placeholder="ldap-server.contoso.com" label="LDAP Server:" />
                                     <div class="fieldDescription">The server name for the LDAP server you wish to use for Authentication.</div>
                                 </div>
                                 <div class="inputContainer fldExternalAddressFilter">
-                                    <input is="emby-input" type="number" id="txtLdapPort" min="0" label="LDAP Port:" />
+                                    <input is="emby-input" type="number" id="txtLdapPort" required min="0" label="LDAP Port:" />
                                     <div class="fieldDescription">The port to communicate with LDAP.</div>
                                 </div>
                                 <div class="checkboxContainer checkboxContainer-withDescription">
@@ -34,9 +34,9 @@
                                 <div class="checkboxContainer checkboxContainer-withDescription">
                                     <label>
                                         <input type="checkbox" is="emby-checkbox" id="chkUseStartTls" />
-                                        <span>STARTTLS</span>
+                                        <span>StartTLS</span>
                                     </label>
-                                    <div class="fieldDescription checkboxFieldDescription">Use STARTTLS for the LDAP connection.</div>
+                                    <div class="fieldDescription checkboxFieldDescription">Use StartTLS for the LDAP connection.</div>
                                 </div>
                                 <div class="checkboxContainer checkboxContainer-withDescription">
                                     <label>
@@ -54,7 +54,7 @@
                                     <div class="fieldDescription">The password for the LDAP search query user.</div>
                                 </div>
                                 <div class="inputContainer fldExternalAddressFilter">
-                                    <input is="emby-input" type="text" id="txtLdapBaseDn" label="LDAP Base DN for searches:" />
+                                    <input is="emby-input" type="text" id="txtLdapBaseDn" required placeholder="o=domains,dc=contoso,dc=com" label="LDAP Base DN for searches:" />
                                     <div class="fieldDescription">The base DN for your LDAP query.</div>
                                 </div>
                             </div>
@@ -62,7 +62,7 @@
                         <div class="verticalSection" is="emby-collapse" title="LDAP User Settings">
                             <div class="collapseContent">
                                 <div class="inputContainer fldExternalAddressFilter">
-                                    <input is="emby-input" type="text" id="txtLdapSearchFilter" label="LDAP User Filter:" />
+                                    <input is="emby-input" type="text" id="txtLdapSearchFilter" required placeholder="(memberOf=CN=JellyfinUsers,DC=contoso,DC=com)" label="LDAP User Filter:" />
                                     <div class="fieldDescription">The LDAP search filter to find users for Jellyfin, e.g. (objectClass=inetOrgPerson).</div>
                                 </div>
                                 <div class="inputContainer fldExternalAddressFilter">
@@ -74,7 +74,7 @@
                                     </div>
                                 </div>
                                 <div class="inputContainer fldExternalAddressFilter">
-                                    <input is="emby-input" type="text" id="txtLdapSearchAttributes" label="LDAP Attributes:" />
+                                    <input is="emby-input" type="text" id="txtLdapSearchAttributes" required placeholder="uid, cn, mail, displayName" label="LDAP Attributes:" />
                                     <div class="fieldDescription">A comma-separated list of LDAP attributes to compare with entered usernames.</div>
                                 </div>
                                 <div class="checkboxContainer checkboxContainer-withDescription">
@@ -157,24 +157,27 @@
                         return;
                     }
 
+                    // start with all groups expanded
+                    document.querySelectorAll("button#expandButton").forEach(button => button.click());
+
                     Dashboard.showLoadingMsg();
 
                     window.ApiClient.getPluginConfiguration(LdapConfigurationPage.pluginUniqueId).then(function (config) {
-                        LdapConfigurationPage.txtLdapServer.value = config.LdapServer || "ldap-server.contoso.com";
-                        LdapConfigurationPage.txtLdapPort.value = config.LdapPort || "389";
+                        LdapConfigurationPage.txtLdapServer.value = config.LdapServer;
+                        LdapConfigurationPage.txtLdapPort.value = config.LdapPort;
                         LdapConfigurationPage.chkUseSsl.checked = config.UseSsl;
                         LdapConfigurationPage.chkUseStartTls.checked = config.UseStartTls;
                         LdapConfigurationPage.chkSkipSslVerify.checked = config.SkipSslVerify;
-                        LdapConfigurationPage.txtLdapBindUser.value = config.LdapBindUser || "CN=BindUser,DC=contoso,DC=com";
-                        LdapConfigurationPage.txtLdapBindPassword.value = config.LdapBindPassword || "";
-                        LdapConfigurationPage.txtLdapBaseDn.value = config.LdapBaseDn || "o=domains,dc=contoso,dc=com";
-                        LdapConfigurationPage.txtLdapSearchFilter.value = config.LdapSearchFilter || "(memberOf=CN=JellyfinUsers,DC=contoso,DC=com)";
+                        LdapConfigurationPage.txtLdapBindUser.value = config.LdapBindUser;
+                        LdapConfigurationPage.txtLdapBindPassword.value = config.LdapBindPassword;
+                        LdapConfigurationPage.txtLdapBaseDn.value = config.LdapBaseDn;
+                        LdapConfigurationPage.txtLdapSearchFilter.value = config.LdapSearchFilter;
                         LdapConfigurationPage.txtLdapAdminFilter.value =
-                            (config.LdapAdminFilter == '_disabled_') ? "" : (config.LdapAdminFilter || "(enabledService=JellyfinAdministrator)");
-                        LdapConfigurationPage.txtLdapSearchAttributes.value = config.LdapSearchAttributes || "uid, cn, mail, displayName";
+                            (config.LdapAdminFilter === '_disabled_') ? "" : config.LdapAdminFilter;
+                        LdapConfigurationPage.txtLdapSearchAttributes.value = config.LdapSearchAttributes;
                         LdapConfigurationPage.chkEnableCaseInsensitiveUsername.checked = config.EnableCaseInsensitiveUsername;
                         LdapConfigurationPage.chkEnableUserCreation.checked = config.CreateUsersFromLdap;
-                        LdapConfigurationPage.txtLdapUsernameAttribute.value = config.LdapUsernameAttribute || "uid";
+                        LdapConfigurationPage.txtLdapUsernameAttribute.value = config.LdapUsernameAttribute;
                         config.EnableAllFolders = config.EnableAllFolders || false;
                         LdapConfigurationPage.chkEnableAllFolders.checked = config.EnableAllFolders;
                         /* Default to empty array if Enabled Folders is not set */
@@ -240,7 +243,7 @@
 
                     window.ApiClient.getPluginConfiguration(LdapConfigurationPage.pluginUniqueId).then(function (config) {
                         config.LdapServer = LdapConfigurationPage.txtLdapServer.value;
-                        config.LdapPort = parseInt(LdapConfigurationPage.txtLdapPort.value || "389");
+                        config.LdapPort = parseInt(LdapConfigurationPage.txtLdapPort.value);
                         config.UseSsl = LdapConfigurationPage.chkUseSsl.checked;
                         config.UseStartTls = LdapConfigurationPage.chkUseStartTls.checked;
                         config.SkipSslVerify = LdapConfigurationPage.chkSkipSslVerify.checked;
