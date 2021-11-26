@@ -149,128 +149,120 @@
                 folderAccessList: document.querySelector('.folderAccess'),
             };
 
-            if (!window.ldapInitialized) {
-                window.ldapInitialized = true;
-                window.addEventListener("pageshow", function (_) {
-                    /* Only take action if the page being shown is 'LDAP-Auth' */
-                    if (!event.detail || !event.detail.params || !event.detail.params.name || event.detail.params.name != 'LDAP-Auth') {
-                        return;
-                    }
+            document.querySelector('.esqConfigurationPage').addEventListener("pageshow", function () {
+                // start with all groups expanded
+                document.querySelectorAll("button#expandButton").forEach(button => button.click());
 
-                    // start with all groups expanded
-                    document.querySelectorAll("button#expandButton").forEach(button => button.click());
+                Dashboard.showLoadingMsg();
 
-                    Dashboard.showLoadingMsg();
-
-                    window.ApiClient.getPluginConfiguration(LdapConfigurationPage.pluginUniqueId).then(function (config) {
-                        LdapConfigurationPage.txtLdapServer.value = config.LdapServer;
-                        LdapConfigurationPage.txtLdapPort.value = config.LdapPort;
-                        LdapConfigurationPage.chkUseSsl.checked = config.UseSsl;
-                        LdapConfigurationPage.chkUseStartTls.checked = config.UseStartTls;
-                        LdapConfigurationPage.chkSkipSslVerify.checked = config.SkipSslVerify;
-                        LdapConfigurationPage.txtLdapBindUser.value = config.LdapBindUser;
-                        LdapConfigurationPage.txtLdapBindPassword.value = config.LdapBindPassword;
-                        LdapConfigurationPage.txtLdapBaseDn.value = config.LdapBaseDn;
-                        LdapConfigurationPage.txtLdapSearchFilter.value = config.LdapSearchFilter;
-                        LdapConfigurationPage.txtLdapAdminFilter.value =
-                            (config.LdapAdminFilter === '_disabled_') ? "" : config.LdapAdminFilter;
-                        LdapConfigurationPage.txtLdapSearchAttributes.value = config.LdapSearchAttributes;
-                        LdapConfigurationPage.chkEnableCaseInsensitiveUsername.checked = config.EnableCaseInsensitiveUsername;
-                        LdapConfigurationPage.chkEnableUserCreation.checked = config.CreateUsersFromLdap;
-                        LdapConfigurationPage.txtLdapUsernameAttribute.value = config.LdapUsernameAttribute;
-                        config.EnableAllFolders = config.EnableAllFolders || false;
-                        LdapConfigurationPage.chkEnableAllFolders.checked = config.EnableAllFolders;
-                        /* Default to empty array if Enabled Folders is not set */
-                        config.EnabledFolders = config.EnabledFolders || [];
-                        loadMediaFolders(config).then(() => {
-                          Dashboard.hideLoadingMsg();
-                        });
+                window.ApiClient.getPluginConfiguration(LdapConfigurationPage.pluginUniqueId).then(function (config) {
+                    LdapConfigurationPage.txtLdapServer.value = config.LdapServer;
+                    LdapConfigurationPage.txtLdapPort.value = config.LdapPort;
+                    LdapConfigurationPage.chkUseSsl.checked = config.UseSsl;
+                    LdapConfigurationPage.chkUseStartTls.checked = config.UseStartTls;
+                    LdapConfigurationPage.chkSkipSslVerify.checked = config.SkipSslVerify;
+                    LdapConfigurationPage.txtLdapBindUser.value = config.LdapBindUser;
+                    LdapConfigurationPage.txtLdapBindPassword.value = config.LdapBindPassword;
+                    LdapConfigurationPage.txtLdapBaseDn.value = config.LdapBaseDn;
+                    LdapConfigurationPage.txtLdapSearchFilter.value = config.LdapSearchFilter;
+                    LdapConfigurationPage.txtLdapAdminFilter.value =
+                        (config.LdapAdminFilter === '_disabled_') ? "" : config.LdapAdminFilter;
+                    LdapConfigurationPage.txtLdapSearchAttributes.value = config.LdapSearchAttributes;
+                    LdapConfigurationPage.chkEnableCaseInsensitiveUsername.checked = config.EnableCaseInsensitiveUsername;
+                    LdapConfigurationPage.chkEnableUserCreation.checked = config.CreateUsersFromLdap;
+                    LdapConfigurationPage.txtLdapUsernameAttribute.value = config.LdapUsernameAttribute;
+                    config.EnableAllFolders = config.EnableAllFolders || false;
+                    LdapConfigurationPage.chkEnableAllFolders.checked = config.EnableAllFolders;
+                    /* Default to empty array if Enabled Folders is not set */
+                    config.EnabledFolders = config.EnabledFolders || [];
+                    loadMediaFolders(config).then(() => {
+                      Dashboard.hideLoadingMsg();
                     });
+                });
 
-                    const updateFolderListVisibility = () => {
-                        document.querySelector('.folderAccessContainer').style.display =
-                            LdapConfigurationPage.chkEnableUserCreation.checked ? 'block' : 'none';
-                    }
+                const updateFolderListVisibility = () => {
+                    document.querySelector('.folderAccessContainer').style.display =
+                        LdapConfigurationPage.chkEnableUserCreation.checked ? 'block' : 'none';
+                }
 
-                    function loadMediaFolders(config) {
-                      if (!LdapConfigurationPage.folderAccessList) {
-                        return Promise.resolve();
-                      }
+                function loadMediaFolders(config) {
+                  if (!LdapConfigurationPage.folderAccessList) {
+                    return Promise.resolve();
+                  }
 
-                      return window.ApiClient.getJSON(window.ApiClient.getUrl('Library/MediaFolders', {
-                        IsHidden: false
-                      })).then((mediaFolders) => {
-                        let html = '';
-                        html += '<h3 class="checkboxListLabel">${HeaderLibraries}</h3>';
-                        html += '<div id="folderList" class="checkboxList paperList checkboxList-paperList">';
+                  return window.ApiClient.getJSON(window.ApiClient.getUrl('Library/MediaFolders', {
+                    IsHidden: false
+                  })).then((mediaFolders) => {
+                    let html = '';
+                    html += '<h3 class="checkboxListLabel">${HeaderLibraries}</h3>';
+                    html += '<div id="folderList" class="checkboxList paperList checkboxList-paperList">';
 
-                        if (Array.isArray(mediaFolders.Items)) {
-                          mediaFolders.Items.forEach((folder) => {
-                            const isChecked = config.EnableAllFolders || config.EnabledFolders.indexOf(folder.Id) != -1;
-                            const checkedAttribute = isChecked ? ' checked' : '';
-                            html += '<label><input type="checkbox" is="emby-checkbox" class="chkFolder" data-id="' +
-                              folder.Id + '" ' + checkedAttribute + '><span>' + folder.Name +
-                                '</span></label>';
-                          });
-                        }
-
-                        html += '</div>';
-                        LdapConfigurationPage.folderAccessList.innerHTML = html;
-                        /* Only show these options if Jellyfin user creation is enabled on successful LDAP authentication */
-                        updateFolderListVisibility();
-                        LdapConfigurationPage.chkEnableUserCreation.addEventListener('change', updateFolderListVisibility);
-                        /* Set up event handlers for tracking folder enabling/disabling */
-                        Array.prototype.forEach.call(document.querySelectorAll('#folderList input'), (folder) => {
-                          folder.addEventListener('change', (event) => {
-                            const folders = document.querySelectorAll('#folderList input');
-                            let count = 0;
-                            Array.prototype.forEach.call(folders, folder => folder.checked && count++);
-                            LdapConfigurationPage.chkEnableAllFolders.checked = count == folders.length;
-                          });
-                        });
-                        LdapConfigurationPage.chkEnableAllFolders.addEventListener('change', (event) => {
-                          Array.prototype.forEach.call(document.querySelectorAll('#folderList input'), (folder) => {
-                            folder.checked = event.currentTarget.checked;
-                          });
-                        });
+                    if (Array.isArray(mediaFolders.Items)) {
+                      mediaFolders.Items.forEach((folder) => {
+                        const isChecked = config.EnableAllFolders || config.EnabledFolders.indexOf(folder.Id) != -1;
+                        const checkedAttribute = isChecked ? ' checked' : '';
+                        html += '<label><input type="checkbox" is="emby-checkbox" class="chkFolder" data-id="' +
+                          folder.Id + '" ' + checkedAttribute + '><span>' + folder.Name +
+                            '</span></label>';
                       });
                     }
-                });
 
-                document.querySelector(".esqConfigurationForm").addEventListener("submit", function(e){
-                    e.preventDefault();
-                    Dashboard.showLoadingMsg();
-
-                    window.ApiClient.getPluginConfiguration(LdapConfigurationPage.pluginUniqueId).then(function (config) {
-                        config.LdapServer = LdapConfigurationPage.txtLdapServer.value;
-                        config.LdapPort = parseInt(LdapConfigurationPage.txtLdapPort.value);
-                        config.UseSsl = LdapConfigurationPage.chkUseSsl.checked;
-                        config.UseStartTls = LdapConfigurationPage.chkUseStartTls.checked;
-                        config.SkipSslVerify = LdapConfigurationPage.chkSkipSslVerify.checked;
-                        config.LdapBindUser = LdapConfigurationPage.txtLdapBindUser.value;
-                        config.LdapBindPassword = LdapConfigurationPage.txtLdapBindPassword.value;
-                        config.LdapBaseDn = LdapConfigurationPage.txtLdapBaseDn.value;
-                        config.LdapSearchFilter = LdapConfigurationPage.txtLdapSearchFilter.value;
-                        config.LdapAdminFilter =
-                            LdapConfigurationPage.txtLdapAdminFilter.value ?
-                                LdapConfigurationPage.txtLdapAdminFilter.value : '_disabled_';
-                        config.LdapSearchAttributes = LdapConfigurationPage.txtLdapSearchAttributes.value;
-                        config.EnableCaseInsensitiveUsername = LdapConfigurationPage.chkEnableCaseInsensitiveUsername.checked;
-                        config.CreateUsersFromLdap = LdapConfigurationPage.chkEnableUserCreation.checked;
-                        config.LdapUsernameAttribute = LdapConfigurationPage.txtLdapUsernameAttribute.value;
-                        /* Map the set of checked input items to an array of library Id's */
-                        config.EnableAllFolders = LdapConfigurationPage.chkEnableAllFolders.checked || false;
-                        let folders = document.querySelectorAll('#folderList input');
-                        folders = Array.prototype.filter.call(folders, folder => folder.checked)
-                          .map(folder => folder.getAttribute("data-id"));
-                        config.EnabledFolders = folders;
-                        window.ApiClient.updatePluginConfiguration(LdapConfigurationPage.pluginUniqueId, config).then(Dashboard.processPluginConfigurationUpdateResult);
+                    html += '</div>';
+                    LdapConfigurationPage.folderAccessList.innerHTML = html;
+                    /* Only show these options if Jellyfin user creation is enabled on successful LDAP authentication */
+                    updateFolderListVisibility();
+                    LdapConfigurationPage.chkEnableUserCreation.addEventListener('change', updateFolderListVisibility);
+                    /* Set up event handlers for tracking folder enabling/disabling */
+                    Array.prototype.forEach.call(document.querySelectorAll('#folderList input'), (folder) => {
+                      folder.addEventListener('change', (event) => {
+                        const folders = document.querySelectorAll('#folderList input');
+                        let count = 0;
+                        Array.prototype.forEach.call(folders, folder => folder.checked && count++);
+                        LdapConfigurationPage.chkEnableAllFolders.checked = count == folders.length;
+                      });
                     });
+                    LdapConfigurationPage.chkEnableAllFolders.addEventListener('change', (event) => {
+                      Array.prototype.forEach.call(document.querySelectorAll('#folderList input'), (folder) => {
+                        folder.checked = event.currentTarget.checked;
+                      });
+                    });
+                  });
+                }
+            });
 
-                    // Disable default form submission
-                    return false;
+            document.querySelector(".esqConfigurationForm").addEventListener("submit", function(e){
+                e.preventDefault();
+                Dashboard.showLoadingMsg();
+
+                window.ApiClient.getPluginConfiguration(LdapConfigurationPage.pluginUniqueId).then(function (config) {
+                    config.LdapServer = LdapConfigurationPage.txtLdapServer.value;
+                    config.LdapPort = parseInt(LdapConfigurationPage.txtLdapPort.value);
+                    config.UseSsl = LdapConfigurationPage.chkUseSsl.checked;
+                    config.UseStartTls = LdapConfigurationPage.chkUseStartTls.checked;
+                    config.SkipSslVerify = LdapConfigurationPage.chkSkipSslVerify.checked;
+                    config.LdapBindUser = LdapConfigurationPage.txtLdapBindUser.value;
+                    config.LdapBindPassword = LdapConfigurationPage.txtLdapBindPassword.value;
+                    config.LdapBaseDn = LdapConfigurationPage.txtLdapBaseDn.value;
+                    config.LdapSearchFilter = LdapConfigurationPage.txtLdapSearchFilter.value;
+                    config.LdapAdminFilter =
+                        LdapConfigurationPage.txtLdapAdminFilter.value ?
+                            LdapConfigurationPage.txtLdapAdminFilter.value : '_disabled_';
+                    config.LdapSearchAttributes = LdapConfigurationPage.txtLdapSearchAttributes.value;
+                    config.EnableCaseInsensitiveUsername = LdapConfigurationPage.chkEnableCaseInsensitiveUsername.checked;
+                    config.CreateUsersFromLdap = LdapConfigurationPage.chkEnableUserCreation.checked;
+                    config.LdapUsernameAttribute = LdapConfigurationPage.txtLdapUsernameAttribute.value;
+                    /* Map the set of checked input items to an array of library Id's */
+                    config.EnableAllFolders = LdapConfigurationPage.chkEnableAllFolders.checked || false;
+                    let folders = document.querySelectorAll('#folderList input');
+                    folders = Array.prototype.filter.call(folders, folder => folder.checked)
+                      .map(folder => folder.getAttribute("data-id"));
+                    config.EnabledFolders = folders;
+                    window.ApiClient.updatePluginConfiguration(LdapConfigurationPage.pluginUniqueId, config).then(Dashboard.processPluginConfigurationUpdateResult);
                 });
-            }
+
+                // Disable default form submission
+                return false;
+            });
         </script>
     </div>
 </body>
