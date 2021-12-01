@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using System.Threading.Tasks;
 using Jellyfin.Data.Entities;
 using Jellyfin.Data.Enums;
@@ -106,7 +107,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     // Search the current user DN with the adminFilter
                     var ldapUsers = ldapClient.Search(
                         ldapUser.Dn,
-                        0,
+                        LdapConnection.ScopeBase,
                         AdminFilter,
                         LdapUsernameAttributes,
                         false);
@@ -216,7 +217,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
 
             var ldapUsers = ldapClient.Search(
                 LdapPlugin.Instance.Configuration.LdapBaseDn,
-                2,
+                LdapConnection.ScopeSub,
                 SearchFilter,
                 LdapUsernameAttributes,
                 false);
@@ -298,6 +299,60 @@ namespace Jellyfin.Plugin.LDAP_Auth
             constraints.ReferralFollowing = true;
             constraints.setReferralHandler(new LdapAuthHandler(_logger, dn, password));
             return constraints;
+        }
+
+        /// <summary>
+        /// Tests the server connection and bind settings.
+        /// </summary>
+        /// <returns>A string reporting the result of the sequence of connection steps.</returns>
+        public static string TestServerBind()
+        {
+            var configuration = LdapPlugin.Instance.Configuration;
+            var connectionOptions = GetConnectionOptions();
+            var response = new StringBuilder();
+
+            try
+            {
+                response.Append("Connect (");
+                using var ldapClient = new LdapConnection(connectionOptions);
+                ldapClient.Connect(configuration.LdapServer, configuration.LdapPort);
+                response.Append("Success)");
+
+                if (configuration.UseStartTls)
+                {
+                    response.Append("; Set StartTLS (");
+                    ldapClient.StartTls();
+                    response.Append("Success)");
+                }
+
+                response.Append("; Bind (");
+                ldapClient.Bind(configuration.LdapBindUser, configuration.LdapBindPassword);
+                response.Append("Success)");
+
+                response.Append("; Base Search (");
+                var entries = ldapClient.Search(
+                    configuration.LdapBaseDn,
+                    LdapConnection.ScopeSub,
+                    string.Empty,
+                    Array.Empty<string>(),
+                    false);
+
+                // entries.Count is unreliable (timing issue?), iterate to count
+                var count = 0;
+                while (entries.HasMore())
+                {
+                    entries.Next();
+                    count++;
+                }
+
+                response.Append("Found ").Append(count).Append(" Entities)");
+            }
+            catch (Exception e)
+            {
+                response.Append("Error: ").Append(e.Message).Append(')');
+            }
+
+            return response.ToString();
         }
     }
 }
