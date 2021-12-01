@@ -1,5 +1,8 @@
+using System.Linq;
 using System.Net.Mime;
 using Jellyfin.Plugin.LDAP_Auth.Api.Models;
+using MediaBrowser.Common;
+using MediaBrowser.Controller.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -15,6 +18,17 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api
     [Produces(MediaTypeNames.Application.Json)]
     public class LdapController : ControllerBase
     {
+        private readonly LdapAuthenticationProviderPlugin _ldapAuthenticationProvider;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LdapController"/> class.
+        /// </summary>
+        /// <param name="appHost">The application host to get the LDAP Authentication Provider from.</param>
+        public LdapController(IApplicationHost appHost)
+        {
+            _ldapAuthenticationProvider = appHost.GetExports<IAuthenticationProvider>().OfType<LdapAuthenticationProviderPlugin>().FirstOrDefault();
+        }
+
         /// <summary>
         /// Tests the server connection and bind settings.
         /// </summary>
@@ -44,9 +58,9 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api
             configuration.LdapBaseDn = body.LdapBaseDn;
             LdapPlugin.Instance.UpdateConfiguration(configuration);
 
-            var result = LdapAuthenticationProviderPlugin.TestServerBind();
+            var result = _ldapAuthenticationProvider.TestServerBind();
 
-            return Ok(result);
+            return Ok(new { Result = result });
         }
     }
 }

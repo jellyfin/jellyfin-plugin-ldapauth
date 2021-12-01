@@ -235,7 +235,7 @@
                 }
             });
 
-            let form = document.querySelector(".esqConfigurationForm");
+            var form = document.querySelector(".esqConfigurationForm");
             form.addEventListener("submit", function(e){
                 e.preventDefault();
                 Dashboard.showLoadingMsg();
@@ -289,12 +289,11 @@
                     LdapBaseDn: LdapConfigurationPage.txtLdapBaseDn.value,
                 }
 
-                const handler = response => response.text().then(message => {
-                    message = message.replace(/^"|"$/g, "");
+                const handler = response => response.json().then(res => {
                     if (response.ok) {
-                        LdapConfigurationPage.divServerTestResults.innerText = message;
+                        LdapConfigurationPage.divServerTestResults.innerText = res.Result;
                     } else {
-                        LdapConfigurationPage.divServerTestResults.innerText = "Failure: " + message;
+                        LdapConfigurationPage.divServerTestResults.innerText = "Failure: " + res.Result;
                     }
                     Dashboard.hideLoadingMsg();
                 });

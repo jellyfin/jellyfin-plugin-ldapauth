@@ -305,7 +305,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
         /// Tests the server connection and bind settings.
         /// </summary>
         /// <returns>A string reporting the result of the sequence of connection steps.</returns>
-        public static string TestServerBind()
+        public string TestServerBind()
         {
             var configuration = LdapPlugin.Instance.Configuration;
             var connectionOptions = GetConnectionOptions();
@@ -349,6 +349,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
             }
             catch (Exception e)
             {
+                _logger.LogWarning(e, "Ldap Test Failed to Connect or Bind to server");
                 response.Append("Error: ").Append(e.Message).Append(')');
             }
 
