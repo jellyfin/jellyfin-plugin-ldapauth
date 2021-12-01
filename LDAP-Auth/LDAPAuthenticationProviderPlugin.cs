@@ -91,78 +91,78 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 throw new AuthenticationException("Error completing LDAP login. Invalid username or password.", e);
             }
 
-            if (ldapClient.Bound)
+            if (!ldapClient.Bound)
             {
-                // Determine if the user should be an administrator
-                var ldapIsAdmin = false;
+                _logger.LogError("Error logging in, invalid LDAP username or password");
+                throw new AuthenticationException("Error completing LDAP login. Invalid username or password.");
+            }
 
-                if (!string.IsNullOrEmpty(AdminFilter) && !string.Equals(AdminFilter, "_disabled_", StringComparison.Ordinal))
+            // Determine if the user should be an administrator
+            var ldapIsAdmin = false;
+
+            if (!string.IsNullOrEmpty(AdminFilter) && !string.Equals(AdminFilter, "_disabled_", StringComparison.Ordinal))
+            {
+                // Automatically follow referrals
+                ldapClient.Constraints = GetSearchConstraints(
+                    ldapClient,
+                    ldapUser.Dn,
+                    password);
+
+                // Search the current user DN with the adminFilter
+                var ldapUsers = ldapClient.Search(
+                    ldapUser.Dn,
+                    LdapConnection.ScopeBase,
+                    AdminFilter,
+                    LdapUsernameAttributes,
+                    false);
+
+                // If we got non-zero, then the filter matched and the user is an admin
+                if (ldapUsers.HasMore())
                 {
-                    // Automatically follow referrals
-                    ldapClient.Constraints = GetSearchConstraints(
-                        ldapClient,
-                        ldapUser.Dn,
-                        password);
-
-                    // Search the current user DN with the adminFilter
-                    var ldapUsers = ldapClient.Search(
-                        ldapUser.Dn,
-                        LdapConnection.ScopeBase,
-                        AdminFilter,
-                        LdapUsernameAttributes,
-                        false);
-
-                    // If we got non-zero, then the filter matched and the user is an admin
-                    if (ldapUsers.HasMore())
-                    {
-                        ldapIsAdmin = true;
-                    }
+                    ldapIsAdmin = true;
                 }
+            }
 
-                if (user == null)
+            if (user == null)
+            {
+                _logger.LogDebug("Creating new user {Username} - is admin? {IsAdmin}", ldapUsername, ldapIsAdmin);
+                if (LdapPlugin.Instance.Configuration.CreateUsersFromLdap)
                 {
-                    _logger.LogDebug("Creating new user {Username} - is admin? {IsAdmin}", ldapUsername, ldapIsAdmin);
-                    if (LdapPlugin.Instance.Configuration.CreateUsersFromLdap)
+                    user = await userManager.CreateUserAsync(ldapUsername).ConfigureAwait(false);
+                    user.AuthenticationProviderId = GetType().FullName;
+                    user.SetPermission(PermissionKind.IsAdministrator, ldapIsAdmin);
+                    user.SetPermission(PermissionKind.EnableAllFolders, LdapPlugin.Instance.Configuration.EnableAllFolders);
+                    if (!LdapPlugin.Instance.Configuration.EnableAllFolders)
                     {
-                        user = await userManager.CreateUserAsync(ldapUsername).ConfigureAwait(false);
-                        user.AuthenticationProviderId = GetType().FullName;
-                        user.SetPermission(PermissionKind.IsAdministrator, ldapIsAdmin);
-                        user.SetPermission(PermissionKind.EnableAllFolders, LdapPlugin.Instance.Configuration.EnableAllFolders);
-                        if (!LdapPlugin.Instance.Configuration.EnableAllFolders)
-                        {
-                            user.SetPreference(PreferenceKind.EnabledFolders, LdapPlugin.Instance.Configuration.EnabledFolders);
-                        }
+                        user.SetPreference(PreferenceKind.EnabledFolders, LdapPlugin.Instance.Configuration.EnabledFolders);
+                    }
 
-                        await userManager.UpdateUserAsync(user).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        _logger.LogError("User not configured for LDAP Uid: {LdapUsername}", ldapUsername);
-                        throw new AuthenticationException(
-                            $"Automatic User Creation is disabled and there is no Jellyfin user for authorized Uid: {ldapUsername}");
-                    }
+                    await userManager.UpdateUserAsync(user).ConfigureAwait(false);
                 }
                 else
                 {
-                    // User exists; if the admin has enabled an AdminFilter, check if the user's
-                    // 'IsAdministrator' matches the LDAP configuration and update if there is a difference.
-                    if (!string.IsNullOrEmpty(AdminFilter) && !string.Equals(AdminFilter, "_disabled_", StringComparison.Ordinal))
+                    _logger.LogError("User not configured for LDAP Uid: {LdapUsername}", ldapUsername);
+                    throw new AuthenticationException(
+                        $"Automatic User Creation is disabled and there is no Jellyfin user for authorized Uid: {ldapUsername}");
+                }
+            }
+            else
+            {
+                // User exists; if the admin has enabled an AdminFilter, check if the user's
+                // 'IsAdministrator' matches the LDAP configuration and update if there is a difference.
+                if (!string.IsNullOrEmpty(AdminFilter) && !string.Equals(AdminFilter, "_disabled_", StringComparison.Ordinal))
+                {
+                    var isJellyfinAdmin = user.HasPermission(PermissionKind.IsAdministrator);
+                    if (isJellyfinAdmin != ldapIsAdmin)
                     {
-                        var isJellyfinAdmin = user.HasPermission(PermissionKind.IsAdministrator);
-                        if (isJellyfinAdmin != ldapIsAdmin)
-                        {
-                            _logger.LogDebug("Updating user {Username} admin status to: {LdapIsAdmin}.", ldapUsername, ldapIsAdmin);
-                            user.SetPermission(PermissionKind.IsAdministrator, ldapIsAdmin);
-                            await userManager.UpdateUserAsync(user).ConfigureAwait(false);
-                        }
+                        _logger.LogDebug("Updating user {Username} admin status to: {LdapIsAdmin}.", ldapUsername, ldapIsAdmin);
+                        user.SetPermission(PermissionKind.IsAdministrator, ldapIsAdmin);
+                        await userManager.UpdateUserAsync(user).ConfigureAwait(false);
                     }
                 }
-
-                return new ProviderAuthenticationResult { Username = ldapUsername };
             }
 
-            _logger.LogError("Error logging in, invalid LDAP username or password");
-            throw new AuthenticationException("Error completing LDAP login. Invalid username or password.");
+            return new ProviderAuthenticationResult { Username = ldapUsername };
         }
 
         /// <inheritdoc />
