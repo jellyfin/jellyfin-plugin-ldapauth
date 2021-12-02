@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Mime;
 using Jellyfin.Plugin.LDAP_Auth.Api.Models;
@@ -61,6 +63,52 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api
             var result = _ldapAuthenticationProvider.TestServerBind();
 
             return Ok(new { Result = result });
+        }
+
+        /// <summary>
+        /// Tests the LDAP user and admin filters.
+        /// </summary>
+        /// <remarks>
+        /// Accepts server connection configuration as JSON body.
+        /// </remarks>
+        /// <response code="200">Filters were queried.</response>
+        /// <response code="400">Body is missing required data.</response>
+        /// <response code="401">Failed to connect to LDAP server.</response>
+        /// <param name="body">The request body.</param>
+        /// <returns>
+        /// A <see cref="OkResult"/> containing the connection results if able to test,
+        /// a <see cref="UnauthorizedResult"/> if unable to connect to the LDAP server,
+        /// or a <see cref="BadRequestResult"/> if the request body is missing data.
+        /// </returns>
+        [HttpPost("TestLdapFilters")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public IActionResult TestLdapFilters([FromBody] UserFilterInfo body)
+        {
+            var configuration = LdapPlugin.Instance.Configuration;
+            configuration.LdapSearchFilter = body.LdapSearchFilter;
+            configuration.LdapAdminFilter = body.LdapAdminFilter;
+            LdapPlugin.Instance.UpdateConfiguration(configuration);
+
+            try
+            {
+                var users = _ldapAuthenticationProvider.GetFilteredUsers(configuration.LdapSearchFilter).ToHashSet();
+
+                HashSet<string> admins = new HashSet<string>();
+                if (!string.IsNullOrEmpty(configuration.LdapAdminFilter) && !string.Equals(configuration.LdapAdminFilter, "_disabled_", StringComparison.Ordinal))
+                {
+                    admins = _ldapAuthenticationProvider.GetFilteredUsers(configuration.LdapAdminFilter).ToHashSet();
+                }
+
+                var isSubset = admins.IsSubsetOf(users);
+
+                return Ok(new { Users = users.Count, Admins = admins.Count, IsSubset = isSubset });
+            }
+            catch (AuthenticationException e)
+            {
+                return Unauthorized(new { Message = e.Message });
+            }
         }
     }
 }

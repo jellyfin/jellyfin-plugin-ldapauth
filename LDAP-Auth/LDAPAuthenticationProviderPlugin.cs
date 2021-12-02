@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Jellyfin.Data.Entities;
@@ -168,6 +170,32 @@ namespace Jellyfin.Plugin.LDAP_Auth
             System.Net.Security.SslPolicyErrors sslPolicyErrors)
             => true;
 
+        /// <summary>
+        /// Returns the user search results for the provided filter.
+        /// </summary>
+        /// <param name="filter">The LDAP filter to search on.</param>
+        /// <returns>The user DNs from the search results.</returns>
+        /// <exception cref="AuthenticationException">Thrown on failure to connect or bind to LDAP server.</exception>
+        public IEnumerable<string> GetFilteredUsers(string filter)
+        {
+            using var ldapClient = ConnectToLdap();
+
+            ldapClient.Constraints = GetSearchConstraints(
+                ldapClient,
+                LdapPlugin.Instance.Configuration.LdapBindUser,
+                LdapPlugin.Instance.Configuration.LdapBindPassword);
+
+            var ldapUsers = ldapClient.Search(
+                LdapPlugin.Instance.Configuration.LdapBaseDn,
+                LdapConnection.ScopeSub,
+                filter,
+                LdapUsernameAttributes,
+                false);
+
+            // ToList to ensure enumeration is complete before the connection is closed
+            return ldapUsers.Select(u => u.Dn).ToList();
+        }
+
         private LdapEntry LocateLdapUser(string username)
         {
             var foundUser = false;
@@ -331,7 +359,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
 
                 response.Append("; Bind (");
                 ldapClient.Bind(configuration.LdapBindUser, configuration.LdapBindPassword);
-                response.Append("Success)");
+                response.Append(ldapClient.Bound ? "Success)" : "Anonymous)");
 
                 response.Append("; Base Search (");
                 var entries = ldapClient.Search(

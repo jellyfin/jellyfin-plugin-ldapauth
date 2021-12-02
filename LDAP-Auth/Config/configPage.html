@@ -77,6 +77,10 @@
                                         not change their active session permissions.
                                     </div>
                                 </div>
+                                <button id="btnTestFilters" is="emby-button" type="button" class="raised button block">
+                                    <span>Save and Test LDAP Filter Settings</span>
+                                </button>
+                                <div id="divFilterTestResults"></div>
                                 <div class="inputContainer fldExternalAddressFilter">
                                     <input is="emby-input" type="text" id="txtLdapSearchAttributes" required placeholder="uid, cn, mail, displayName" label="LDAP Attributes:" />
                                     <div class="fieldDescription">A comma-separated list of LDAP attributes to compare with entered usernames.</div>
@@ -146,6 +150,7 @@
                 divServerTestResults: document.querySelector("#divServerTestResults"),
                 txtLdapSearchFilter: document.querySelector("#txtLdapSearchFilter"),
                 txtLdapAdminFilter: document.querySelector("#txtLdapAdminFilter"),
+                divFilterTestResults: document.querySelector("#divFilterTestResults"),
                 txtLdapSearchAttributes: document.querySelector("#txtLdapSearchAttributes"),
                 chkEnableCaseInsensitiveUsername: document.querySelector("#chkEnableCaseInsensitiveUsername"),
                 chkEnableUserCreation: document.querySelector("#chkEnableUserCreation"),
@@ -250,9 +255,7 @@
                     config.LdapBindPassword = LdapConfigurationPage.txtLdapBindPassword.value;
                     config.LdapBaseDn = LdapConfigurationPage.txtLdapBaseDn.value;
                     config.LdapSearchFilter = LdapConfigurationPage.txtLdapSearchFilter.value;
-                    config.LdapAdminFilter =
-                        LdapConfigurationPage.txtLdapAdminFilter.value ?
-                            LdapConfigurationPage.txtLdapAdminFilter.value : '_disabled_';
+                    config.LdapAdminFilter = LdapConfigurationPage.txtLdapAdminFilter.value || '_disabled_';
                     config.LdapSearchAttributes = LdapConfigurationPage.txtLdapSearchAttributes.value;
                     config.EnableCaseInsensitiveUsername = LdapConfigurationPage.chkEnableCaseInsensitiveUsername.checked;
                     config.CreateUsersFromLdap = LdapConfigurationPage.chkEnableUserCreation.checked;
@@ -299,6 +302,34 @@
                 });
 
                 let url = ApiClient.getUrl('ldap/TestServerBind');
+                let data = JSON.stringify(serverConfig);
+                ApiClient.ajax({ type: 'POST', url, data, contentType: 'application/json' }).then(handler).catch(handler);
+            });
+
+            document.querySelector("#btnTestFilters").addEventListener("click", function (e) {
+                if (!form.reportValidity()) {
+                    return;
+                }
+
+                Dashboard.showLoadingMsg();
+                LdapConfigurationPage.divFilterTestResults.innerText = "";
+
+                const serverConfig = {
+                    LdapSearchFilter: LdapConfigurationPage.txtLdapSearchFilter.value,
+                    LdapAdminFilter: LdapConfigurationPage.txtLdapAdminFilter.value || '_disabled_',
+                }
+
+                const handler = response => response.json().then(res => {
+                    if (response.ok) {
+                        let subsetMessage = res.IsSubset ? "" : ", Warning: Not all Admins are Users";
+                        LdapConfigurationPage.divFilterTestResults.innerText = "Found " + res.Users + " user(s), " + res.Admins + " admin(s)" + subsetMessage;
+                    } else {
+                        LdapConfigurationPage.divFilterTestResults.innerText = "Failure: " + res.Message;
+                    }
+                    Dashboard.hideLoadingMsg();
+                });
+
+                let url = ApiClient.getUrl('ldap/TestLdapFilters');
                 let data = JSON.stringify(serverConfig);
                 ApiClient.ajax({ type: 'POST', url, data, contentType: 'application/json' }).then(handler).catch(handler);
             });
