@@ -233,15 +233,14 @@ namespace Jellyfin.Plugin.LDAP_Auth
 
         private LdapAttribute GetAttribute(LdapEntry userEntry, string attr)
         {
-            try
+            var attributeSet = userEntry.GetAttributeSet();
+            if (attributeSet.ContainsKey(attr))
             {
-                return userEntry.GetAttribute(attr);
+                return attributeSet.GetAttribute(attr);
             }
-            catch (Exception e)
-            {
-                _logger.LogWarning(e, "Error getting LDAP attribute");
-                return null;
-            }
+
+            _logger.LogWarning("LDAP attribute {attr} not found for user {user}", attr, userEntry.Dn);
+            return null;
         }
 
         private static LdapConnectionOptions GetConnectionOptions()
