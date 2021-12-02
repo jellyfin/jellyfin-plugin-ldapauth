@@ -41,7 +41,7 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api
         /// <response code="400">Body is missing required data.</response>
         /// <param name="body">The request body.</param>
         /// <returns>
-        /// A <see cref="OkResult"/> containing the connection results if able to test,
+        /// An <see cref="OkResult"/> containing the connection results if able to test,
         /// or a <see cref="BadRequestResult"/> if the request body is missing data.
         /// </returns>
         [HttpPost("TestServerBind")]
@@ -76,8 +76,8 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api
         /// <response code="401">Failed to connect to LDAP server.</response>
         /// <param name="body">The request body.</param>
         /// <returns>
-        /// A <see cref="OkResult"/> containing the connection results if able to test,
-        /// a <see cref="UnauthorizedResult"/> if unable to connect to the LDAP server,
+        /// An <see cref="OkResult"/> containing the connection results if able to test,
+        /// an <see cref="UnauthorizedResult"/> if unable to connect to the LDAP server,
         /// or a <see cref="BadRequestResult"/> if the request body is missing data.
         /// </returns>
         [HttpPost("TestLdapFilters")]
@@ -104,6 +104,48 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api
                 var isSubset = admins.IsSubsetOf(users);
 
                 return Ok(new { Users = users.Count, Admins = admins.Count, IsSubset = isSubset });
+            }
+            catch (AuthenticationException e)
+            {
+                return Unauthorized(new { Message = e.Message });
+            }
+        }
+
+        /// <summary>
+        /// Saves the LDAP search attributes and optionally tests a query string.
+        /// </summary>
+        /// <remarks>
+        /// Accepts search attributes and test query as JSON body.
+        /// </remarks>
+        /// <response code="200">No test requested or test completed.</response>
+        /// <response code="400">Body is missing required data.</response>
+        /// <response code="401">Failed to connect to LDAP server.</response>
+        /// <param name="body">The request body.</param>
+        /// <returns>
+        /// An <see cref="OkResult"/> containing the test results,
+        /// an <see cref="UnauthorizedResult"/> if unable to connect to the LDAP server,
+        /// or a <see cref="BadRequestResult"/> if the request body is missing data.
+        /// </returns>
+        [HttpPost("LdapUserSearch")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public IActionResult LdapUserSearch([FromBody] UserSearchAttributes body)
+        {
+            var configuration = LdapPlugin.Instance.Configuration;
+            configuration.LdapSearchAttributes = body.LdapSearchAttributes;
+            configuration.EnableCaseInsensitiveUsername = body.EnableCaseInsensitiveUsername;
+            LdapPlugin.Instance.UpdateConfiguration(configuration);
+
+            if (string.IsNullOrEmpty(body.TestSearchUsername))
+            {
+                return Ok(new { });
+            }
+
+            try
+            {
+                var user = _ldapAuthenticationProvider.LocateLdapUser(body.TestSearchUsername);
+                return Ok(new { Found = user?.Dn });
             }
             catch (AuthenticationException e)
             {

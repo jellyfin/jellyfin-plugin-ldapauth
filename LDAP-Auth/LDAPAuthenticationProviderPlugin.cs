@@ -62,6 +62,11 @@ namespace Jellyfin.Plugin.LDAP_Auth
             var userManager = _applicationHost.Resolve<IUserManager>();
             User user = null;
             var ldapUser = LocateLdapUser(username);
+            if (ldapUser == null)
+            {
+                _logger.LogError("Found no users matching {Username} in LDAP search", username);
+                throw new AuthenticationException("Found no LDAP users matching provided username.");
+            }
 
             var ldapUsername = GetAttribute(ldapUser, UsernameAttr)?.StringValue;
             _logger.LogDebug("Setting username: {LdapUsername}", ldapUsername);
@@ -196,7 +201,13 @@ namespace Jellyfin.Plugin.LDAP_Auth
             return ldapUsers.Select(u => u.Dn).ToList();
         }
 
-        private LdapEntry LocateLdapUser(string username)
+        /// <summary>
+        /// Attempts to locate the requested username on the ldap using the plugin-configured search and attribute settings.
+        /// </summary>
+        /// <param name="username">The username to search.</param>
+        /// <returns>The located user or null if not found.</returns>
+        /// <exception cref="AuthenticationException">Thrown on failure to connect or bind to LDAP server.</exception>
+        public LdapEntry LocateLdapUser(string username)
         {
             var foundUser = false;
             LdapEntry ldapUser = null;
@@ -218,11 +229,6 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 SearchFilter,
                 LdapUsernameAttributes,
                 false);
-            if (ldapUsers == null)
-            {
-                _logger.LogWarning("No LDAP users found from query");
-                throw new AuthenticationException("No users found in LDAP Query");
-            }
 
             _logger.LogDebug("Search: {BaseDn} {SearchFilter} @ {LdapServer}", LdapPlugin.Instance.Configuration.LdapBaseDn, SearchFilter, LdapPlugin.Instance.Configuration.LdapServer);
 
@@ -248,12 +254,6 @@ namespace Jellyfin.Plugin.LDAP_Auth
                         }
                     }
                 }
-            }
-
-            if (foundUser == false)
-            {
-                _logger.LogError("Found no users matching {Username} in LDAP search", username);
-                throw new AuthenticationException("Found no LDAP users matching provided username.");
             }
 
             return ldapUser;
