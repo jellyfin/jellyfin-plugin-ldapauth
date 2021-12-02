@@ -73,23 +73,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 _logger.LogWarning("User Manager could not find a user for LDAP User, this may not be fatal", e);
             }
 
-            using var ldapClient = new LdapConnection(GetConnectionOptions());
-            _logger.LogDebug("Trying bind as user {Dn}", ldapUser.Dn);
-            try
-            {
-                ldapClient.Connect(LdapPlugin.Instance.Configuration.LdapServer, LdapPlugin.Instance.Configuration.LdapPort);
-                if (LdapPlugin.Instance.Configuration.UseStartTls)
-                {
-                    ldapClient.StartTls();
-                }
-
-                ldapClient.Bind(ldapUser.Dn, password);
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "Failed to Connect or Bind to server as user {UserDn}", ldapUser.Dn);
-                throw new AuthenticationException("Error completing LDAP login. Invalid username or password.", e);
-            }
+            using var ldapClient = ConnectToLdap(ldapUser.Dn, password);
 
             if (!ldapClient.Bound)
             {
@@ -188,22 +172,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
         {
             var foundUser = false;
             LdapEntry ldapUser = null;
-            using var ldapClient = new LdapConnection(GetConnectionOptions());
-            try
-            {
-                ldapClient.Connect(LdapPlugin.Instance.Configuration.LdapServer, LdapPlugin.Instance.Configuration.LdapPort);
-                if (LdapPlugin.Instance.Configuration.UseStartTls)
-                {
-                    ldapClient.StartTls();
-                }
-
-                ldapClient.Bind(LdapPlugin.Instance.Configuration.LdapBindUser, LdapPlugin.Instance.Configuration.LdapBindPassword);
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "Failed to Connect or Bind to server");
-                throw new AuthenticationException("Failed to Connect or Bind to server");
-            }
+            using var ldapClient = ConnectToLdap();
 
             if (!ldapClient.Connected)
             {
@@ -299,6 +268,42 @@ namespace Jellyfin.Plugin.LDAP_Auth
             constraints.ReferralFollowing = true;
             constraints.setReferralHandler(new LdapAuthHandler(_logger, dn, password));
             return constraints;
+        }
+
+        private LdapConnection ConnectToLdap(string userDn = null, string userPassword = null)
+        {
+            bool initialConnection = userDn == null;
+            if (initialConnection)
+            {
+                userDn = LdapPlugin.Instance.Configuration.LdapBindUser;
+                userPassword = LdapPlugin.Instance.Configuration.LdapBindPassword;
+            }
+
+            // not using `using` for the ability to return ldapClient, need to dispose this manually on exception
+            var ldapClient = new LdapConnection(GetConnectionOptions());
+            try
+            {
+                ldapClient.Connect(LdapPlugin.Instance.Configuration.LdapServer, LdapPlugin.Instance.Configuration.LdapPort);
+                if (LdapPlugin.Instance.Configuration.UseStartTls)
+                {
+                    ldapClient.StartTls();
+                }
+
+                _logger.LogDebug("Trying bind as user {userDn}", userDn);
+                ldapClient.Bind(userDn, userPassword);
+            }
+            catch (Exception e)
+            {
+                ldapClient.Dispose();
+
+                _logger.LogError(e, "Failed to Connect or Bind to server as user {UserDn}", userDn);
+                var message = initialConnection
+                    ? "Failed to Connect or Bind to server."
+                    : "Error completing LDAP login. Invalid username or password.";
+                throw new AuthenticationException(message);
+            }
+
+            return ldapClient;
         }
 
         /// <summary>
