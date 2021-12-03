@@ -28,7 +28,7 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api
         /// <param name="appHost">The application host to get the LDAP Authentication Provider from.</param>
         public LdapController(IApplicationHost appHost)
         {
-            _ldapAuthenticationProvider = appHost.GetExports<IAuthenticationProvider>().OfType<LdapAuthenticationProviderPlugin>().FirstOrDefault();
+            _ldapAuthenticationProvider = appHost.GetExports<LdapAuthenticationProviderPlugin>(false).First();
         }
 
         /// <summary>

@@ -267,7 +267,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 return attributeSet.GetAttribute(attr);
             }
 
-            _logger.LogWarning("LDAP attribute {attr} not found for user {user}", attr, userEntry.Dn);
+            _logger.LogWarning("LDAP attribute {Attr} not found for user {User}", attr, userEntry.Dn);
             return null;
         }
 
@@ -316,7 +316,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     ldapClient.StartTls();
                 }
 
-                _logger.LogDebug("Trying bind as user {userDn}", userDn);
+                _logger.LogDebug("Trying bind as user {UserDn}", userDn);
                 ldapClient.Bind(userDn, userPassword);
             }
             catch (Exception e)
