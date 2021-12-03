@@ -62,7 +62,7 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api
 
             var result = _ldapAuthenticationProvider.TestServerBind();
 
-            return Ok(new { Result = result });
+            return Ok(new ServerTestResponse { Result = result });
         }
 
         /// <summary>
@@ -93,7 +93,10 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api
 
             try
             {
+                var response = new LdapFilterResponse();
+
                 var users = _ldapAuthenticationProvider.GetFilteredUsers(configuration.LdapSearchFilter).ToHashSet();
+                response.Users = users.Count;
 
                 HashSet<string> admins = new HashSet<string>();
                 if (!string.IsNullOrEmpty(configuration.LdapAdminFilter) && !string.Equals(configuration.LdapAdminFilter, "_disabled_", StringComparison.Ordinal))
@@ -101,13 +104,14 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api
                     admins = _ldapAuthenticationProvider.GetFilteredUsers(configuration.LdapAdminFilter).ToHashSet();
                 }
 
-                var isSubset = admins.IsSubsetOf(users);
+                response.Admins = admins.Count;
+                response.IsSubset = admins.IsSubsetOf(users);
 
-                return Ok(new { Users = users.Count, Admins = admins.Count, IsSubset = isSubset });
+                return Ok(response);
             }
             catch (AuthenticationException e)
             {
-                return Unauthorized(new { Message = e.Message });
+                return Unauthorized(new ConnectErrorResponse(e.Message));
             }
         }
 
@@ -137,20 +141,23 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api
             configuration.EnableCaseInsensitiveUsername = body.EnableCaseInsensitiveUsername;
             LdapPlugin.Instance.UpdateConfiguration(configuration);
 
+            var response = new UserSearchResponse();
             if (string.IsNullOrEmpty(body.TestSearchUsername))
             {
-                return Ok(new { });
+                return Ok(response);
             }
 
             try
             {
                 var user = _ldapAuthenticationProvider.LocateLdapUser(body.TestSearchUsername);
-                return Ok(new { Found = user?.Dn });
+                response.LocatedDn = user?.Dn;
             }
             catch (AuthenticationException e)
             {
-                return Unauthorized(new { Message = e.Message });
+                return Unauthorized(new ConnectErrorResponse(e.Message));
             }
+
+            return Ok(response);
         }
     }
 }

@@ -361,9 +361,9 @@
 
                 const handler = response => response.json().then(res => {
                     if (response.ok) {
-                        LdapConfigurationPage.divSearchTestResults.innerText = res.Found === undefined
+                        LdapConfigurationPage.divSearchTestResults.innerText = res.LocatedDn === undefined
                             ? "No user found"
-                            : "Found user: " + res.Found;
+                            : "Found user: " + res.LocatedDn;
                     } else {
                         LdapConfigurationPage.divSearchTestResults.innerText = "Failure: " + res.Message;
                     }
