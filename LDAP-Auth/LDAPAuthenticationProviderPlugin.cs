@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Jellyfin.Data.Entities;
 using Jellyfin.Data.Enums;
+using Jellyfin.Plugin.LDAP_Auth.Api.Models;
 using MediaBrowser.Common;
 using MediaBrowser.Controller.Authentication;
 using MediaBrowser.Controller.Library;
@@ -337,31 +337,34 @@ namespace Jellyfin.Plugin.LDAP_Auth
         /// Tests the server connection and bind settings.
         /// </summary>
         /// <returns>A string reporting the result of the sequence of connection steps.</returns>
-        public string TestServerBind()
+        public ServerTestResponse TestServerBind()
         {
+            const string started = "Testing...";
+            const string success = "Success";
+
             var configuration = LdapPlugin.Instance.Configuration;
             var connectionOptions = GetConnectionOptions();
-            var response = new StringBuilder();
+            var response = new ServerTestResponse();
 
             try
             {
-                response.Append("Connect (");
+                response.Connect = started;
                 using var ldapClient = new LdapConnection(connectionOptions);
                 ldapClient.Connect(configuration.LdapServer, configuration.LdapPort);
-                response.Append("Success)");
+                response.Connect = success;
 
                 if (configuration.UseStartTls)
                 {
-                    response.Append("; Set StartTLS (");
+                    response.StartTls = started;
                     ldapClient.StartTls();
-                    response.Append("Success)");
+                    response.StartTls = success;
                 }
 
-                response.Append("; Bind (");
+                response.Bind = started;
                 ldapClient.Bind(configuration.LdapBindUser, configuration.LdapBindPassword);
-                response.Append(ldapClient.Bound ? "Success)" : "Anonymous)");
+                response.Bind = ldapClient.Bound ? success : "Anonymous";
 
-                response.Append("; Base Search (");
+                response.BaseSearch = started;
                 var entries = ldapClient.Search(
                     configuration.LdapBaseDn,
                     LdapConnection.ScopeSub,
@@ -377,15 +380,15 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     count++;
                 }
 
-                response.Append("Found ").Append(count).Append(" Entities)");
+                response.BaseSearch = $"Found {count} Entities";
             }
             catch (Exception e)
             {
                 _logger.LogWarning(e, "Ldap Test Failed to Connect or Bind to server");
-                response.Append("Error: ").Append(e.Message).Append(')');
+                response.Error = e.Message;
             }
 
-            return response.ToString();
+            return response;
         }
     }
 }

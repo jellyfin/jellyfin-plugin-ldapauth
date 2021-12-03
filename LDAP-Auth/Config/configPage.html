@@ -305,9 +305,46 @@
 
                 const handler = response => response.json().then(res => {
                     if (response.ok) {
-                        LdapConfigurationPage.divServerTestResults.innerText = res.Result;
+                        const failureString = "Testing...";
+                        let failed = false;
+                        let testString = "Connect"
+                        if (res.Connect === failureString) {
+                            failed = true;
+                            testString += ": " + res.Error;
+                        } else {
+                            testString += " (" + res.Connect + ")";
+                        }
+                        if (!failed && res.StartTls) {
+                            testString += "; Set StartTLS"
+                            if (res.StartTls === failureString) {
+                                failed = true;
+                                testString += ": " + res.Error;
+                            } else {
+                                testString += " (" + res.StartTls + ")";
+                            }
+                        }
+                        if (!failed) {
+                            testString += "; Bind"
+                            if (res.Bind === failureString) {
+                                failed = true;
+                                testString += ": " + res.Error;
+                            } else {
+                                testString += " (" + res.Bind + ")";
+                            }
+                        }
+                        if (!failed) {
+                            testString += "; Base Search"
+                            if (res.BaseSearch === failureString) {
+                                failed = true;
+                                testString += ": " + res.Error;
+                            } else {
+                                testString += " (" + res.BaseSearch + ")";
+                            }
+                        }
+
+                        LdapConfigurationPage.divServerTestResults.innerText = testString;
                     } else {
-                        LdapConfigurationPage.divServerTestResults.innerText = "Failure: " + res.Result;
+                        LdapConfigurationPage.divServerTestResults.innerText = "Failure: " + JSON.stringify(res.errors);
                     }
                     Dashboard.hideLoadingMsg();
                 });
@@ -334,8 +371,10 @@
                     if (response.ok) {
                         let subsetMessage = res.IsSubset ? "" : ", Warning: Not all Admins are Users";
                         LdapConfigurationPage.divFilterTestResults.innerText = "Found " + res.Users + " user(s), " + res.Admins + " admin(s)" + subsetMessage;
-                    } else {
+                    } else if (res.Message) {
                         LdapConfigurationPage.divFilterTestResults.innerText = "Failure: " + res.Message;
+                    } else {
+                        LdapConfigurationPage.divFilterTestResults.innerText = "Failure: " + JSON.stringify(res.errors);
                     }
                     Dashboard.hideLoadingMsg();
                 });
@@ -364,8 +403,10 @@
                         LdapConfigurationPage.divSearchTestResults.innerText = res.LocatedDn === undefined
                             ? "No user found"
                             : "Found user: " + res.LocatedDn;
-                    } else {
+                    } else if (res.Message) {
                         LdapConfigurationPage.divSearchTestResults.innerText = "Failure: " + res.Message;
+                    } else {
+                        LdapConfigurationPage.divSearchTestResults.innerText = "Failure: " + JSON.stringify(res.errors);
                     }
                     Dashboard.hideLoadingMsg();
                 });

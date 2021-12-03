@@ -60,9 +60,7 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api
             configuration.LdapBaseDn = body.LdapBaseDn;
             LdapPlugin.Instance.UpdateConfiguration(configuration);
 
-            var result = _ldapAuthenticationProvider.TestServerBind();
-
-            return Ok(new ServerTestResponse { Result = result });
+            return Ok(_ldapAuthenticationProvider.TestServerBind());
         }
 
         /// <summary>
