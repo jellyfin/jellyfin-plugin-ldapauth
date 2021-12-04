@@ -99,18 +99,26 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     ldapUser.Dn,
                     password);
 
-                // Search the current user DN with the adminFilter
-                var ldapUsers = ldapClient.Search(
-                    ldapUser.Dn,
-                    LdapConnection.ScopeBase,
-                    AdminFilter,
-                    LdapUsernameAttributes,
-                    false);
-
-                // If we got non-zero, then the filter matched and the user is an admin
-                if (ldapUsers.HasMore())
+                try
                 {
-                    ldapIsAdmin = true;
+                    // Search the current user DN with the adminFilter
+                    var ldapUsers = ldapClient.Search(
+                        ldapUser.Dn,
+                        LdapConnection.ScopeBase,
+                        AdminFilter,
+                        LdapUsernameAttributes,
+                        false);
+
+                    // If we got non-zero, then the filter matched and the user is an admin
+                    if (ldapUsers.HasMore())
+                    {
+                        ldapIsAdmin = true;
+                    }
+                }
+                catch (LdapException e)
+                {
+                    _logger.LogError(e, "Failed to check for admin with: {Filter}", SearchFilter);
+                    throw new AuthenticationException("Error completing LDAP login while applying admin filter.");
                 }
             }
 
@@ -181,6 +189,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
         /// <param name="filter">The LDAP filter to search on.</param>
         /// <returns>The user DNs from the search results.</returns>
         /// <exception cref="AuthenticationException">Thrown on failure to connect or bind to LDAP server.</exception>
+        /// <exception cref="LdapException">Thrown on failure to execute the search.</exception>
         public IEnumerable<string> GetFilteredUsers(string filter)
         {
             using var ldapClient = ConnectToLdap();
@@ -190,15 +199,23 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 LdapPlugin.Instance.Configuration.LdapBindUser,
                 LdapPlugin.Instance.Configuration.LdapBindPassword);
 
-            var ldapUsers = ldapClient.Search(
-                LdapPlugin.Instance.Configuration.LdapBaseDn,
-                LdapConnection.ScopeSub,
-                filter,
-                LdapUsernameAttributes,
-                false);
+            try
+            {
+                var ldapUsers = ldapClient.Search(
+                    LdapPlugin.Instance.Configuration.LdapBaseDn,
+                    LdapConnection.ScopeSub,
+                    filter,
+                    LdapUsernameAttributes,
+                    false);
 
-            // ToList to ensure enumeration is complete before the connection is closed
-            return ldapUsers.Select(u => u.Dn).ToList();
+                // ToList to ensure enumeration is complete before the connection is closed
+                return ldapUsers.Select(u => u.Dn).ToList();
+            }
+            catch (LdapException e)
+            {
+                _logger.LogWarning(e, "Failed to filter users with: {Filter}", filter);
+                throw;
+            }
         }
 
         /// <summary>
@@ -223,12 +240,21 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 LdapPlugin.Instance.Configuration.LdapBindUser,
                 LdapPlugin.Instance.Configuration.LdapBindPassword);
 
-            var ldapUsers = ldapClient.Search(
-                LdapPlugin.Instance.Configuration.LdapBaseDn,
-                LdapConnection.ScopeSub,
-                SearchFilter,
-                LdapUsernameAttributes,
-                false);
+            ILdapSearchResults ldapUsers;
+            try
+            {
+                ldapUsers = ldapClient.Search(
+                    LdapPlugin.Instance.Configuration.LdapBaseDn,
+                    LdapConnection.ScopeSub,
+                    SearchFilter,
+                    LdapUsernameAttributes,
+                    false);
+            }
+            catch (LdapException e)
+            {
+                _logger.LogError(e, "Failed to filter users with: {Filter}", SearchFilter);
+                throw new AuthenticationException("Error completing LDAP login while applying user filter.");
+            }
 
             _logger.LogDebug("Search: {BaseDn} {SearchFilter} @ {LdapServer}", LdapPlugin.Instance.Configuration.LdapBaseDn, SearchFilter, LdapPlugin.Instance.Configuration.LdapServer);
 
@@ -339,8 +365,8 @@ namespace Jellyfin.Plugin.LDAP_Auth
         /// <returns>A string reporting the result of the sequence of connection steps.</returns>
         public ServerTestResponse TestServerBind()
         {
-            const string started = "Testing...";
-            const string success = "Success";
+            const string Started = "Testing...";
+            const string Success = "Success";
 
             var configuration = LdapPlugin.Instance.Configuration;
             var connectionOptions = GetConnectionOptions();
@@ -348,23 +374,23 @@ namespace Jellyfin.Plugin.LDAP_Auth
 
             try
             {
-                response.Connect = started;
+                response.Connect = Started;
                 using var ldapClient = new LdapConnection(connectionOptions);
                 ldapClient.Connect(configuration.LdapServer, configuration.LdapPort);
-                response.Connect = success;
+                response.Connect = Success;
 
                 if (configuration.UseStartTls)
                 {
-                    response.StartTls = started;
+                    response.StartTls = Started;
                     ldapClient.StartTls();
-                    response.StartTls = success;
+                    response.StartTls = Success;
                 }
 
-                response.Bind = started;
+                response.Bind = Started;
                 ldapClient.Bind(configuration.LdapBindUser, configuration.LdapBindPassword);
-                response.Bind = ldapClient.Bound ? success : "Anonymous";
+                response.Bind = ldapClient.Bound ? Success : "Anonymous";
 
-                response.BaseSearch = started;
+                response.BaseSearch = Started;
                 var entries = ldapClient.Search(
                     configuration.LdapBaseDn,
                     LdapConnection.ScopeSub,

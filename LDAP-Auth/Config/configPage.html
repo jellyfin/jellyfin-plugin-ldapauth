@@ -367,17 +367,25 @@
                     LdapAdminFilter: LdapConfigurationPage.txtLdapAdminFilter.value || '_disabled_',
                 }
 
-                const handler = response => response.json().then(res => {
-                    if (response.ok) {
-                        let subsetMessage = res.IsSubset ? "" : ", Warning: Not all Admins are Users";
-                        LdapConfigurationPage.divFilterTestResults.innerText = "Found " + res.Users + " user(s), " + res.Admins + " admin(s)" + subsetMessage;
-                    } else if (res.Message) {
-                        LdapConfigurationPage.divFilterTestResults.innerText = "Failure: " + res.Message;
+                const handler = response => {
+                    if (response.ok || response.status === 400 || response.status === 401) {
+                        response.json().then(res => {
+                            if (response.ok) {
+                                let subsetMessage = res.IsSubset ? "" : ", Warning: Not all Admins are Users";
+                                LdapConfigurationPage.divFilterTestResults.innerText = "Found " + res.Users + " user(s), " + res.Admins + " admin(s)" + subsetMessage;
+                            } else if (res.Message) {
+                                LdapConfigurationPage.divFilterTestResults.innerText = "Failure: " + res.Message;
+                            } else {
+                                LdapConfigurationPage.divFilterTestResults.innerText = "Failure: " + JSON.stringify(res.errors);
+                            }
+                        });
                     } else {
-                        LdapConfigurationPage.divFilterTestResults.innerText = "Failure: " + JSON.stringify(res.errors);
+                        response.text().then(res => {
+                            LdapConfigurationPage.divFilterTestResults.innerText = "Failure: " + res;
+                        });
                     }
                     Dashboard.hideLoadingMsg();
-                });
+                }
 
                 let url = ApiClient.getUrl('ldap/TestLdapFilters');
                 let data = JSON.stringify(configUpdate);
@@ -398,18 +406,26 @@
                     TestSearchUsername: LdapConfigurationPage.txtLdapSearchTest.value,
                 }
 
-                const handler = response => response.json().then(res => {
-                    if (response.ok) {
-                        LdapConfigurationPage.divSearchTestResults.innerText = res.LocatedDn === undefined
-                            ? "No user found"
-                            : "Found user: " + res.LocatedDn;
-                    } else if (res.Message) {
-                        LdapConfigurationPage.divSearchTestResults.innerText = "Failure: " + res.Message;
+                const handler = response => {
+                    if (response.ok || response.status === 400 || response.status === 401) {
+                        response.json().then(res => {
+                            if (response.ok) {
+                                LdapConfigurationPage.divSearchTestResults.innerText = res.LocatedDn === undefined
+                                    ? "No user found"
+                                    : "Found user: " + res.LocatedDn;
+                            } else if (res.Message) {
+                                LdapConfigurationPage.divSearchTestResults.innerText = "Failure: " + res.Message;
+                            } else {
+                                LdapConfigurationPage.divSearchTestResults.innerText = "Failure: " + JSON.stringify(res.errors);
+                            }
+                        });
                     } else {
-                        LdapConfigurationPage.divSearchTestResults.innerText = "Failure: " + JSON.stringify(res.errors);
+                        response.text().then(res => {
+                            LdapConfigurationPage.divSearchTestResults.innerText = "Failure: " + res;
+                        });
                     }
                     Dashboard.hideLoadingMsg();
-                });
+                }
 
                 let url = ApiClient.getUrl('ldap/LdapUserSearch');
                 let data = JSON.stringify(configUpdate);

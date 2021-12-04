@@ -2,12 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Mime;
+using System.Text.RegularExpressions;
 using Jellyfin.Plugin.LDAP_Auth.Api.Models;
 using MediaBrowser.Common;
 using MediaBrowser.Controller.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Novell.Directory.Ldap;
 
 namespace Jellyfin.Plugin.LDAP_Auth.Api
 {
@@ -70,13 +72,13 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api
         /// Accepts server connection configuration as JSON body.
         /// </remarks>
         /// <response code="200">Filters were queried.</response>
-        /// <response code="400">Body is missing required data.</response>
+        /// <response code="400">Body is missing required data or filter is invalid.</response>
         /// <response code="401">Failed to connect to LDAP server.</response>
         /// <param name="body">The request body.</param>
         /// <returns>
         /// An <see cref="OkResult"/> containing the connection results if able to test,
         /// an <see cref="UnauthorizedResult"/> if unable to connect to the LDAP server,
-        /// or a <see cref="BadRequestResult"/> if the request body is missing data.
+        /// or a <see cref="BadRequestResult"/> if the request body is missing data or filter is invalid.
         /// </returns>
         [HttpPost("TestLdapFilters")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -89,12 +91,14 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api
             configuration.LdapAdminFilter = body.LdapAdminFilter;
             LdapPlugin.Instance.UpdateConfiguration(configuration);
 
+            var usersComplete = false;
             try
             {
                 var response = new LdapFilterResponse();
 
                 var users = _ldapAuthenticationProvider.GetFilteredUsers(configuration.LdapSearchFilter).ToHashSet();
                 response.Users = users.Count;
+                usersComplete = true;
 
                 HashSet<string> admins = new HashSet<string>();
                 if (!string.IsNullOrEmpty(configuration.LdapAdminFilter) && !string.Equals(configuration.LdapAdminFilter, "_disabled_", StringComparison.Ordinal))
@@ -109,7 +113,19 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api
             }
             catch (AuthenticationException e)
             {
-                return Unauthorized(new ConnectErrorResponse(e.Message));
+                return Unauthorized(new LdapTestErrorResponse(e.Message));
+            }
+            catch (LdapException e)
+            {
+                var filterLabel = usersComplete ? "Admin Filter: " : "User Filter: ";
+
+                var filterMessage = Regex.Match(e.ToString(), @"LdapLocalException: (?<message>.*) \(\d+\) Filter Error");
+                if (filterMessage.Success)
+                {
+                    return BadRequest(new LdapTestErrorResponse(filterLabel + filterMessage.Groups["message"].Value));
+                }
+
+                return BadRequest(new LdapTestErrorResponse(filterLabel + e.Message));
             }
         }
 
@@ -121,11 +137,11 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api
         /// </remarks>
         /// <response code="200">No test requested or test completed.</response>
         /// <response code="400">Body is missing required data.</response>
-        /// <response code="401">Failed to connect to LDAP server.</response>
+        /// <response code="401">Failed to connect to LDAP server or user filter is invalid.</response>
         /// <param name="body">The request body.</param>
         /// <returns>
         /// An <see cref="OkResult"/> containing the test results,
-        /// an <see cref="UnauthorizedResult"/> if unable to connect to the LDAP server,
+        /// an <see cref="UnauthorizedResult"/> if unable to connect to the LDAP server or user filter is invalid,
         /// or a <see cref="BadRequestResult"/> if the request body is missing data.
         /// </returns>
         [HttpPost("LdapUserSearch")]
@@ -152,7 +168,7 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api
             }
             catch (AuthenticationException e)
             {
-                return Unauthorized(new ConnectErrorResponse(e.Message));
+                return Unauthorized(new LdapTestErrorResponse(e.Message));
             }
 
             return Ok(response);
