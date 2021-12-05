@@ -1,8 +1,10 @@
 using System;
-using System.Text;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Jellyfin.Data.Entities;
 using Jellyfin.Data.Enums;
+using Jellyfin.Plugin.LDAP_Auth.Api.Models;
 using MediaBrowser.Common;
 using MediaBrowser.Controller.Authentication;
 using MediaBrowser.Controller.Library;
@@ -60,6 +62,11 @@ namespace Jellyfin.Plugin.LDAP_Auth
             var userManager = _applicationHost.Resolve<IUserManager>();
             User user = null;
             var ldapUser = LocateLdapUser(username);
+            if (ldapUser == null)
+            {
+                _logger.LogError("Found no users matching {Username} in LDAP search", username);
+                throw new AuthenticationException("Found no LDAP users matching provided username.");
+            }
 
             var ldapUsername = GetAttribute(ldapUser, UsernameAttr)?.StringValue;
             _logger.LogDebug("Setting username: {LdapUsername}", ldapUsername);
@@ -73,37 +80,27 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 _logger.LogWarning("User Manager could not find a user for LDAP User, this may not be fatal", e);
             }
 
-            using var ldapClient = new LdapConnection(GetConnectionOptions());
-            _logger.LogDebug("Trying bind as user {Dn}", ldapUser.Dn);
-            try
-            {
-                ldapClient.Connect(LdapPlugin.Instance.Configuration.LdapServer, LdapPlugin.Instance.Configuration.LdapPort);
-                if (LdapPlugin.Instance.Configuration.UseStartTls)
-                {
-                    ldapClient.StartTls();
-                }
+            using var ldapClient = ConnectToLdap(ldapUser.Dn, password);
 
-                ldapClient.Bind(ldapUser.Dn, password);
-            }
-            catch (Exception e)
+            if (!ldapClient.Bound)
             {
-                _logger.LogError(e, "Failed to Connect or Bind to server as user {UserDn}", ldapUser.Dn);
-                throw new AuthenticationException("Error completing LDAP login. Invalid username or password.", e);
+                _logger.LogError("Error logging in, invalid LDAP username or password");
+                throw new AuthenticationException("Error completing LDAP login. Invalid username or password.");
             }
 
-            if (ldapClient.Bound)
+            // Determine if the user should be an administrator
+            var ldapIsAdmin = false;
+
+            if (!string.IsNullOrEmpty(AdminFilter) && !string.Equals(AdminFilter, "_disabled_", StringComparison.Ordinal))
             {
-                // Determine if the user should be an administrator
-                var ldapIsAdmin = false;
+                // Automatically follow referrals
+                ldapClient.Constraints = GetSearchConstraints(
+                    ldapClient,
+                    ldapUser.Dn,
+                    password);
 
-                if (!string.IsNullOrEmpty(AdminFilter) && !string.Equals(AdminFilter, "_disabled_", StringComparison.Ordinal))
+                try
                 {
-                    // Automatically follow referrals
-                    ldapClient.Constraints = GetSearchConstraints(
-                        ldapClient,
-                        ldapUser.Dn,
-                        password);
-
                     // Search the current user DN with the adminFilter
                     var ldapUsers = ldapClient.Search(
                         ldapUser.Dn,
@@ -118,51 +115,53 @@ namespace Jellyfin.Plugin.LDAP_Auth
                         ldapIsAdmin = true;
                     }
                 }
-
-                if (user == null)
+                catch (LdapException e)
                 {
-                    _logger.LogDebug("Creating new user {Username} - is admin? {IsAdmin}", ldapUsername, ldapIsAdmin);
-                    if (LdapPlugin.Instance.Configuration.CreateUsersFromLdap)
-                    {
-                        user = await userManager.CreateUserAsync(ldapUsername).ConfigureAwait(false);
-                        user.AuthenticationProviderId = GetType().FullName;
-                        user.SetPermission(PermissionKind.IsAdministrator, ldapIsAdmin);
-                        user.SetPermission(PermissionKind.EnableAllFolders, LdapPlugin.Instance.Configuration.EnableAllFolders);
-                        if (!LdapPlugin.Instance.Configuration.EnableAllFolders)
-                        {
-                            user.SetPreference(PreferenceKind.EnabledFolders, LdapPlugin.Instance.Configuration.EnabledFolders);
-                        }
+                    _logger.LogError(e, "Failed to check for admin with: {Filter}", SearchFilter);
+                    throw new AuthenticationException("Error completing LDAP login while applying admin filter.");
+                }
+            }
 
-                        await userManager.UpdateUserAsync(user).ConfigureAwait(false);
-                    }
-                    else
+            if (user == null)
+            {
+                _logger.LogDebug("Creating new user {Username} - is admin? {IsAdmin}", ldapUsername, ldapIsAdmin);
+                if (LdapPlugin.Instance.Configuration.CreateUsersFromLdap)
+                {
+                    user = await userManager.CreateUserAsync(ldapUsername).ConfigureAwait(false);
+                    user.AuthenticationProviderId = GetType().FullName;
+                    user.SetPermission(PermissionKind.IsAdministrator, ldapIsAdmin);
+                    user.SetPermission(PermissionKind.EnableAllFolders, LdapPlugin.Instance.Configuration.EnableAllFolders);
+                    if (!LdapPlugin.Instance.Configuration.EnableAllFolders)
                     {
-                        _logger.LogError("User not configured for LDAP Uid: {LdapUsername}", ldapUsername);
-                        throw new AuthenticationException(
-                            $"Automatic User Creation is disabled and there is no Jellyfin user for authorized Uid: {ldapUsername}");
+                        user.SetPreference(PreferenceKind.EnabledFolders, LdapPlugin.Instance.Configuration.EnabledFolders);
                     }
+
+                    await userManager.UpdateUserAsync(user).ConfigureAwait(false);
                 }
                 else
                 {
-                    // User exists; if the admin has enabled an AdminFilter, check if the user's
-                    // 'IsAdministrator' matches the LDAP configuration and update if there is a difference.
-                    if (!string.IsNullOrEmpty(AdminFilter) && !string.Equals(AdminFilter, "_disabled_", StringComparison.Ordinal))
+                    _logger.LogError("User not configured for LDAP Uid: {LdapUsername}", ldapUsername);
+                    throw new AuthenticationException(
+                        $"Automatic User Creation is disabled and there is no Jellyfin user for authorized Uid: {ldapUsername}");
+                }
+            }
+            else
+            {
+                // User exists; if the admin has enabled an AdminFilter, check if the user's
+                // 'IsAdministrator' matches the LDAP configuration and update if there is a difference.
+                if (!string.IsNullOrEmpty(AdminFilter) && !string.Equals(AdminFilter, "_disabled_", StringComparison.Ordinal))
+                {
+                    var isJellyfinAdmin = user.HasPermission(PermissionKind.IsAdministrator);
+                    if (isJellyfinAdmin != ldapIsAdmin)
                     {
-                        var isJellyfinAdmin = user.HasPermission(PermissionKind.IsAdministrator);
-                        if (isJellyfinAdmin != ldapIsAdmin)
-                        {
-                            _logger.LogDebug("Updating user {Username} admin status to: {LdapIsAdmin}.", ldapUsername, ldapIsAdmin);
-                            user.SetPermission(PermissionKind.IsAdministrator, ldapIsAdmin);
-                            await userManager.UpdateUserAsync(user).ConfigureAwait(false);
-                        }
+                        _logger.LogDebug("Updating user {Username} admin status to: {LdapIsAdmin}.", ldapUsername, ldapIsAdmin);
+                        user.SetPermission(PermissionKind.IsAdministrator, ldapIsAdmin);
+                        await userManager.UpdateUserAsync(user).ConfigureAwait(false);
                     }
                 }
-
-                return new ProviderAuthenticationResult { Username = ldapUsername };
             }
 
-            _logger.LogError("Error logging in, invalid LDAP username or password");
-            throw new AuthenticationException("Error completing LDAP login. Invalid username or password.");
+            return new ProviderAuthenticationResult { Username = ldapUsername };
         }
 
         /// <inheritdoc />
@@ -184,26 +183,52 @@ namespace Jellyfin.Plugin.LDAP_Auth
             System.Net.Security.SslPolicyErrors sslPolicyErrors)
             => true;
 
-        private LdapEntry LocateLdapUser(string username)
+        /// <summary>
+        /// Returns the user search results for the provided filter.
+        /// </summary>
+        /// <param name="filter">The LDAP filter to search on.</param>
+        /// <returns>The user DNs from the search results.</returns>
+        /// <exception cref="AuthenticationException">Thrown on failure to connect or bind to LDAP server.</exception>
+        /// <exception cref="LdapException">Thrown on failure to execute the search.</exception>
+        public IEnumerable<string> GetFilteredUsers(string filter)
+        {
+            using var ldapClient = ConnectToLdap();
+
+            ldapClient.Constraints = GetSearchConstraints(
+                ldapClient,
+                LdapPlugin.Instance.Configuration.LdapBindUser,
+                LdapPlugin.Instance.Configuration.LdapBindPassword);
+
+            try
+            {
+                var ldapUsers = ldapClient.Search(
+                    LdapPlugin.Instance.Configuration.LdapBaseDn,
+                    LdapConnection.ScopeSub,
+                    filter,
+                    LdapUsernameAttributes,
+                    false);
+
+                // ToList to ensure enumeration is complete before the connection is closed
+                return ldapUsers.Select(u => u.Dn).ToList();
+            }
+            catch (LdapException e)
+            {
+                _logger.LogWarning(e, "Failed to filter users with: {Filter}", filter);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Attempts to locate the requested username on the ldap using the plugin-configured search and attribute settings.
+        /// </summary>
+        /// <param name="username">The username to search.</param>
+        /// <returns>The located user or null if not found.</returns>
+        /// <exception cref="AuthenticationException">Thrown on failure to connect or bind to LDAP server.</exception>
+        public LdapEntry LocateLdapUser(string username)
         {
             var foundUser = false;
             LdapEntry ldapUser = null;
-            using var ldapClient = new LdapConnection(GetConnectionOptions());
-            try
-            {
-                ldapClient.Connect(LdapPlugin.Instance.Configuration.LdapServer, LdapPlugin.Instance.Configuration.LdapPort);
-                if (LdapPlugin.Instance.Configuration.UseStartTls)
-                {
-                    ldapClient.StartTls();
-                }
-
-                ldapClient.Bind(LdapPlugin.Instance.Configuration.LdapBindUser, LdapPlugin.Instance.Configuration.LdapBindPassword);
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "Failed to Connect or Bind to server");
-                throw new AuthenticationException("Failed to Connect or Bind to server");
-            }
+            using var ldapClient = ConnectToLdap();
 
             if (!ldapClient.Connected)
             {
@@ -215,16 +240,20 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 LdapPlugin.Instance.Configuration.LdapBindUser,
                 LdapPlugin.Instance.Configuration.LdapBindPassword);
 
-            var ldapUsers = ldapClient.Search(
-                LdapPlugin.Instance.Configuration.LdapBaseDn,
-                LdapConnection.ScopeSub,
-                SearchFilter,
-                LdapUsernameAttributes,
-                false);
-            if (ldapUsers == null)
+            ILdapSearchResults ldapUsers;
+            try
             {
-                _logger.LogWarning("No LDAP users found from query");
-                throw new AuthenticationException("No users found in LDAP Query");
+                ldapUsers = ldapClient.Search(
+                    LdapPlugin.Instance.Configuration.LdapBaseDn,
+                    LdapConnection.ScopeSub,
+                    SearchFilter,
+                    LdapUsernameAttributes,
+                    false);
+            }
+            catch (LdapException e)
+            {
+                _logger.LogError(e, "Failed to filter users with: {Filter}", SearchFilter);
+                throw new AuthenticationException("Error completing LDAP login while applying user filter.");
             }
 
             _logger.LogDebug("Search: {BaseDn} {SearchFilter} @ {LdapServer}", LdapPlugin.Instance.Configuration.LdapBaseDn, SearchFilter, LdapPlugin.Instance.Configuration.LdapServer);
@@ -253,26 +282,19 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 }
             }
 
-            if (foundUser == false)
-            {
-                _logger.LogError("Found no users matching {Username} in LDAP search", username);
-                throw new AuthenticationException("Found no LDAP users matching provided username.");
-            }
-
             return ldapUser;
         }
 
         private LdapAttribute GetAttribute(LdapEntry userEntry, string attr)
         {
-            try
+            var attributeSet = userEntry.GetAttributeSet();
+            if (attributeSet.ContainsKey(attr))
             {
-                return userEntry.GetAttribute(attr);
+                return attributeSet.GetAttribute(attr);
             }
-            catch (Exception e)
-            {
-                _logger.LogWarning(e, "Error getting LDAP attribute");
-                return null;
-            }
+
+            _logger.LogWarning("LDAP attribute {Attr} not found for user {User}", attr, userEntry.Dn);
+            return null;
         }
 
         private static LdapConnectionOptions GetConnectionOptions()
@@ -301,35 +323,74 @@ namespace Jellyfin.Plugin.LDAP_Auth
             return constraints;
         }
 
+        private LdapConnection ConnectToLdap(string userDn = null, string userPassword = null)
+        {
+            bool initialConnection = userDn == null;
+            if (initialConnection)
+            {
+                userDn = LdapPlugin.Instance.Configuration.LdapBindUser;
+                userPassword = LdapPlugin.Instance.Configuration.LdapBindPassword;
+            }
+
+            // not using `using` for the ability to return ldapClient, need to dispose this manually on exception
+            var ldapClient = new LdapConnection(GetConnectionOptions());
+            try
+            {
+                ldapClient.Connect(LdapPlugin.Instance.Configuration.LdapServer, LdapPlugin.Instance.Configuration.LdapPort);
+                if (LdapPlugin.Instance.Configuration.UseStartTls)
+                {
+                    ldapClient.StartTls();
+                }
+
+                _logger.LogDebug("Trying bind as user {UserDn}", userDn);
+                ldapClient.Bind(userDn, userPassword);
+            }
+            catch (Exception e)
+            {
+                ldapClient.Dispose();
+
+                _logger.LogError(e, "Failed to Connect or Bind to server as user {UserDn}", userDn);
+                var message = initialConnection
+                    ? "Failed to Connect or Bind to server."
+                    : "Error completing LDAP login. Invalid username or password.";
+                throw new AuthenticationException(message);
+            }
+
+            return ldapClient;
+        }
+
         /// <summary>
         /// Tests the server connection and bind settings.
         /// </summary>
         /// <returns>A string reporting the result of the sequence of connection steps.</returns>
-        public static string TestServerBind()
+        public ServerTestResponse TestServerBind()
         {
+            const string Started = "Testing...";
+            const string Success = "Success";
+
             var configuration = LdapPlugin.Instance.Configuration;
             var connectionOptions = GetConnectionOptions();
-            var response = new StringBuilder();
+            var response = new ServerTestResponse();
 
             try
             {
-                response.Append("Connect (");
+                response.Connect = Started;
                 using var ldapClient = new LdapConnection(connectionOptions);
                 ldapClient.Connect(configuration.LdapServer, configuration.LdapPort);
-                response.Append("Success)");
+                response.Connect = Success;
 
                 if (configuration.UseStartTls)
                 {
-                    response.Append("; Set StartTLS (");
+                    response.StartTls = Started;
                     ldapClient.StartTls();
-                    response.Append("Success)");
+                    response.StartTls = Success;
                 }
 
-                response.Append("; Bind (");
+                response.Bind = Started;
                 ldapClient.Bind(configuration.LdapBindUser, configuration.LdapBindPassword);
-                response.Append("Success)");
+                response.Bind = ldapClient.Bound ? Success : "Anonymous";
 
-                response.Append("; Base Search (");
+                response.BaseSearch = Started;
                 var entries = ldapClient.Search(
                     configuration.LdapBaseDn,
                     LdapConnection.ScopeSub,
@@ -345,14 +406,15 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     count++;
                 }
 
-                response.Append("Found ").Append(count).Append(" Entities)");
+                response.BaseSearch = $"Found {count} Entities";
             }
             catch (Exception e)
             {
-                response.Append("Error: ").Append(e.Message).Append(')');
+                _logger.LogWarning(e, "Ldap Test Failed to Connect or Bind to server");
+                response.Error = e.Message;
             }
 
-            return response.ToString();
+            return response;
         }
     }
 }

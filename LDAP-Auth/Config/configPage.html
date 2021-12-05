@@ -77,6 +77,11 @@
                                         not change their active session permissions.
                                     </div>
                                 </div>
+                                <button id="btnTestFilters" is="emby-button" type="button" class="raised button block">
+                                    <span>Save and Test LDAP Filter Settings</span>
+                                </button>
+                                <div id="divFilterTestResults"></div>
+                                <hr>
                                 <div class="inputContainer fldExternalAddressFilter">
                                     <input is="emby-input" type="text" id="txtLdapSearchAttributes" required placeholder="uid, cn, mail, displayName" label="LDAP Attributes:" />
                                     <div class="fieldDescription">A comma-separated list of LDAP attributes to compare with entered usernames.</div>
@@ -88,6 +93,14 @@
                                     </label>
                                     <div class="fieldDescription checkboxFieldDescription">Enable case insensitive username comparison</div>
                                 </div>
+                                <div class="inputContainer fldExternalAddressFilter">
+                                    <input is="emby-input" type="text" id="txtLdapSearchTest" label="Test Login Name:" />
+                                    <div class="fieldDescription">A user login to search the LDAP for to test attribute configuration.</div>
+                                </div>
+                                <button id="btnTestSearch" is="emby-button" type="button" class="raised button block">
+                                    <span>Save Search Attribute Settings and Query User</span>
+                                </button>
+                                <div id="divSearchTestResults"></div>
                             </div>
                         </div>
                         <div class="verticalSection" is="emby-collapse" title="Jellyfin User Settings">
@@ -146,8 +159,11 @@
                 divServerTestResults: document.querySelector("#divServerTestResults"),
                 txtLdapSearchFilter: document.querySelector("#txtLdapSearchFilter"),
                 txtLdapAdminFilter: document.querySelector("#txtLdapAdminFilter"),
+                divFilterTestResults: document.querySelector("#divFilterTestResults"),
                 txtLdapSearchAttributes: document.querySelector("#txtLdapSearchAttributes"),
                 chkEnableCaseInsensitiveUsername: document.querySelector("#chkEnableCaseInsensitiveUsername"),
+                txtLdapSearchTest: document.querySelector("#txtLdapSearchTest"),
+                divSearchTestResults: document.querySelector("#divSearchTestResults"),
                 chkEnableUserCreation: document.querySelector("#chkEnableUserCreation"),
                 txtLdapUsernameAttribute: document.querySelector("#txtLdapUsernameAttribute"),
                 chkEnableAllFolders: document.querySelector('#chkEnableAllFolders'),
@@ -235,7 +251,7 @@
                 }
             });
 
-            let form = document.querySelector(".esqConfigurationForm");
+            var form = document.querySelector(".esqConfigurationForm");
             form.addEventListener("submit", function(e){
                 e.preventDefault();
                 Dashboard.showLoadingMsg();
@@ -250,9 +266,7 @@
                     config.LdapBindPassword = LdapConfigurationPage.txtLdapBindPassword.value;
                     config.LdapBaseDn = LdapConfigurationPage.txtLdapBaseDn.value;
                     config.LdapSearchFilter = LdapConfigurationPage.txtLdapSearchFilter.value;
-                    config.LdapAdminFilter =
-                        LdapConfigurationPage.txtLdapAdminFilter.value ?
-                            LdapConfigurationPage.txtLdapAdminFilter.value : '_disabled_';
+                    config.LdapAdminFilter = LdapConfigurationPage.txtLdapAdminFilter.value || '_disabled_';
                     config.LdapSearchAttributes = LdapConfigurationPage.txtLdapSearchAttributes.value;
                     config.EnableCaseInsensitiveUsername = LdapConfigurationPage.chkEnableCaseInsensitiveUsername.checked;
                     config.CreateUsersFromLdap = LdapConfigurationPage.chkEnableUserCreation.checked;
@@ -278,7 +292,7 @@
                 Dashboard.showLoadingMsg();
                 LdapConfigurationPage.divServerTestResults.innerText = "";
 
-                const serverConfig = {
+                const configUpdate = {
                     LdapServer: LdapConfigurationPage.txtLdapServer.value,
                     LdapPort: parseInt(LdapConfigurationPage.txtLdapPort.value),
                     UseSsl: LdapConfigurationPage.chkUseSsl.checked,
@@ -289,18 +303,132 @@
                     LdapBaseDn: LdapConfigurationPage.txtLdapBaseDn.value,
                 }
 
-                const handler = response => response.text().then(message => {
-                    message = message.replace(/^"|"$/g, "");
+                const handler = response => response.json().then(res => {
                     if (response.ok) {
-                        LdapConfigurationPage.divServerTestResults.innerText = message;
+                        const failureString = "Testing...";
+                        let failed = false;
+                        let testString = "Connect"
+                        if (res.Connect === failureString) {
+                            failed = true;
+                            testString += ": " + res.Error;
+                        } else {
+                            testString += " (" + res.Connect + ")";
+                        }
+                        if (!failed && res.StartTls) {
+                            testString += "; Set StartTLS"
+                            if (res.StartTls === failureString) {
+                                failed = true;
+                                testString += ": " + res.Error;
+                            } else {
+                                testString += " (" + res.StartTls + ")";
+                            }
+                        }
+                        if (!failed) {
+                            testString += "; Bind"
+                            if (res.Bind === failureString) {
+                                failed = true;
+                                testString += ": " + res.Error;
+                            } else {
+                                testString += " (" + res.Bind + ")";
+                            }
+                        }
+                        if (!failed) {
+                            testString += "; Base Search"
+                            if (res.BaseSearch === failureString) {
+                                failed = true;
+                                testString += ": " + res.Error;
+                            } else {
+                                testString += " (" + res.BaseSearch + ")";
+                            }
+                        }
+
+                        LdapConfigurationPage.divServerTestResults.innerText = testString;
                     } else {
-                        LdapConfigurationPage.divServerTestResults.innerText = "Failure: " + message;
+                        LdapConfigurationPage.divServerTestResults.innerText = "Failure: " + JSON.stringify(res.errors);
                     }
                     Dashboard.hideLoadingMsg();
                 });
 
                 let url = ApiClient.getUrl('ldap/TestServerBind');
-                let data = JSON.stringify(serverConfig);
+                let data = JSON.stringify(configUpdate);
+                ApiClient.ajax({ type: 'POST', url, data, contentType: 'application/json' }).then(handler).catch(handler);
+            });
+
+            document.querySelector("#btnTestFilters").addEventListener("click", function (e) {
+                if (!form.reportValidity()) {
+                    return;
+                }
+
+                Dashboard.showLoadingMsg();
+                LdapConfigurationPage.divFilterTestResults.innerText = "";
+
+                const configUpdate = {
+                    LdapSearchFilter: LdapConfigurationPage.txtLdapSearchFilter.value,
+                    LdapAdminFilter: LdapConfigurationPage.txtLdapAdminFilter.value || '_disabled_',
+                }
+
+                const handler = response => {
+                    if (response.ok || response.status === 400 || response.status === 401) {
+                        response.json().then(res => {
+                            if (response.ok) {
+                                let subsetMessage = res.IsSubset ? "" : ", Warning: Not all Admins are Users";
+                                LdapConfigurationPage.divFilterTestResults.innerText = "Found " + res.Users + " user(s), " + res.Admins + " admin(s)" + subsetMessage;
+                            } else if (res.Message) {
+                                LdapConfigurationPage.divFilterTestResults.innerText = "Failure: " + res.Message;
+                            } else {
+                                LdapConfigurationPage.divFilterTestResults.innerText = "Failure: " + JSON.stringify(res.errors);
+                            }
+                        });
+                    } else {
+                        response.text().then(res => {
+                            LdapConfigurationPage.divFilterTestResults.innerText = "Failure: " + res;
+                        });
+                    }
+                    Dashboard.hideLoadingMsg();
+                }
+
+                let url = ApiClient.getUrl('ldap/TestLdapFilters');
+                let data = JSON.stringify(configUpdate);
+                ApiClient.ajax({ type: 'POST', url, data, contentType: 'application/json' }).then(handler).catch(handler);
+            });
+
+            document.querySelector("#btnTestSearch").addEventListener("click", function (e) {
+                if (!form.reportValidity()) {
+                    return;
+                }
+
+                Dashboard.showLoadingMsg();
+                LdapConfigurationPage.divSearchTestResults.innerText = "";
+
+                const configUpdate = {
+                    LdapSearchAttributes: LdapConfigurationPage.txtLdapSearchAttributes.value,
+                    EnableCaseInsensitiveUsername: LdapConfigurationPage.chkEnableCaseInsensitiveUsername.checked,
+                    TestSearchUsername: LdapConfigurationPage.txtLdapSearchTest.value,
+                }
+
+                const handler = response => {
+                    if (response.ok || response.status === 400 || response.status === 401) {
+                        response.json().then(res => {
+                            if (response.ok) {
+                                LdapConfigurationPage.divSearchTestResults.innerText = res.LocatedDn === undefined
+                                    ? "No user found"
+                                    : "Found user: " + res.LocatedDn;
+                            } else if (res.Message) {
+                                LdapConfigurationPage.divSearchTestResults.innerText = "Failure: " + res.Message;
+                            } else {
+                                LdapConfigurationPage.divSearchTestResults.innerText = "Failure: " + JSON.stringify(res.errors);
+                            }
+                        });
+                    } else {
+                        response.text().then(res => {
+                            LdapConfigurationPage.divSearchTestResults.innerText = "Failure: " + res;
+                        });
+                    }
+                    Dashboard.hideLoadingMsg();
+                }
+
+                let url = ApiClient.getUrl('ldap/LdapUserSearch');
+                let data = JSON.stringify(configUpdate);
                 ApiClient.ajax({ type: 'POST', url, data, contentType: 'application/json' }).then(handler).catch(handler);
             });
         </script>
