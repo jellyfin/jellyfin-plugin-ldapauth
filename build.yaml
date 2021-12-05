@@ -1,8 +1,8 @@
 name: "LDAP Authentication"
 guid: "958aad66-3784-4d2a-b89a-a7b6fab6e25c"
 imageUrl: "https://repo.jellyfin.org/releases/plugin/images/jellyfin-plugin-ldapauth.png"
-version: "13"
-targetAbi: "10.8.0.0"
+version: "14"
+targetAbi: "10.7.7.0"
 framework: "net6.0"
 owner: "jellyfin"
 overview: "Authenticate users against an LDAP database"
@@ -15,5 +15,11 @@ artifacts:
   - "LDAP-Auth.dll"
   - "Novell.Directory.Ldap.NETStandard.dll"
 changelog: |2-
-  ### Code or Repo Maintenance ###
-  - 10.8 support (#89) @crobibero
+  ### New features and improvements ###
+  - Add User Settings Tests (#101) @1337joe
+  - Add Settings Tests (#100) @1337joe
+  - Changing the LDAP Admin filter can change existing LDAP authenticating users (#96) @jketreno
+  - Add 'Enable All Folders' or selected folder list for LDAP user create (#90) @jketreno
+
+  ### Bug Fixes ###
+  - Fix #92 - Re-registering of "pageshow" handler (#93) @jketreno
