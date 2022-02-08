@@ -53,5 +53,10 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api.Models
         /// </summary>
         [Required]
         public string LdapBaseDn { get; set; }
+
+        /// <summary>
+        /// Gets or sets the password reset url.
+        /// </summary>
+        public string PasswordResetUrl { get; set; }
     }
 }

@@ -8,6 +8,7 @@ using Jellyfin.Plugin.LDAP_Auth.Api.Models;
 using MediaBrowser.Common;
 using MediaBrowser.Controller.Authentication;
 using MediaBrowser.Controller.Library;
+using MediaBrowser.Model.Users;
 using Microsoft.Extensions.Logging;
 using Novell.Directory.Ldap;
 
@@ -16,7 +17,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
     /// <summary>
     /// Ldap Authentication Provider Plugin.
     /// </summary>
-    public class LdapAuthenticationProviderPlugin : IAuthenticationProvider
+    public class LdapAuthenticationProviderPlugin : IAuthenticationProvider, IPasswordResetProvider
     {
         private readonly ILogger<LdapAuthenticationProviderPlugin> _logger;
         private readonly IApplicationHost _applicationHost;
@@ -128,7 +129,9 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 if (LdapPlugin.Instance.Configuration.CreateUsersFromLdap)
                 {
                     user = await userManager.CreateUserAsync(ldapUsername).ConfigureAwait(false);
-                    user.AuthenticationProviderId = GetType().FullName;
+                    var providerName = GetType().FullName!;
+                    user.AuthenticationProviderId = providerName;
+                    user.PasswordResetProviderId = providerName;
                     user.SetPermission(PermissionKind.IsAdministrator, ldapIsAdmin);
                     user.SetPermission(PermissionKind.EnableAllFolders, LdapPlugin.Instance.Configuration.EnableAllFolders);
                     if (!LdapPlugin.Instance.Configuration.EnableAllFolders)
@@ -283,6 +286,34 @@ namespace Jellyfin.Plugin.LDAP_Auth
             }
 
             return ldapUser;
+        }
+
+        /// <inheritdoc />
+        public Task<ForgotPasswordResult> StartForgotPasswordProcess(User user, bool isInNetwork)
+        {
+            var resetUrl = LdapPlugin.Instance.Configuration.PasswordResetUrl;
+            if (string.IsNullOrEmpty(resetUrl))
+            {
+                throw new NotImplementedException();
+            }
+
+            resetUrl = resetUrl
+                .Replace("$userId", user.Id.ToString(), StringComparison.OrdinalIgnoreCase)
+                .Replace("$userName", user.Username, StringComparison.OrdinalIgnoreCase);
+
+            var result = new ForgotPasswordResult
+            {
+                Action = ForgotPasswordAction.PinCode,
+                PinFile = resetUrl
+            };
+
+            return Task.FromResult(result);
+        }
+
+        /// <inheritdoc />
+        public Task<PinRedeemResult> RedeemPasswordResetPin(string pin)
+        {
+            throw new NotImplementedException();
         }
 
         private LdapAttribute GetAttribute(LdapEntry userEntry, string attr)
