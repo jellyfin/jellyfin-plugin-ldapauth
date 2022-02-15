@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns="http://www.w3.org/1999/html">
 <head>
     <title>LDAP</title>
 </head>
@@ -44,6 +44,15 @@
                                         <span>Skip SSL/TLS Verification</span>
                                     </label>
                                     <div class="fieldDescription checkboxFieldDescription">Skip verification of connection certificate when using SSL/STARTTLS.</div>
+                                </div>
+                                <div class="inputContainer fldExternalAddressFilter">
+                                    <input is="emby-input" type="text" id="txtLdapPasswordResetUrl" label="Password Reset Url:" />
+                                    <div class="fieldDescription">
+                                        The url for password reset.
+                                        </br>Placeholders:
+                                        </br>- $userId
+                                        </br>- $userName
+                                    </div>
                                 </div>
                                 <div class="inputContainer fldExternalAddressFilter">
                                     <input is="emby-input" type="text" id="txtLdapBindUser" label="LDAP Bind User:" />
@@ -168,6 +177,7 @@
                 txtLdapUsernameAttribute: document.querySelector("#txtLdapUsernameAttribute"),
                 chkEnableAllFolders: document.querySelector('#chkEnableAllFolders'),
                 folderAccessList: document.querySelector('.folderAccess'),
+                txtPasswordResetUrl: document.querySelector("#txtLdapPasswordResetUrl")
             };
 
             document.querySelector('.esqConfigurationPage').addEventListener("pageshow", function () {
@@ -196,6 +206,7 @@
                     LdapConfigurationPage.chkEnableAllFolders.checked = config.EnableAllFolders;
                     /* Default to empty array if Enabled Folders is not set */
                     config.EnabledFolders = config.EnabledFolders || [];
+                    LdapConfigurationPage.txtPasswordResetUrl.value = config.PasswordResetUrl || '';
                     loadMediaFolders(config).then(() => {
                       Dashboard.hideLoadingMsg();
                     });
@@ -277,6 +288,7 @@
                     folders = Array.prototype.filter.call(folders, folder => folder.checked)
                       .map(folder => folder.getAttribute("data-id"));
                     config.EnabledFolders = folders;
+                    config.PasswordResetUrl = LdapConfigurationPage.txtPasswordResetUrl;
                     window.ApiClient.updatePluginConfiguration(LdapConfigurationPage.pluginUniqueId, config).then(Dashboard.processPluginConfigurationUpdateResult);
                 });
 
@@ -301,6 +313,7 @@
                     LdapBindUser: LdapConfigurationPage.txtLdapBindUser.value,
                     LdapBindPassword: LdapConfigurationPage.txtLdapBindPassword.value,
                     LdapBaseDn: LdapConfigurationPage.txtLdapBaseDn.value,
+                    PasswordResetUrl: LdapConfigurationPage.txtPasswordResetUrl.value,
                 }
 
                 const handler = response => response.json().then(res => {
