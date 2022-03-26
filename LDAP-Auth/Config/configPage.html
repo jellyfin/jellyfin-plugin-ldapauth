@@ -79,8 +79,12 @@
                                     <div class="fieldDescription">The LDAP search filter to find users for Jellyfin, e.g. (objectClass=inetOrgPerson).</div>
                                 </div>
                                 <div class="inputContainer fldExternalAddressFilter">
+                                    <input is="emby-input" type="text" id="txtLdapAdminBaseDn" label="LDAP Admin Base DN:" />
+                                    <div class="fieldDescription">The LDAP search base dn to find administrative users for Jellyfin, e.g. (cn=admins,dc=contoso,dc=com). Defaults to user dn if empty</div>
+                                </div>
+                                <div class="inputContainer fldExternalAddressFilter">
                                     <input is="emby-input" type="text" id="txtLdapAdminFilter" label="LDAP Admin Filter:" />
-                                    <div class="fieldDescription">The LDAP search filter to find administrative users for Jellyfin, e.g. (objectClass=JellyfinAdministrator).
+                                    <div class="fieldDescription">The LDAP search filter to find administrative users for Jellyfin, e.g. (objectClass=JellyfinAdministrator). Variable {username} is available for more complex filters e.g. (memberUid={username}). 
                                         If left blank, administrative state must be configured manually for each user. If set, administrative access will automatically be applied
                                         (either granting or removing administrative access) when the LDAP user next logs in. If the user is currently logged in, this filter will
                                         not change their active session permissions.
@@ -167,6 +171,7 @@
                 txtLdapBaseDn: document.querySelector("#txtLdapBaseDn"),
                 divServerTestResults: document.querySelector("#divServerTestResults"),
                 txtLdapSearchFilter: document.querySelector("#txtLdapSearchFilter"),
+                txtLdapAdminBaseDn: document.querySelector("#txtLdapAdminBaseDn"),
                 txtLdapAdminFilter: document.querySelector("#txtLdapAdminFilter"),
                 divFilterTestResults: document.querySelector("#divFilterTestResults"),
                 txtLdapSearchAttributes: document.querySelector("#txtLdapSearchAttributes"),
@@ -196,6 +201,7 @@
                     LdapConfigurationPage.txtLdapBindPassword.value = config.LdapBindPassword;
                     LdapConfigurationPage.txtLdapBaseDn.value = config.LdapBaseDn;
                     LdapConfigurationPage.txtLdapSearchFilter.value = config.LdapSearchFilter;
+                    LdapConfigurationPage.txtLdapAdminBaseDn.value = config.LdapAdminBaseDn || "";
                     LdapConfigurationPage.txtLdapAdminFilter.value =
                         (config.LdapAdminFilter === '_disabled_') ? "" : config.LdapAdminFilter;
                     LdapConfigurationPage.txtLdapSearchAttributes.value = config.LdapSearchAttributes;
@@ -277,6 +283,7 @@
                     config.LdapBindPassword = LdapConfigurationPage.txtLdapBindPassword.value;
                     config.LdapBaseDn = LdapConfigurationPage.txtLdapBaseDn.value;
                     config.LdapSearchFilter = LdapConfigurationPage.txtLdapSearchFilter.value;
+                    config.LdapAdminBaseDn = LdapConfigurationPage.txtLdapAdminBaseDn.value;
                     config.LdapAdminFilter = LdapConfigurationPage.txtLdapAdminFilter.value || '_disabled_';
                     config.LdapSearchAttributes = LdapConfigurationPage.txtLdapSearchAttributes.value;
                     config.EnableCaseInsensitiveUsername = LdapConfigurationPage.chkEnableCaseInsensitiveUsername.checked;
