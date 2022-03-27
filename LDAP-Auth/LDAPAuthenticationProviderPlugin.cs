@@ -102,11 +102,17 @@ namespace Jellyfin.Plugin.LDAP_Auth
 
                 try
                 {
+                    var adminBaseDn = LdapPlugin.Instance.Configuration.LdapAdminBaseDn;
+                    if (string.IsNullOrEmpty(adminBaseDn))
+                    {
+                        adminBaseDn = ldapUser.Dn;
+                    }
+
                     // Search the current user DN with the adminFilter
                     var ldapUsers = ldapClient.Search(
-                        ldapUser.Dn,
+                        adminBaseDn,
                         LdapConnection.ScopeBase,
-                        AdminFilter,
+                        AdminFilter.Replace("{username}", username, StringComparison.OrdinalIgnoreCase),
                         LdapUsernameAttributes,
                         false);
 
