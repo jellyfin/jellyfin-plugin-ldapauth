@@ -118,7 +118,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                         false);
 
                     var foundUser = false;
-                    while (ldapUsers.HasMore() && foundUser == false)
+                    while (ldapUsers.HasMore() && !foundUser)
                     {
                         var currentUser = ldapUsers.Next();
                         if (string.Equals(ldapUser.Dn, currentUser.Dn, StringComparison.Ordinal))
