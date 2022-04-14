@@ -81,12 +81,13 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 _logger.LogWarning("User Manager could not find a user for LDAP User, this may not be fatal", e);
             }
 
-            using var ldapClient = ConnectToLdap(ldapUser.Dn, password);
-
-            if (!ldapClient.Bound)
+            using (var currentUserConnection = ConnectToLdap(ldapUser.Dn, password))
             {
-                _logger.LogError("Error logging in, invalid LDAP username or password");
-                throw new AuthenticationException("Error completing LDAP login. Invalid username or password.");
+                if (!currentUserConnection.Bound)
+                {
+                    _logger.LogError("Error logging in, invalid LDAP username or password");
+                    throw new AuthenticationException("Error completing LDAP login. Invalid username or password.");
+                }
             }
 
             // Determine if the user should be an administrator
@@ -94,32 +95,31 @@ namespace Jellyfin.Plugin.LDAP_Auth
 
             if (!string.IsNullOrEmpty(AdminFilter) && !string.Equals(AdminFilter, "_disabled_", StringComparison.Ordinal))
             {
-                // Automatically follow referrals
+                using var ldapClient = ConnectToLdap();
+
                 ldapClient.Constraints = GetSearchConstraints(
                     ldapClient,
-                    ldapUser.Dn,
-                    password);
+                    LdapPlugin.Instance.Configuration.LdapBindUser,
+                    LdapPlugin.Instance.Configuration.LdapBindPassword);
 
                 try
                 {
-                    var adminBaseDn = LdapPlugin.Instance.Configuration.LdapAdminBaseDn;
-                    if (string.IsNullOrEmpty(adminBaseDn))
-                    {
-                        adminBaseDn = ldapUser.Dn;
-                    }
-
-                    // Search the current user DN with the adminFilter
                     var ldapUsers = ldapClient.Search(
-                        adminBaseDn,
-                        LdapConnection.ScopeBase,
+                        LdapPlugin.Instance.Configuration.LdapBaseDn,
+                        LdapConnection.ScopeSub,
                         AdminFilter.Replace("{username}", username, StringComparison.OrdinalIgnoreCase),
-                        LdapUsernameAttributes,
+                        Array.Empty<string>(),
                         false);
 
-                    // If we got non-zero, then the filter matched and the user is an admin
-                    if (ldapUsers.HasMore())
+                    var foundUser = false;
+                    while (ldapUsers.HasMore() && foundUser == false)
                     {
-                        ldapIsAdmin = true;
+                        var currentUser = ldapUsers.Next();
+                        if (string.Equals(ldapUser.Dn, currentUser.Dn, StringComparison.Ordinal))
+                        {
+                            ldapIsAdmin = true;
+                            foundUser = true;
+                        }
                     }
                 }
                 catch (LdapException e)
