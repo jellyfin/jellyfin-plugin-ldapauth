@@ -20,6 +20,7 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
             LdapBindUser = "CN=BindUser,DC=contoso,DC=com";
             LdapBindPassword = "password";
             CreateUsersFromLdap = true;
+            AllowPassReset = true;
             UseSsl = true;
             UseStartTls = false;
             SkipSslVerify = false;
@@ -74,6 +75,11 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
         /// Gets or sets a value indicating whether to create Jellyfin users from ldap.
         /// </summary>
         public bool CreateUsersFromLdap { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to allow password reset flow.
+        /// </summary>
+        public bool AllowPassReset { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether to use ssl when connecting to the ldap server.

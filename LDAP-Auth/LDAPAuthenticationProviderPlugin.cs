@@ -244,6 +244,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
         /// <inheritdoc />
         public Task ChangePassword(User user, string newPassword)
         {
+            if(!_config.AllowPassReset){return Task.FromException(new AuthenticationException("AllowPassReset Disabled"));}
             var ldapUser = LocateLdapUser(user.Username);
 
             if (ldapUser == null)
