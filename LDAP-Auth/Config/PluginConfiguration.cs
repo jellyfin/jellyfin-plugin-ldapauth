@@ -107,8 +107,6 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
         /// </summary>
         public bool AllowPassReset { get; set; }
 
-        /// <summary>
-        /// Gets or sets a value indicating whether to use ssl when connecting to the ldap server.
         /// Gets or sets the ldap username attribute.
         /// </summary>
         public string LdapUsernameAttribute { get; set; }
