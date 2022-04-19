@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns="http://www.w3.org/1999/html">
 <head>
     <title>LDAP</title>
 </head>
@@ -14,82 +14,145 @@
                             <a is="emby-button" class="raised button-alt headerHelpButton" target="_blank" href="https://github.com/jellyfin/jellyfin-plugin-ldapauth">${Help}</a>
                         </div>
                         <p><i>Note:</i> Making changes to this configuration requires a restart of Jellyfin.</p>
-                        <div class="verticalSection verticalSection-extrabottompadding">
-                            <div class="inputContainer">
-                                <input is="emby-input" type="text" id="txtLdapServer" label="LDAP Server:" />
-                                <div class="fieldDescription">The server name for the LDAP server you wish to use for Authentication.</div>
+                        <div class="verticalSection" is="emby-collapse" title="LDAP Server Settings">
+                            <div class="collapseContent">
+                                <div class="inputContainer">
+                                    <input is="emby-input" type="text" id="txtLdapServer" required placeholder="ldap-server.contoso.com" label="LDAP Server:" />
+                                    <div class="fieldDescription">The server name for the LDAP server you wish to use for Authentication.</div>
+                                </div>
+                                <div class="inputContainer fldExternalAddressFilter">
+                                    <input is="emby-input" type="number" id="txtLdapPort" required min="0" label="LDAP Port:" />
+                                    <div class="fieldDescription">The port to communicate with LDAP.</div>
+                                </div>
+                                <div class="checkboxContainer checkboxContainer-withDescription">
+                                    <label>
+                                        <input type="checkbox" is="emby-checkbox" id="chkUseSsl" />
+                                        <span>Secure LDAP</span>
+                                    </label>
+                                    <div class="fieldDescription checkboxFieldDescription">Use SSL for the LDAP connection.</div>
+                                </div>
+                                <div class="checkboxContainer checkboxContainer-withDescription">
+                                    <label>
+                                        <input type="checkbox" is="emby-checkbox" id="chkUseStartTls" />
+                                        <span>StartTLS</span>
+                                    </label>
+                                    <div class="fieldDescription checkboxFieldDescription">Use StartTLS for the LDAP connection.</div>
+                                </div>
+                                <div class="checkboxContainer checkboxContainer-withDescription">
+                                    <label>
+                                        <input type="checkbox" is="emby-checkbox" id="chkSkipSslVerify" />
+                                        <span>Skip SSL/TLS Verification</span>
+                                    </label>
+                                    <div class="fieldDescription checkboxFieldDescription">Skip verification of connection certificate when using SSL/STARTTLS.</div>
+                                </div>
+                                <div class="checkboxContainer checkboxContainer-withDescription">
+                                    <label>
+                                        <input type="checkbox" is="emby-checkbox" id="chkAllowPassReset" />
+                                        <span>Allow Password Reset:</span>
+                                    </label>
+                                    <div class="fieldDescription checkboxFieldDescription">Allow users to us Password Reset flow.</div>
+                                </div>
+                                <div class="inputContainer fldExternalAddressFilter">
+                                    <input is="emby-input" type="text" id="txtLdapPasswordResetUrl" label="Password Reset Url:" />
+                                    <div class="fieldDescription">
+                                        The url for password reset.
+                                        </br>Placeholders:
+                                        </br>- $userId
+                                        </br>- $userName
+                                    </div>
+                                </div>
+                                <div class="inputContainer fldExternalAddressFilter">
+                                    <input is="emby-input" type="text" id="txtLdapBindUser" label="LDAP Bind User:" />
+                                    <div class="fieldDescription">A bind user for LDAP search queries, required if your LDAP doesn't support anonymous bind.</div>
+                                </div>
+                                <div class="inputContainer fldExternalAddressFilter">
+                                    <input is="emby-input" type="password" id="txtLdapBindPassword" label="LDAP Bind User Password:" />
+                                    <div class="fieldDescription">The password for the LDAP search query user.</div>
+                                </div>
+                                <div class="inputContainer fldExternalAddressFilter">
+                                    <input is="emby-input" type="text" id="txtLdapBaseDn" required placeholder="o=domains,dc=contoso,dc=com" label="LDAP Base DN for searches:" />
+                                    <div class="fieldDescription">The base DN for your LDAP query.</div>
+                                </div>
+                                <button id="btnTestServer" is="emby-button" type="button" class="raised button block">
+                                    <span>Save and Test LDAP Server Settings</span>
+                                </button>
+                                <div id="divServerTestResults"></div>
                             </div>
-                            <div class="checkboxContainer checkboxContainer-withDescription">
-                                <label>
-                                    <input type="checkbox" is="emby-checkbox" id="chkAllowPassReset" />
-                                    <span>Allow Password Reset:</span>
-                                </label>
-                                <div class="fieldDescription checkboxFieldDescription">Allow users to us Password Reset flow.</div>
+                        </div>
+                        <div class="verticalSection" is="emby-collapse" title="LDAP User Settings">
+                            <div class="collapseContent">
+                                <div class="inputContainer fldExternalAddressFilter">
+                                    <input is="emby-input" type="text" id="txtLdapSearchFilter" required placeholder="(memberOf=CN=JellyfinUsers,DC=contoso,DC=com)" label="LDAP User Filter:" />
+                                    <div class="fieldDescription">The LDAP search filter to find users for Jellyfin, e.g. (objectClass=inetOrgPerson).</div>
+                                </div>
+                                <div class="inputContainer fldExternalAddressFilter">
+                                    <input is="emby-input" type="text" id="txtLdapAdminBaseDn" label="LDAP Admin Base DN:" />
+                                    <div class="fieldDescription">The LDAP search base dn to find administrative users for Jellyfin, e.g. (cn=admins,dc=contoso,dc=com). Defaults to user dn if empty</div>
+                                </div>
+                                <div class="inputContainer fldExternalAddressFilter">
+                                    <input is="emby-input" type="text" id="txtLdapAdminFilter" label="LDAP Admin Filter:" />
+                                    <div class="fieldDescription">The LDAP search filter to find administrative users for Jellyfin, e.g. (objectClass=JellyfinAdministrator). Variable {username} is available for more complex filters e.g. (memberUid={username}). 
+                                        If left blank, administrative state must be configured manually for each user. If set, administrative access will automatically be applied
+                                        (either granting or removing administrative access) when the LDAP user next logs in. If the user is currently logged in, this filter will
+                                        not change their active session permissions.
+                                    </div>
+                                </div>
+                                <button id="btnTestFilters" is="emby-button" type="button" class="raised button block">
+                                    <span>Save and Test LDAP Filter Settings</span>
+                                </button>
+                                <div id="divFilterTestResults"></div>
+                                <hr>
+                                <div class="inputContainer fldExternalAddressFilter">
+                                    <input is="emby-input" type="text" id="txtLdapSearchAttributes" required placeholder="uid, cn, mail, displayName" label="LDAP Attributes:" />
+                                    <div class="fieldDescription">A comma-separated list of LDAP attributes to compare with entered usernames.</div>
+                                </div>
+                                <div class="checkboxContainer checkboxContainer-withDescription">
+                                    <label>
+                                        <input type="checkbox" is="emby-checkbox" id="chkEnableCaseInsensitiveUsername" />
+                                        <span>Enable Case Insensitive Username</span>
+                                    </label>
+                                    <div class="fieldDescription checkboxFieldDescription">Enable case insensitive username comparison</div>
+                                </div>
+                                <div class="inputContainer fldExternalAddressFilter">
+                                    <input is="emby-input" type="text" id="txtLdapSearchTest" label="Test Login Name:" />
+                                    <div class="fieldDescription">A user login to search the LDAP for to test attribute configuration.</div>
+                                </div>
+                                <button id="btnTestSearch" is="emby-button" type="button" class="raised button block">
+                                    <span>Save Search Attribute Settings and Query User</span>
+                                </button>
+                                <div id="divSearchTestResults"></div>
                             </div>
-                            <div class="checkboxContainer checkboxContainer-withDescription">
-                                <label>
-                                    <input type="checkbox" is="emby-checkbox" id="chkUseSsl" />
-                                    <span>Secure LDAP:</span>
-                                </label>
-                                <div class="fieldDescription checkboxFieldDescription">Use SSL for the LDAP connection.</div>
-                            </div>
-                            <div class="checkboxContainer checkboxContainer-withDescription">
-                                <label>
-                                    <input type="checkbox" is="emby-checkbox" id="chkUseStartTls" />
-                                    <span>STARTTLS:</span>
-                                </label>
-                                <div class="fieldDescription checkboxFieldDescription">Use STARTTLS for the LDAP connection.</div>
-                            </div>
-                            <div class="checkboxContainer checkboxContainer-withDescription">
-                                <label>
-                                    <input type="checkbox" is="emby-checkbox" id="chkSkipSslVerify" />
-                                    <span>Skip SSL/TLS Verification:</span>
-                                </label>
-                                <div class="fieldDescription checkboxFieldDescription">Skip verification of connection certificate when using SSL/STARTTLS.</div>
-                            </div>
-                            <div class="inputContainer fldExternalAddressFilter">
-                                <input is="emby-input" type="text" id="txtLdapBaseDn" label="LDAP Base DN for searches:" />
-                                <div class="fieldDescription">The base DN for your LDAP query.</div>
-                            </div>
-                            <div class="inputContainer fldExternalAddressFilter">
-                                <input is="emby-input" type="number" id="txtLdapPort" label="LDAP Port:" />
-                                <div class="fieldDescription">The port to communicate with LDAP.</div>
-                            </div>
-                            <div class="inputContainer fldExternalAddressFilter">
-                                <input is="emby-input" type="text" id="txtLdapSearchAttributes" label="LDAP Attributes:" />
-                                <div class="fieldDescription">A comma-separated list of LDAP attributes to compare with entered usernames.</div>
-                            </div>
-                            <div class="inputContainer fldExternalAddressFilter">
-                                <input is="emby-input" type="text" id="txtLdapUsernameAttribute" label="LDAP Name Attribute:" />
-                                <div class="fieldDescription">The LDAP attribute to create Jellyfin user names from.</div>
-                            </div>
-                            <div class="inputContainer fldExternalAddressFilter">
-                                <input is="emby-input" type="text" id="txtLdapSearchFilter" label="LDAP User Filter:" />
-                                <div class="fieldDescription">The LDAP search filter to find users for Jellyfin, e.g. (objectClass=inetOrgPerson).</div>
-                            </div>
-                            <div class="inputContainer fldExternalAddressFilter">
-                                <input is="emby-input" type="text" id="txtLdapAdminFilter" label="LDAP Admin Filter:" />
-                                <div class="fieldDescription">The LDAP search filter to find administrative users for Jellyfin, e.g. (objectClass=JellyfinAdministrator).</div>
-                            </div>
-                            <div class="inputContainer fldExternalAddressFilter">
-                                <input is="emby-input" type="text" id="txtLdapBindUser" label="LDAP Bind User:" />
-                                <div class="fieldDescription">A bind user for LDAP search queries, required if your LDAP doesn't support anonymous bind.</div>
-                            </div>
-                            <div class="inputContainer fldExternalAddressFilter">
-                                <input is="emby-input" type="password" id="txtLdapBindPassword" label="LDAP Bind User Password:" />
-                                <div class="fieldDescription">The password for the LDAP search query user.</div>
-                            </div>
-                            <div class="checkboxContainer checkboxContainer-withDescription">
-                                <label>
-                                    <input type="checkbox" is="emby-checkbox" id="chkEnableUserCreation" />
-                                    <span>Enable User Creation</span>
-                                </label>
-                                <div class="fieldDescription checkboxFieldDescription">Enable on first login creation of authorized users from LDAP</div>
+                        </div>
+                        <div class="verticalSection" is="emby-collapse" title="Jellyfin User Settings">
+                            <div class="collapseContent">
+                                <div class="checkboxContainer checkboxContainer-withDescription">
+                                    <label>
+                                        <input type="checkbox" is="emby-checkbox" id="chkEnableUserCreation" />
+                                        <span>Enable User Creation</span>
+                                    </label>
+                                    <div class="fieldDescription checkboxFieldDescription">Enable user creation in Jellyfin on successful LDAP authentication. User must first exist in LDAP.</div>
+                                </div>
+                                <div class="inputContainer fldExternalAddressFilter">
+                                    <input is="emby-input" type="text" id="txtLdapUsernameAttribute" label="LDAP Name Attribute:" />
+                                    <div class="fieldDescription">The LDAP attribute to create Jellyfin user names from.</div>
+                                </div>
+                                <div class="folderAccessContainer">
+                                    <h2>${HeaderLibraryAccess}</h2>
+                                    <label class="checkboxContainer">
+                                        <input type="checkbox" is="emby-checkbox" id="chkEnableAllFolders" />
+                                        <span>${OptionEnableAccessToAllLibraries}</span>
+                                    </label>
+                                    <div class="folderAccessListContainer">
+                                        <div class="folderAccess">
+                                        </div>
+                                        <div class="fieldDescription">${LibraryAccessHelp}</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div>
                             <button is="emby-button" type="submit" data-theme="b" class="raised button-submit block">
-                                <span>${ButtonSave}</span>
+                                <span>${Save}</span>
                             </button>
                             <button is="emby-button" type="button" class="raised button-cancel block btnCancel" onclick="history.back();">
                                 <span>${ButtonCancel}</span>
@@ -104,67 +167,296 @@
         <script type="text/javascript">
             var LdapConfigurationPage = {
                 pluginUniqueId: "958aad66-3784-4d2a-b89a-a7b6fab6e25c",
-                
-                txtLdapServer: document.getElementById("txtLdapServer"),
-                chkUseSsl: document.getElementById("chkUseSsl"),
-                chkUseStartTls: document.getElementById("chkUseStartTls"),
-                chkSkipSslVerify: document.getElementById("chkSkipSslVerify"),
-                txtLdapBaseDn: document.getElementById("txtLdapBaseDn"),
-                txtLdapPort: document.getElementById("txtLdapPort"),
-                txtLdapSearchAttributes: document.getElementById("txtLdapSearchAttributes"),
-                txtLdapUsernameAttribute: document.getElementById("txtLdapUsernameAttribute"),
-                txtLdapSearchFilter: document.getElementById("txtLdapSearchFilter"),
-                txtLdapAdminFilter: document.getElementById("txtLdapAdminFilter"),
-                txtLdapBindUser: document.getElementById("txtLdapBindUser"),
-                txtLdapBindPassword: document.getElementById("txtLdapBindPassword"),
-                chkEnableUserCreation: document.getElementById("chkEnableUserCreation")
+
+                txtLdapServer: document.querySelector("#txtLdapServer"),
+                txtLdapPort: document.querySelector("#txtLdapPort"),
+                chkUseSsl: document.querySelector("#chkUseSsl"),
+                chkUseStartTls: document.querySelector("#chkUseStartTls"),
+                chkSkipSslVerify: document.querySelector("#chkSkipSslVerify"),
+                txtLdapBindUser: document.querySelector("#txtLdapBindUser"),
+                txtLdapBindPassword: document.querySelector("#txtLdapBindPassword"),
+                txtLdapBaseDn: document.querySelector("#txtLdapBaseDn"),
+                divServerTestResults: document.querySelector("#divServerTestResults"),
+                txtLdapSearchFilter: document.querySelector("#txtLdapSearchFilter"),
+                txtLdapAdminBaseDn: document.querySelector("#txtLdapAdminBaseDn"),
+                txtLdapAdminFilter: document.querySelector("#txtLdapAdminFilter"),
+                divFilterTestResults: document.querySelector("#divFilterTestResults"),
+                txtLdapSearchAttributes: document.querySelector("#txtLdapSearchAttributes"),
+                chkEnableCaseInsensitiveUsername: document.querySelector("#chkEnableCaseInsensitiveUsername"),
+                txtLdapSearchTest: document.querySelector("#txtLdapSearchTest"),
+                divSearchTestResults: document.querySelector("#divSearchTestResults"),
+                chkEnableUserCreation: document.querySelector("#chkEnableUserCreation"),
+                txtLdapUsernameAttribute: document.querySelector("#txtLdapUsernameAttribute"),
+                chkEnableAllFolders: document.querySelector('#chkEnableAllFolders'),
+                folderAccessList: document.querySelector('.folderAccess'),
+                txtPasswordResetUrl: document.querySelector("#txtLdapPasswordResetUrl")
             };
 
-            window.addEventListener("pageshow", function (_) {
+            document.querySelector('.esqConfigurationPage').addEventListener("pageshow", function () {
+                // start with all groups expanded
+                document.querySelectorAll("button#expandButton").forEach(button => button.click());
+
                 Dashboard.showLoadingMsg();
 
-                ApiClient.getPluginConfiguration(LdapConfigurationPage.pluginUniqueId).then(function (config) {
-                    LdapConfigurationPage.txtLdapServer.value = config.LdapServer || "ldap-server.contoso.com"; 
+                window.ApiClient.getPluginConfiguration(LdapConfigurationPage.pluginUniqueId).then(function (config) {
+                    LdapConfigurationPage.txtLdapServer.value = config.LdapServer;
+                    LdapConfigurationPage.txtLdapPort.value = config.LdapPort;
                     LdapConfigurationPage.chkUseSsl.checked = config.UseSsl;
                     LdapConfigurationPage.chkUseStartTls.checked = config.UseStartTls;
                     LdapConfigurationPage.chkSkipSslVerify.checked = config.SkipSslVerify;
-                    LdapConfigurationPage.txtLdapBaseDn.value = config.LdapBaseDn || "o=domains,dc=contoso,dc=com";
-                    LdapConfigurationPage.txtLdapPort.value = config.LdapPort || "389";
-                    LdapConfigurationPage.txtLdapSearchAttributes.value = config.LdapSearchAttributes || "uid, cn, mail, displayName";
-                    LdapConfigurationPage.txtLdapUsernameAttribute.value = config.LdapUsernameAttribute || "uid"; 
-                    LdapConfigurationPage.txtLdapSearchFilter.value = config.LdapSearchFilter || "(memberOf=CN=JellyfinUsers,DC=contoso,DC=com)"; 
-                    LdapConfigurationPage.txtLdapAdminFilter.value = config.LdapAdminFilter || "(enabledService=JellyfinAdministrator)";
-                    LdapConfigurationPage.txtLdapBindUser.value = config.LdapBindUser || "CN=BindUser,DC=contoso,DC=com";
-                    LdapConfigurationPage.txtLdapBindPassword.value = config.LdapBindPassword || "";
+                    LdapConfigurationPage.txtLdapBindUser.value = config.LdapBindUser;
+                    LdapConfigurationPage.txtLdapBindPassword.value = config.LdapBindPassword;
+                    LdapConfigurationPage.txtLdapBaseDn.value = config.LdapBaseDn;
+                    LdapConfigurationPage.txtLdapSearchFilter.value = config.LdapSearchFilter;
+                    LdapConfigurationPage.txtLdapAdminBaseDn.value = config.LdapAdminBaseDn || "";
+                    LdapConfigurationPage.txtLdapAdminFilter.value =
+                        (config.LdapAdminFilter === '_disabled_') ? "" : config.LdapAdminFilter;
+                    LdapConfigurationPage.txtLdapSearchAttributes.value = config.LdapSearchAttributes;
+                    LdapConfigurationPage.chkEnableCaseInsensitiveUsername.checked = config.EnableCaseInsensitiveUsername;
                     LdapConfigurationPage.chkEnableUserCreation.checked = config.CreateUsersFromLdap;
-                    Dashboard.hideLoadingMsg();
+                    LdapConfigurationPage.txtLdapUsernameAttribute.value = config.LdapUsernameAttribute;
+                    config.EnableAllFolders = config.EnableAllFolders || false;
+                    LdapConfigurationPage.chkEnableAllFolders.checked = config.EnableAllFolders;
+                    /* Default to empty array if Enabled Folders is not set */
+                    config.EnabledFolders = config.EnabledFolders || [];
+                    LdapConfigurationPage.txtPasswordResetUrl.value = config.PasswordResetUrl || '';
+                    loadMediaFolders(config).then(() => {
+                      Dashboard.hideLoadingMsg();
+                    });
                 });
+
+                const updateFolderListVisibility = () => {
+                    document.querySelector('.folderAccessContainer').style.display =
+                        LdapConfigurationPage.chkEnableUserCreation.checked ? 'block' : 'none';
+                }
+
+                function loadMediaFolders(config) {
+                  if (!LdapConfigurationPage.folderAccessList) {
+                    return Promise.resolve();
+                  }
+
+                  return window.ApiClient.getJSON(window.ApiClient.getUrl('Library/MediaFolders', {
+                    IsHidden: false
+                  })).then((mediaFolders) => {
+                    let html = '';
+                    html += '<h3 class="checkboxListLabel">${HeaderLibraries}</h3>';
+                    html += '<div id="folderList" class="checkboxList paperList checkboxList-paperList">';
+
+                    if (Array.isArray(mediaFolders.Items)) {
+                      mediaFolders.Items.forEach((folder) => {
+                        const isChecked = config.EnableAllFolders || config.EnabledFolders.indexOf(folder.Id) != -1;
+                        const checkedAttribute = isChecked ? ' checked' : '';
+                        html += '<label><input type="checkbox" is="emby-checkbox" class="chkFolder" data-id="' +
+                          folder.Id + '" ' + checkedAttribute + '><span>' + folder.Name +
+                            '</span></label>';
+                      });
+                    }
+
+                    html += '</div>';
+                    LdapConfigurationPage.folderAccessList.innerHTML = html;
+                    /* Only show these options if Jellyfin user creation is enabled on successful LDAP authentication */
+                    updateFolderListVisibility();
+                    LdapConfigurationPage.chkEnableUserCreation.addEventListener('change', updateFolderListVisibility);
+                    /* Set up event handlers for tracking folder enabling/disabling */
+                    Array.prototype.forEach.call(document.querySelectorAll('#folderList input'), (folder) => {
+                      folder.addEventListener('change', (event) => {
+                        const folders = document.querySelectorAll('#folderList input');
+                        let count = 0;
+                        Array.prototype.forEach.call(folders, folder => folder.checked && count++);
+                        LdapConfigurationPage.chkEnableAllFolders.checked = count == folders.length;
+                      });
+                    });
+                    LdapConfigurationPage.chkEnableAllFolders.addEventListener('change', (event) => {
+                      Array.prototype.forEach.call(document.querySelectorAll('#folderList input'), (folder) => {
+                        folder.checked = event.currentTarget.checked;
+                      });
+                    });
+                  });
+                }
             });
 
-            document.querySelector(".esqConfigurationForm").addEventListener("submit", function(e){
+            var form = document.querySelector(".esqConfigurationForm");
+            form.addEventListener("submit", function(e){
+                e.preventDefault();
                 Dashboard.showLoadingMsg();
 
-                ApiClient.getPluginConfiguration(LdapConfigurationPage.pluginUniqueId).then(function (config) {
-                    config.LDAPServer = LdapConfigurationPage.txtLdapServer.value;
+                window.ApiClient.getPluginConfiguration(LdapConfigurationPage.pluginUniqueId).then(function (config) {
+                    config.LdapServer = LdapConfigurationPage.txtLdapServer.value;
+                    config.LdapPort = parseInt(LdapConfigurationPage.txtLdapPort.value);
                     config.UseSsl = LdapConfigurationPage.chkUseSsl.checked;
                     config.UseStartTls = LdapConfigurationPage.chkUseStartTls.checked;
                     config.SkipSslVerify = LdapConfigurationPage.chkSkipSslVerify.checked;
-                    config.LdapBaseDn = LdapConfigurationPage.txtLdapBaseDn.value;
-                    config.LdapPort = parseInt(LdapConfigurationPage.txtLdapPort.value || "389");
-                    config.LdapSearchAttributes = LdapConfigurationPage.txtLdapSearchAttributes.value;
-                    config.LdapUsernameAttribute = LdapConfigurationPage.txtLdapUsernameAttribute.value;
-                    config.LdapSearchFilter = LdapConfigurationPage.txtLdapSearchFilter.value;
-                    config.LdapAdminFilter = LdapConfigurationPage.txtLdapAdminFilter.value;
                     config.LdapBindUser = LdapConfigurationPage.txtLdapBindUser.value;
                     config.LdapBindPassword = LdapConfigurationPage.txtLdapBindPassword.value;
+                    config.LdapBaseDn = LdapConfigurationPage.txtLdapBaseDn.value;
+                    config.LdapSearchFilter = LdapConfigurationPage.txtLdapSearchFilter.value;
+                    config.LdapAdminBaseDn = LdapConfigurationPage.txtLdapAdminBaseDn.value;
+                    config.LdapAdminFilter = LdapConfigurationPage.txtLdapAdminFilter.value || '_disabled_';
+                    config.LdapSearchAttributes = LdapConfigurationPage.txtLdapSearchAttributes.value;
+                    config.EnableCaseInsensitiveUsername = LdapConfigurationPage.chkEnableCaseInsensitiveUsername.checked;
                     config.CreateUsersFromLdap = LdapConfigurationPage.chkEnableUserCreation.checked;
-
-                    ApiClient.updatePluginConfiguration(LdapConfigurationPage.pluginUniqueId, config).then(Dashboard.processPluginConfigurationUpdateResult);
-                    e.preventDefault();
+                    config.LdapUsernameAttribute = LdapConfigurationPage.txtLdapUsernameAttribute.value;
+                    /* Map the set of checked input items to an array of library Id's */
+                    config.EnableAllFolders = LdapConfigurationPage.chkEnableAllFolders.checked || false;
+                    let folders = document.querySelectorAll('#folderList input');
+                    folders = Array.prototype.filter.call(folders, folder => folder.checked)
+                      .map(folder => folder.getAttribute("data-id"));
+                    config.EnabledFolders = folders;
+                    config.PasswordResetUrl = LdapConfigurationPage.txtPasswordResetUrl;
+                    window.ApiClient.updatePluginConfiguration(LdapConfigurationPage.pluginUniqueId, config).then(Dashboard.processPluginConfigurationUpdateResult);
                 });
 
                 // Disable default form submission
                 return false;
+            });
+
+            document.querySelector("#btnTestServer").addEventListener("click", function (e) {
+                if (!form.reportValidity()) {
+                    return;
+                }
+
+                Dashboard.showLoadingMsg();
+                LdapConfigurationPage.divServerTestResults.innerText = "";
+
+                const configUpdate = {
+                    LdapServer: LdapConfigurationPage.txtLdapServer.value,
+                    LdapPort: parseInt(LdapConfigurationPage.txtLdapPort.value),
+                    UseSsl: LdapConfigurationPage.chkUseSsl.checked,
+                    UseStartTls: LdapConfigurationPage.chkUseStartTls.checked,
+                    SkipSslVerify: LdapConfigurationPage.chkSkipSslVerify.checked,
+                    LdapBindUser: LdapConfigurationPage.txtLdapBindUser.value,
+                    LdapBindPassword: LdapConfigurationPage.txtLdapBindPassword.value,
+                    LdapBaseDn: LdapConfigurationPage.txtLdapBaseDn.value,
+                    PasswordResetUrl: LdapConfigurationPage.txtPasswordResetUrl.value,
+                }
+
+                const handler = response => response.json().then(res => {
+                    if (response.ok) {
+                        const failureString = "Testing...";
+                        let failed = false;
+                        let testString = "Connect"
+                        if (res.Connect === failureString) {
+                            failed = true;
+                            testString += ": " + res.Error;
+                        } else {
+                            testString += " (" + res.Connect + ")";
+                        }
+                        if (!failed && res.StartTls) {
+                            testString += "; Set StartTLS"
+                            if (res.StartTls === failureString) {
+                                failed = true;
+                                testString += ": " + res.Error;
+                            } else {
+                                testString += " (" + res.StartTls + ")";
+                            }
+                        }
+                        if (!failed) {
+                            testString += "; Bind"
+                            if (res.Bind === failureString) {
+                                failed = true;
+                                testString += ": " + res.Error;
+                            } else {
+                                testString += " (" + res.Bind + ")";
+                            }
+                        }
+                        if (!failed) {
+                            testString += "; Base Search"
+                            if (res.BaseSearch === failureString) {
+                                failed = true;
+                                testString += ": " + res.Error;
+                            } else {
+                                testString += " (" + res.BaseSearch + ")";
+                            }
+                        }
+
+                        LdapConfigurationPage.divServerTestResults.innerText = testString;
+                    } else {
+                        LdapConfigurationPage.divServerTestResults.innerText = "Failure: " + JSON.stringify(res.errors);
+                    }
+                    Dashboard.hideLoadingMsg();
+                });
+
+                let url = ApiClient.getUrl('ldap/TestServerBind');
+                let data = JSON.stringify(configUpdate);
+                ApiClient.ajax({ type: 'POST', url, data, contentType: 'application/json' }).then(handler).catch(handler);
+            });
+
+            document.querySelector("#btnTestFilters").addEventListener("click", function (e) {
+                if (!form.reportValidity()) {
+                    return;
+                }
+
+                Dashboard.showLoadingMsg();
+                LdapConfigurationPage.divFilterTestResults.innerText = "";
+
+                const configUpdate = {
+                    LdapSearchFilter: LdapConfigurationPage.txtLdapSearchFilter.value,
+                    LdapAdminFilter: LdapConfigurationPage.txtLdapAdminFilter.value || '_disabled_',
+                }
+
+                const handler = response => {
+                    if (response.ok || response.status === 400 || response.status === 401) {
+                        response.json().then(res => {
+                            if (response.ok) {
+                                let subsetMessage = res.IsSubset ? "" : ", Warning: Not all Admins are Users";
+                                LdapConfigurationPage.divFilterTestResults.innerText = "Found " + res.Users + " user(s), " + res.Admins + " admin(s)" + subsetMessage;
+                            } else if (res.Message) {
+                                LdapConfigurationPage.divFilterTestResults.innerText = "Failure: " + res.Message;
+                            } else {
+                                LdapConfigurationPage.divFilterTestResults.innerText = "Failure: " + JSON.stringify(res.errors);
+                            }
+                        });
+                    } else {
+                        response.text().then(res => {
+                            LdapConfigurationPage.divFilterTestResults.innerText = "Failure: " + res;
+                        });
+                    }
+                    Dashboard.hideLoadingMsg();
+                }
+
+                let url = ApiClient.getUrl('ldap/TestLdapFilters');
+                let data = JSON.stringify(configUpdate);
+                ApiClient.ajax({ type: 'POST', url, data, contentType: 'application/json' }).then(handler).catch(handler);
+            });
+
+            document.querySelector("#btnTestSearch").addEventListener("click", function (e) {
+                if (!form.reportValidity()) {
+                    return;
+                }
+
+                Dashboard.showLoadingMsg();
+                LdapConfigurationPage.divSearchTestResults.innerText = "";
+
+                const configUpdate = {
+                    LdapSearchAttributes: LdapConfigurationPage.txtLdapSearchAttributes.value,
+                    EnableCaseInsensitiveUsername: LdapConfigurationPage.chkEnableCaseInsensitiveUsername.checked,
+                    TestSearchUsername: LdapConfigurationPage.txtLdapSearchTest.value,
+                }
+
+                const handler = response => {
+                    if (response.ok || response.status === 400 || response.status === 401) {
+                        response.json().then(res => {
+                            if (response.ok) {
+                                LdapConfigurationPage.divSearchTestResults.innerText = res.LocatedDn === undefined
+                                    ? "No user found"
+                                    : "Found user: " + res.LocatedDn;
+                            } else if (res.Message) {
+                                LdapConfigurationPage.divSearchTestResults.innerText = "Failure: " + res.Message;
+                            } else {
+                                LdapConfigurationPage.divSearchTestResults.innerText = "Failure: " + JSON.stringify(res.errors);
+                            }
+                        });
+                    } else {
+                        response.text().then(res => {
+                            LdapConfigurationPage.divSearchTestResults.innerText = "Failure: " + res;
+                        });
+                    }
+                    Dashboard.hideLoadingMsg();
+                }
+
+                let url = ApiClient.getUrl('ldap/LdapUserSearch');
+                let data = JSON.stringify(configUpdate);
+                ApiClient.ajax({ type: 'POST', url, data, contentType: 'application/json' }).then(handler).catch(handler);
             });
         </script>
     </div>
