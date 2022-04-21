@@ -295,7 +295,7 @@
                     folders = Array.prototype.filter.call(folders, folder => folder.checked)
                       .map(folder => folder.getAttribute("data-id"));
                     config.EnabledFolders = folders;
-                    config.PasswordResetUrl = LdapConfigurationPage.txtPasswordResetUrl;
+                    config.PasswordResetUrl = LdapConfigurationPage.txtPasswordResetUrl.value;
                     window.ApiClient.updatePluginConfiguration(LdapConfigurationPage.pluginUniqueId, config).then(Dashboard.processPluginConfigurationUpdateResult);
                 });
 
