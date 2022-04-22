@@ -103,10 +103,11 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
         public bool CreateUsersFromLdap { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether to allow password reset flow.
+        /// Gets a value indicating whether to allow password reset flow.
         /// </summary>
-        public bool AllowPassReset { get; set; }
+        public bool AllowPassReset { get; }
 
+        /// <summary>
         /// Gets or sets the ldap username attribute.
         /// </summary>
         public string LdapUsernameAttribute { get; set; }

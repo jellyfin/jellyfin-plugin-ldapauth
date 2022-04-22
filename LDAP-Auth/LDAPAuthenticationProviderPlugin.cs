@@ -322,38 +322,44 @@ namespace Jellyfin.Plugin.LDAP_Auth
             return Task.FromResult(result);
         }
 
-        /// <inheritdoc />
-        public Task<PinRedeemResult> RedeemPasswordResetPin(string pin)
+        /// <summary>
+        /// Missing Summary.
+        /// </summary>
+        /// <param name="user">The Reset User.</param>
+        /// <param name="pin">The Reset PIN.</param>
+        /// <returns>Confirmation of completed Password Reset.</returns>
+        /// <exception cref="AuthenticationException">Thrown on failure to connect or bind to LDAP server.</exception>
+        public Task<PinRedeemResult> RedeemPasswordResetPin(User user, string pin)
         {
-            if(!_config.AllowPassReset)
+            if (!LdapPlugin.Instance.Configuration.AllowPassReset)
             {
-                return Task.FromException(new AuthenticationException("AllowPassReset Disabled"));
+                throw new NotImplementedException();
             }
 
             var ldapUser = LocateLdapUser(user.Username);
 
             if (ldapUser == null)
             {
-                return Task.FromException(new AuthenticationException("No users found in LDAP Query"));
+                throw new AuthenticationException("No users found in LDAP Query");
             }
 
-            using (var ldapClient = new LdapConnection {SecureSocketLayer = _config.UseSsl})
+            using (var ldapClient = new LdapConnection {SecureSocketLayer = LdapPlugin.Instance.Configuration.UseSsl})
             {
                 try
                 {
-                    if (_config.SkipSslVerify)
+                    if (LdapPlugin.Instance.Configuration.SkipSslVerify)
                     {
                         ldapClient.UserDefinedServerCertValidationDelegate +=
                             LdapClient_UserDefinedServerCertValidationDelegate;
                     }
 
-                    ldapClient.Connect(_config.LdapServer, _config.LdapPort);
-                    if (_config.UseStartTls)
+                    ldapClient.Connect(LdapPlugin.Instance.Configuration.LdapServer, LdapPlugin.Instance.Configuration.LdapPort);
+                    if (LdapPlugin.Instance.Configuration.UseStartTls)
                     {
                         ldapClient.StartTls();
                     }
 
-                    ldapClient.Bind(_config.LdapBindUser, _config.LdapBindPassword);
+                    ldapClient.Bind(LdapPlugin.Instance.Configuration.LdapBindUser, LdapPlugin.Instance.Configuration.LdapBindPassword);
                 }
                 catch (Exception e)
                 {
@@ -368,7 +374,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
 
                 if (!ldapClient.Bound)
                 {
-                    return Task.FromException(new AuthenticationException("Failed to Connect or Bind to server"));
+                    throw new AuthenticationException("Failed to Connect or Bind to server");
                 }
 
                 var newPassAttr = new LdapAttribute("userPassword", newPassword);
@@ -376,7 +382,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 ldapClient.Modify(ldapUser.Dn, mod);
             }
 
-            return Task.CompletedTask;
+            return Task<PinRedeemResult>.CompletedTask;
         }
 
         private LdapAttribute GetAttribute(LdapEntry userEntry, string attr)
