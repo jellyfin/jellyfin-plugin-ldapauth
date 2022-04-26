@@ -57,6 +57,8 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api
             configuration.UseSsl = body.UseSsl;
             configuration.UseStartTls = body.UseStartTls;
             configuration.SkipSslVerify = body.SkipSslVerify;
+            configuration.AllowPassChange = body.AllowPassChange;
+            configuration.ActiveDirectory = body.ActiveDirectory;
             configuration.LdapBindUser = body.LdapBindUser;
             configuration.LdapBindPassword = body.LdapBindPassword;
             configuration.LdapBaseDn = body.LdapBaseDn;
