@@ -47,10 +47,17 @@
                                 </div>
                                 <div class="checkboxContainer checkboxContainer-withDescription">
                                     <label>
-                                        <input type="checkbox" is="emby-checkbox" id="chkAllowPassReset" />
-                                        <span>Allow Password Reset:</span>
+                                        <input type="checkbox" is="emby-checkbox" id="chkAllowPassChange" />
+                                        <span>Allow Password Change</span>
                                     </label>
-                                    <div class="fieldDescription checkboxFieldDescription">Allow users to us Password Reset flow.</div>
+                                    <div class="fieldDescription checkboxFieldDescription">Allow users to change password.</div>
+                                </div>
+                                <div class="checkboxContainer checkboxContainer-withDescription">
+                                    <label>
+                                        <input type="checkbox" is="emby-checkbox" id="chkActiveDirectory" />
+                                        <span>Active Directory</span>
+                                    </label>
+                                    <div class="fieldDescription checkboxFieldDescription">Use Active Directory specific configurations.</div>
                                 </div>
                                 <div class="inputContainer fldExternalAddressFilter">
                                     <input is="emby-input" type="text" id="txtLdapPasswordResetUrl" label="Password Reset Url:" />
@@ -91,7 +98,7 @@
                                 </div>
                                 <div class="inputContainer fldExternalAddressFilter">
                                     <input is="emby-input" type="text" id="txtLdapAdminFilter" label="LDAP Admin Filter:" />
-                                    <div class="fieldDescription">The LDAP search filter to find administrative users for Jellyfin, e.g. (objectClass=JellyfinAdministrator). Variable {username} is available for more complex filters e.g. (memberUid={username}). 
+                                    <div class="fieldDescription">The LDAP search filter to find administrative users for Jellyfin, e.g. (objectClass=JellyfinAdministrator). Variable {username} is available for more complex filters e.g. (memberUid={username}).
                                         If left blank, administrative state must be configured manually for each user. If set, administrative access will automatically be applied
                                         (either granting or removing administrative access) when the LDAP user next logs in. If the user is currently logged in, this filter will
                                         not change their active session permissions.
