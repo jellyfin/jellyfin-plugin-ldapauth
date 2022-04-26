@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Jellyfin.Data.Entities;
 using Jellyfin.Data.Enums;
@@ -188,7 +189,22 @@ namespace Jellyfin.Plugin.LDAP_Auth
         /// <inheritdoc />
         public Task ChangePassword(User user, string newPassword)
         {
-            throw new NotImplementedException();
+            if (!LdapPlugin.Instance.Configuration.AllowPassChange)
+            {
+                throw new NotImplementedException();
+            }
+
+            var ldapUser = LocateLdapUser(user.Username) ?? throw new LdapException("No users found in LDAP Query");
+            using var ldapClient = ConnectToLdap() ?? throw new AuthenticationException("Failed to Connect or Bind to server");
+            var passwordAttribute = "userPassword";
+            if (LdapPlugin.Instance.Configuration.ActiveDirectory)
+            {
+                passwordAttribute = "unicodePwd";
+                newPassword = Convert.ToBase64String(Encoding.UTF8.GetBytes(newPassword));
+            }
+
+            ldapClient.Modify(ldapUser.Dn, new LdapModification(LdapModification.Replace, new LdapAttribute(passwordAttribute, newPassword)));
+            return Task.CompletedTask;
         }
 
         private static bool LdapClient_UserDefinedServerCertValidationDelegate(
@@ -322,67 +338,10 @@ namespace Jellyfin.Plugin.LDAP_Auth
             return Task.FromResult(result);
         }
 
-        /// <summary>
-        /// Missing Summary.
-        /// </summary>
-        /// <param name="user">The Reset User.</param>
-        /// <param name="pin">The Reset PIN.</param>
-        /// <returns>Confirmation of completed Password Reset.</returns>
-        /// <exception cref="AuthenticationException">Thrown on failure to connect or bind to LDAP server.</exception>
-        public Task<PinRedeemResult> RedeemPasswordResetPin(User user, string pin)
+        /// <inheritdoc />
+        public Task<PinRedeemResult> RedeemPasswordResetPin(string pin)
         {
-            if (!LdapPlugin.Instance.Configuration.AllowPassReset)
-            {
-                throw new NotImplementedException();
-            }
-
-            var ldapUser = LocateLdapUser(user.Username);
-
-            if (ldapUser == null)
-            {
-                throw new AuthenticationException("No users found in LDAP Query");
-            }
-
-            using (var ldapClient = new LdapConnection {SecureSocketLayer = LdapPlugin.Instance.Configuration.UseSsl})
-            {
-                try
-                {
-                    if (LdapPlugin.Instance.Configuration.SkipSslVerify)
-                    {
-                        ldapClient.UserDefinedServerCertValidationDelegate +=
-                            LdapClient_UserDefinedServerCertValidationDelegate;
-                    }
-
-                    ldapClient.Connect(LdapPlugin.Instance.Configuration.LdapServer, LdapPlugin.Instance.Configuration.LdapPort);
-                    if (LdapPlugin.Instance.Configuration.UseStartTls)
-                    {
-                        ldapClient.StartTls();
-                    }
-
-                    ldapClient.Bind(LdapPlugin.Instance.Configuration.LdapBindUser, LdapPlugin.Instance.Configuration.LdapBindPassword);
-                }
-                catch (Exception e)
-                {
-                    _logger.LogError(e, "Failed to Connect or Bind to server");
-                    throw new AuthenticationException("Failed to Connect or Bind to server");
-                }
-                finally
-                {
-                    ldapClient.UserDefinedServerCertValidationDelegate -=
-                        LdapClient_UserDefinedServerCertValidationDelegate;
-                }
-
-                if (!ldapClient.Bound)
-                {
-                    throw new AuthenticationException("Failed to Connect or Bind to server");
-                }
-
-                var newPassAttr = new LdapAttribute("userPassword", newPassword);
-                var mod = new LdapModification(LdapModification.Replace, newPassAttr);
-                ldapClient.Modify(ldapUser.Dn, mod);
-            }
-
-            return Task<PinRedeemResult>.CompletedTask;
+            throw new NotImplementedException();
         }
 
         private LdapAttribute GetAttribute(LdapEntry userEntry, string attr)
