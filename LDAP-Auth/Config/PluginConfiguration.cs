@@ -14,7 +14,7 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
         {
             LdapServer = "ldap-server.contoso.com";
             LdapPort = 389;
-            AllowPassReset = true;
+            AllowPassChange = true;
             UseSsl = true;
             UseStartTls = false;
             SkipSslVerify = false;
@@ -103,9 +103,14 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
         public bool CreateUsersFromLdap { get; set; }
 
         /// <summary>
-        /// Gets a value indicating whether to allow password reset flow.
+        /// Gets or sets a value indicating whether to allow password change.
         /// </summary>
-        public bool AllowPassReset { get; }
+        public bool AllowPassChange { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to use Active Directory specific configurations.
+        /// </summary>
+        public bool ActiveDirectory { get; set; }
 
         /// <summary>
         /// Gets or sets the ldap username attribute.
