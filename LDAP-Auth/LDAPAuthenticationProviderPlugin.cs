@@ -34,9 +34,32 @@ namespace Jellyfin.Plugin.LDAP_Auth
             _applicationHost = applicationHost;
         }
 
-        private string[] LdapUsernameAttributes => LdapPlugin.Instance.Configuration.LdapSearchAttributes.Replace(" ", string.Empty, StringComparison.Ordinal).Split(',');
+        private string[] LdapUsernameAttributes
+        {
+            get
+            {
+                if (LdapPlugin.Instance.Configuration.ActiveDirectory)
+                {
+                    string[] output = {"sAMAccountName", "mail"};
+                    return output;
+                }
 
-        private string UsernameAttr => LdapPlugin.Instance.Configuration.LdapUsernameAttribute;
+                return LdapPlugin.Instance.Configuration.LdapSearchAttributes.Replace(" ", string.Empty, StringComparison.Ordinal).Split(',');
+            }
+        }
+
+        private string UsernameAttr
+        {
+            get
+            {
+                if (LdapPlugin.Instance.Configuration.ActiveDirectory)
+                {
+                    return "sAMAccountName";
+                }
+
+                return LdapPlugin.Instance.Configuration.LdapUsernameAttribute;
+            }
+        }
 
         private string SearchFilter => LdapPlugin.Instance.Configuration.LdapSearchFilter;
 
