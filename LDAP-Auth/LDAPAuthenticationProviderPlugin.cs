@@ -34,32 +34,9 @@ namespace Jellyfin.Plugin.LDAP_Auth
             _applicationHost = applicationHost;
         }
 
-        private string[] LdapUsernameAttributes
-        {
-            get
-            {
-                if (LdapPlugin.Instance.Configuration.ActiveDirectory)
-                {
-                    string[] output = { "sAMAccountName", "mail" };
-                    return output;
-                }
+        private string[] LdapUsernameAttributes => LdapPlugin.Instance.Configuration.LdapSearchAttributes.Replace(" ", string.Empty, StringComparison.Ordinal).Split(',');
 
-                return LdapPlugin.Instance.Configuration.LdapSearchAttributes.Replace(" ", string.Empty, StringComparison.Ordinal).Split(',');
-            }
-        }
-
-        private string UsernameAttr
-        {
-            get
-            {
-                if (LdapPlugin.Instance.Configuration.ActiveDirectory)
-                {
-                    return "sAMAccountName";
-                }
-
-                return LdapPlugin.Instance.Configuration.LdapUsernameAttribute;
-            }
-        }
+        private string UsernameAttr => LdapPlugin.Instance.Configuration.LdapUsernameAttribute;
 
         private string SearchFilter => LdapPlugin.Instance.Configuration.LdapSearchFilter;
 
@@ -219,14 +196,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
 
             var ldapUser = LocateLdapUser(user.Username) ?? throw new LdapException("No users found in LDAP Query");
             using var ldapClient = ConnectToLdap() ?? throw new AuthenticationException("Failed to Connect or Bind to server");
-            var passwordAttribute = "userPassword";
-            if (LdapPlugin.Instance.Configuration.ActiveDirectory)
-            {
-                passwordAttribute = "unicodePwd";
-                newPassword = Convert.ToBase64String(Encoding.UTF8.GetBytes(newPassword));
-            }
-
-            ldapClient.Modify(ldapUser.Dn, new LdapModification(LdapModification.Replace, new LdapAttribute(passwordAttribute, newPassword)));
+            ldapClient.Modify(ldapUser.Dn, new LdapModification(LdapModification.Replace, new LdapAttribute("userPassword", newPassword)));
             return Task.CompletedTask;
         }
 

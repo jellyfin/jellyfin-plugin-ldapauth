@@ -108,11 +108,6 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
         public bool AllowPassChange { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether to use Active Directory specific configurations.
-        /// </summary>
-        public bool ActiveDirectory { get; set; }
-
-        /// <summary>
         /// Gets or sets the ldap username attribute.
         /// </summary>
         public string LdapUsernameAttribute { get; set; }

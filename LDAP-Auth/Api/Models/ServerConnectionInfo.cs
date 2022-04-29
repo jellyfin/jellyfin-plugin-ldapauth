@@ -45,12 +45,6 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api.Models
         public bool AllowPassChange { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether to use Active Directory specific configurations.
-        /// </summary>
-        [Required]
-        public bool ActiveDirectory { get; set; }
-
-        /// <summary>
         /// Gets or sets the ldap bind user.
         /// </summary>
         public string LdapBindUser { get; set; } = string.Empty;
