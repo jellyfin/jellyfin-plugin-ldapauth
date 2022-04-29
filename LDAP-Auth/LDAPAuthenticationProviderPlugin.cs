@@ -63,12 +63,6 @@ namespace Jellyfin.Plugin.LDAP_Auth
             var userManager = _applicationHost.Resolve<IUserManager>();
             User user = null;
             var ldapUser = LocateLdapUser(username);
-            if (ldapUser == null)
-            {
-                _logger.LogError("Found no users matching {Username} in LDAP search", username);
-                throw new AuthenticationException("Found no LDAP users matching provided username.");
-            }
-
             var ldapUsername = GetAttribute(ldapUser, UsernameAttr)?.StringValue;
             _logger.LogDebug("Setting username: {LdapUsername}", ldapUsername);
 
@@ -194,7 +188,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
             }
 
             var passAttr = LdapPlugin.Instance.Configuration.LdapPasswordAttribute ?? "userPassword";
-            var ldapUser = LocateLdapUser(user.Username) ?? throw new LdapException("No users found in LDAP Query");
+            var ldapUser = LocateLdapUser(user.Username);
             using var ldapClient = ConnectToLdap();
             ldapClient.Modify(ldapUser.Dn, new LdapModification(LdapModification.Replace, new LdapAttribute(passAttr, newPassword)));
             return Task.CompletedTask;
@@ -304,6 +298,12 @@ namespace Jellyfin.Plugin.LDAP_Auth
                         }
                     }
                 }
+            }
+
+            if (ldapUser == null)
+            {
+                _logger.LogError("Found no users matching {Username} in LDAP search", username);
+                throw new AuthenticationException("Found no LDAP users matching provided username.");
             }
 
             return ldapUser;
