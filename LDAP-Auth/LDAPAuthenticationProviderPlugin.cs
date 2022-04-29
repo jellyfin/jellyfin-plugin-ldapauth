@@ -195,7 +195,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
 
             var passAttr = LdapPlugin.Instance.Configuration.LdapPasswordAttribute;
             var ldapUser = LocateLdapUser(user.Username) ?? throw new LdapException("No users found in LDAP Query");
-            using var ldapClient = ConnectToLdap() ?? throw new AuthenticationException("Failed to Connect or Bind to server");
+            using var ldapClient = ConnectToLdap();
             ldapClient.Modify(ldapUser.Dn, new LdapModification(LdapModification.Replace, new LdapAttribute(passAttr, newPassword)));
             return Task.CompletedTask;
         }
