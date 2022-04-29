@@ -136,6 +136,10 @@
                                     <input is="emby-input" type="text" id="txtLdapUsernameAttribute" label="LDAP Name Attribute:" />
                                     <div class="fieldDescription">The LDAP attribute to create Jellyfin user names from.</div>
                                 </div>
+                                <div class="inputContainer fldExternalAddressFilter">
+                                    <input is="emby-input" type="text" id="txtLdapPasswordAttribute" label="LDAP Password Attribute:" />
+                                    <div class="fieldDescription">The LDAP attribute to change passwords with (only applies to password change toggle).</div>
+                                </div>
                                 <div class="folderAccessContainer">
                                     <h2>${HeaderLibraryAccess}</h2>
                                     <label class="checkboxContainer">
@@ -173,6 +177,7 @@
                 chkUseSsl: document.querySelector("#chkUseSsl"),
                 chkUseStartTls: document.querySelector("#chkUseStartTls"),
                 chkSkipSslVerify: document.querySelector("#chkSkipSslVerify"),
+                chkAllowPassChange: document.querySelector("#chkAllowPassChange"),
                 txtLdapBindUser: document.querySelector("#txtLdapBindUser"),
                 txtLdapBindPassword: document.querySelector("#txtLdapBindPassword"),
                 txtLdapBaseDn: document.querySelector("#txtLdapBaseDn"),
@@ -187,6 +192,7 @@
                 divSearchTestResults: document.querySelector("#divSearchTestResults"),
                 chkEnableUserCreation: document.querySelector("#chkEnableUserCreation"),
                 txtLdapUsernameAttribute: document.querySelector("#txtLdapUsernameAttribute"),
+                txtLdapPasswordAttribute: document.querySelector("#txtLdapPasswordAttribute"),
                 chkEnableAllFolders: document.querySelector('#chkEnableAllFolders'),
                 folderAccessList: document.querySelector('.folderAccess'),
                 txtPasswordResetUrl: document.querySelector("#txtLdapPasswordResetUrl")
@@ -204,6 +210,7 @@
                     LdapConfigurationPage.chkUseSsl.checked = config.UseSsl;
                     LdapConfigurationPage.chkUseStartTls.checked = config.UseStartTls;
                     LdapConfigurationPage.chkSkipSslVerify.checked = config.SkipSslVerify;
+                    LdapConfigurationPage.chkAllowPassChange.checked = config.AllowPassChange;
                     LdapConfigurationPage.txtLdapBindUser.value = config.LdapBindUser;
                     LdapConfigurationPage.txtLdapBindPassword.value = config.LdapBindPassword;
                     LdapConfigurationPage.txtLdapBaseDn.value = config.LdapBaseDn;
@@ -215,6 +222,7 @@
                     LdapConfigurationPage.chkEnableCaseInsensitiveUsername.checked = config.EnableCaseInsensitiveUsername;
                     LdapConfigurationPage.chkEnableUserCreation.checked = config.CreateUsersFromLdap;
                     LdapConfigurationPage.txtLdapUsernameAttribute.value = config.LdapUsernameAttribute;
+                    LdapConfigurationPage.txtLdapPasswordAttribute.value = config.LdapPasswordAttribute;
                     config.EnableAllFolders = config.EnableAllFolders || false;
                     LdapConfigurationPage.chkEnableAllFolders.checked = config.EnableAllFolders;
                     /* Default to empty array if Enabled Folders is not set */
@@ -285,6 +293,7 @@
                     config.LdapPort = parseInt(LdapConfigurationPage.txtLdapPort.value);
                     config.UseSsl = LdapConfigurationPage.chkUseSsl.checked;
                     config.UseStartTls = LdapConfigurationPage.chkUseStartTls.checked;
+                    config.AllowPassChange = LdapConfigurationPage.chkAllowPassChange.checked;
                     config.SkipSslVerify = LdapConfigurationPage.chkSkipSslVerify.checked;
                     config.LdapBindUser = LdapConfigurationPage.txtLdapBindUser.value;
                     config.LdapBindPassword = LdapConfigurationPage.txtLdapBindPassword.value;
@@ -296,6 +305,7 @@
                     config.EnableCaseInsensitiveUsername = LdapConfigurationPage.chkEnableCaseInsensitiveUsername.checked;
                     config.CreateUsersFromLdap = LdapConfigurationPage.chkEnableUserCreation.checked;
                     config.LdapUsernameAttribute = LdapConfigurationPage.txtLdapUsernameAttribute.value;
+                    config.LdapPasswordAttribute = LdapConfigurationPage.txtLdapPasswordAttribute.value;
                     /* Map the set of checked input items to an array of library Id's */
                     config.EnableAllFolders = LdapConfigurationPage.chkEnableAllFolders.checked || false;
                     let folders = document.querySelectorAll('#folderList input');
@@ -322,6 +332,7 @@
                     LdapServer: LdapConfigurationPage.txtLdapServer.value,
                     LdapPort: parseInt(LdapConfigurationPage.txtLdapPort.value),
                     UseSsl: LdapConfigurationPage.chkUseSsl.checked,
+                    AllowPassChange: LdapConfigurationPage.chkAllowPassChange.checked,
                     UseStartTls: LdapConfigurationPage.chkUseStartTls.checked,
                     SkipSslVerify: LdapConfigurationPage.chkSkipSslVerify.checked,
                     LdapBindUser: LdapConfigurationPage.txtLdapBindUser.value,
