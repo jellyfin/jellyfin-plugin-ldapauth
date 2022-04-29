@@ -40,7 +40,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
             {
                 if (LdapPlugin.Instance.Configuration.ActiveDirectory)
                 {
-                    string[] output = {"sAMAccountName", "mail"};
+                    string[] output = { "sAMAccountName", "mail" };
                     return output;
                 }
 
