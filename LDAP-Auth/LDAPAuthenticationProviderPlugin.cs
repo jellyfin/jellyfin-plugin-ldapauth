@@ -190,7 +190,9 @@ namespace Jellyfin.Plugin.LDAP_Auth
             var passAttr = LdapPlugin.Instance.Configuration.LdapPasswordAttribute ?? "userPassword";
             var ldapUser = LocateLdapUser(user.Username);
             using var ldapClient = ConnectToLdap();
-            ldapClient.Modify(ldapUser.Dn, new LdapModification(LdapModification.Replace, new LdapAttribute(passAttr, newPassword)));
+            var ldapAttr = new LdapAttribute(passAttr, newPassword);
+            var ldapMod = new LdapModification(LdapModification.Replace, ldapAttr);
+            ldapClient.Modify(ldapUser.Dn, ldapMod);
             return Task.CompletedTask;
         }
 
