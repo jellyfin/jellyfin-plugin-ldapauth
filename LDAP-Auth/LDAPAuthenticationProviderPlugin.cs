@@ -179,7 +179,13 @@ namespace Jellyfin.Plugin.LDAP_Auth
             return true;
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Changes the users password (Requires privileged bind user).
+        /// </summary>
+        /// <param name="user">The user who's password will be changed.</param>
+        /// <param name="newPassword">The new password to set.</param>
+        /// <returns>Completed Task notification.</returns>
+        /// <exception cref="NotImplementedException">Thrown if AllowPassChange set to false.</exception>
         public Task ChangePassword(User user, string newPassword)
         {
             if (!LdapPlugin.Instance.Configuration.AllowPassChange)

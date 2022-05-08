@@ -104,7 +104,7 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
         public bool CreateUsersFromLdap { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether to allow password change.
+        /// Gets or sets a value indicating whether to allow password change (Requires privileged bind user).
         /// </summary>
         public bool AllowPassChange { get; set; }
 

@@ -39,7 +39,7 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api.Models
         public bool SkipSslVerify { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether to allow password reset flow.
+        /// Gets or sets a value indicating whether to allow password reset flow (Requires privileged bind user).
         /// </summary>
         [Required]
         public bool AllowPassChange { get; set; }
