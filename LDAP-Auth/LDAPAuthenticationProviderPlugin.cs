@@ -186,6 +186,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
         /// <param name="newPassword">The new password to set.</param>
         /// <returns>Completed Task notification.</returns>
         /// <exception cref="NotImplementedException">Thrown if AllowPassChange set to false.</exception>
+        /// <exception cref="InvalidOperationException">Thrown if LdapPasswordAttribute field is null or empty.</exception>
         public Task ChangePassword(User user, string newPassword)
         {
             if (!LdapPlugin.Instance.Configuration.AllowPassChange)
@@ -193,7 +194,12 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 throw new NotImplementedException();
             }
 
-            var passAttr = LdapPlugin.Instance.Configuration.LdapPasswordAttribute ?? "userPassword";
+            if (string.IsNullOrEmpty(LdapPlugin.Instance.Configuration.LdapPasswordAttribute))
+            {
+                throw new InvalidOperationException("Password attribute is not set");
+            }
+
+            var passAttr = LdapPlugin.Instance.Configuration.LdapPasswordAttribute;
             var ldapUser = LocateLdapUser(user.Username);
             using var ldapClient = ConnectToLdap();
             var ldapAttr = new LdapAttribute(passAttr, newPassword);
