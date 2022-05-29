@@ -63,12 +63,6 @@ namespace Jellyfin.Plugin.LDAP_Auth
             var userManager = _applicationHost.Resolve<IUserManager>();
             User user = null;
             var ldapUser = LocateLdapUser(username);
-            if (ldapUser == null)
-            {
-                _logger.LogError("Found no users matching {Username} in LDAP search", username);
-                throw new AuthenticationException("Found no LDAP users matching provided username.");
-            }
-
             var ldapUsername = GetAttribute(ldapUser, UsernameAttr)?.StringValue;
             _logger.LogDebug("Setting username: {LdapUsername}", ldapUsername);
 
@@ -185,10 +179,33 @@ namespace Jellyfin.Plugin.LDAP_Auth
             return true;
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Changes the users password (Requires privileged bind user).
+        /// </summary>
+        /// <param name="user">The user who's password will be changed.</param>
+        /// <param name="newPassword">The new password to set.</param>
+        /// <returns>Completed Task notification.</returns>
+        /// <exception cref="NotImplementedException">Thrown if AllowPassChange set to false.</exception>
+        /// <exception cref="InvalidOperationException">Thrown if LdapPasswordAttribute field is null or empty.</exception>
         public Task ChangePassword(User user, string newPassword)
         {
-            throw new NotImplementedException();
+            if (!LdapPlugin.Instance.Configuration.AllowPassChange)
+            {
+                throw new NotImplementedException();
+            }
+
+            if (string.IsNullOrEmpty(LdapPlugin.Instance.Configuration.LdapPasswordAttribute))
+            {
+                throw new InvalidOperationException("Password attribute is not set");
+            }
+
+            var passAttr = LdapPlugin.Instance.Configuration.LdapPasswordAttribute;
+            var ldapUser = LocateLdapUser(user.Username);
+            using var ldapClient = ConnectToLdap();
+            var ldapAttr = new LdapAttribute(passAttr, newPassword);
+            var ldapMod = new LdapModification(LdapModification.Replace, ldapAttr);
+            ldapClient.Modify(ldapUser.Dn, ldapMod);
+            return Task.CompletedTask;
         }
 
         private static bool LdapClient_UserDefinedServerCertValidationDelegate(
@@ -295,6 +312,12 @@ namespace Jellyfin.Plugin.LDAP_Auth
                         }
                     }
                 }
+            }
+
+            if (ldapUser == null)
+            {
+                _logger.LogError("Found no users matching {Username} in LDAP search", username);
+                throw new AuthenticationException("Found no LDAP users matching provided username.");
             }
 
             return ldapUser;
