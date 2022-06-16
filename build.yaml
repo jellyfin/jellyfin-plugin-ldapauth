@@ -1,7 +1,7 @@
 name: "LDAP Authentication"
 guid: "958aad66-3784-4d2a-b89a-a7b6fab6e25c"
 imageUrl: "https://repo.jellyfin.org/releases/plugin/images/jellyfin-plugin-ldapauth.png"
-version: "15"
+version: 16
 targetAbi: "10.8.0.0"
 framework: "net6.0"
 owner: "jellyfin"
@@ -15,15 +15,11 @@ artifacts:
   - "LDAP-Auth.dll"
   - "Novell.Directory.Ldap.NETStandard.dll"
 changelog: |2-
-  ### Major bug fixes ###
-  - Fix searching for admin (#114) @crobibero
-
   ### New features and improvements ###
-  - OpenLDAP admin memberUid support (#113) @cyberb
-  - Add ability to use LDAP as password reset provider (#106) @crobibero
+  - Feature: LDAP Password Change with Toggle (#115) @mstrhakr
 
-  ### Code or Repo Maintenance ###
-  - Use meta ci (#110) @crobibero
+  ### Bug Fixes ###
+  - Fix PasswordResetUrl value in config page script (#117) @robobenklein
 
   ### CI & build changes ###
-  - Use meta ci (#110) @crobibero
+  - fix: meta ci workflows (#122) @h1dden-da3m0n
