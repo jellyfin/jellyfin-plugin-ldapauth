@@ -2,7 +2,7 @@ name: "LDAP Authentication"
 guid: "958aad66-3784-4d2a-b89a-a7b6fab6e25c"
 imageUrl: "https://repo.jellyfin.org/releases/plugin/images/jellyfin-plugin-ldapauth.png"
 version: 16
-targetAbi: "10.7.7.0"
+targetAbi: "10.8.0.0"
 framework: "net6.0"
 owner: "jellyfin"
 overview: "Authenticate users against an LDAP database"
