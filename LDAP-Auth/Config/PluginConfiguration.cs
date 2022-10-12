@@ -25,6 +25,9 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
             LdapAdminBaseDn = string.Empty;
             LdapAdminFilter = "(enabledService=JellyfinAdministrator)";
             LdapSearchAttributes = "uid, cn, mail, displayName";
+            LdapClientCertPath = string.Empty;
+            LdapClientKeyPath = string.Empty;
+            LdapRootCaPath = string.Empty;
             EnableCaseInsensitiveUsername = false;
             CreateUsersFromLdap = true;
             LdapUsernameAttribute = "uid";
@@ -97,6 +100,21 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
         /// Gets or sets a value indicating whether to use case insensitive username comparison.
         /// </summary>
         public bool EnableCaseInsensitiveUsername { get; set; }
+
+        /// <summary>
+        /// Gets or sets the ldap client cert path.
+        /// </summary>
+        public string LdapClientCertPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the ldap client cert path.
+        /// </summary>
+        public string LdapClientKeyPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the ldap root CA path.
+        /// </summary>
+        public string LdapRootCaPath { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether to create Jellyfin users from ldap.

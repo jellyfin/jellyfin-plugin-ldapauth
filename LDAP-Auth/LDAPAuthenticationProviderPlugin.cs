@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Jellyfin.Data.Entities;
 using Jellyfin.Data.Enums;
@@ -208,12 +210,88 @@ namespace Jellyfin.Plugin.LDAP_Auth
             return Task.CompletedTask;
         }
 
-        private static bool LdapClient_UserDefinedServerCertValidationDelegate(
+        /// <summary>
+        /// Deligate for validating LDAP server cert against a user provided CA.
+        /// </summary>
+        /// <param name="sender">An object that contains state information for this validation.</param>
+        /// <param name="certificate">TLS certificate provided by the server.</param>
+        /// <param name="chain">TLS chain provided by the server.</param>
+        /// <param name="sslPolicyErrors">Bitset of possible policy errors with the server's certificate.</param>
+        /// <returns>True if server cert is valid and trusted by the CA, otherwise false.</returns>
+        private bool LdapClient_UserDefinedServerCertValidationDelegate(
             object sender,
-            System.Security.Cryptography.X509Certificates.X509Certificate certificate,
-            System.Security.Cryptography.X509Certificates.X509Chain chain,
+            X509Certificate certificate,
+            X509Chain chain,
+            SslPolicyErrors sslPolicyErrors)
+        {
+            if (sslPolicyErrors.HasFlag(SslPolicyErrors.RemoteCertificateNameMismatch)
+                || sslPolicyErrors.HasFlag(SslPolicyErrors.RemoteCertificateNotAvailable))
+            {
+                _logger.LogWarning("Provided certificate not valid for remote name");
+                return false;
+            }
+
+            using var rootChain = new X509Chain
+            {
+                ChainPolicy =
+                {
+                    VerificationFlags = X509VerificationFlags.AllowUnknownCertificateAuthority
+                                        | X509VerificationFlags.IgnoreCertificateAuthorityRevocationUnknown
+                                        | X509VerificationFlags.IgnoreCtlNotTimeValid
+                                        | X509VerificationFlags.IgnoreCtlSignerRevocationUnknown
+                                        | X509VerificationFlags.IgnoreEndRevocationUnknown,
+                    TrustMode = X509ChainTrustMode.CustomRootTrust,
+                }
+            };
+            rootChain.ChainPolicy.CustomTrustStore.ImportFromPemFile(LdapPlugin.Instance.Configuration.LdapRootCaPath);
+            using var cert = new X509Certificate2(certificate);
+            var result = rootChain.Build(cert);
+            foreach (var error in chain.ChainStatus)
+            {
+                _logger.LogWarning("{State}: {Information}", error.Status.ToString(), error.StatusInformation);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Deligate for skipping TLS validation.
+        /// </summary>
+        /// <param name="sender">An object that contains state information for this validation.</param>
+        /// <param name="certificate">TLS certificate provided by the server.</param>
+        /// <param name="chain">TLS chain provided by the server.</param>
+        /// <param name="sslPolicyErrors">Bitset of possible policy errors with the server's certificate.</param>
+        /// <returns>True.</returns>
+        private static bool LdapClient_IgnoreCertDelegate(
+            object sender,
+            X509Certificate certificate,
+            X509Chain chain,
             System.Net.Security.SslPolicyErrors sslPolicyErrors)
             => true;
+
+        /// <summary>
+        /// Deligate for selecting which client cert to provide to the LDAP server for client auth.
+        /// </summary>
+        /// <param name="sender">An object that contains state information for this validation.</param>
+        /// <param name="host">Hostname you are connecting to.</param>
+        /// <param name="localCerts">Local client certs.</param>
+        /// <param name="remoteCert">Certificate provided by the remote party.</param>
+        /// <param name="issuers">Valid certificate issuers for the remote party.</param>
+        /// <returns>First client cert if available, otherwise remoteCert.</returns>
+        private static X509Certificate LdapClient_CertificateSelectorDelegate(
+            object sender,
+            string host,
+            X509CertificateCollection localCerts,
+            X509Certificate remoteCert,
+            string[] issuers)
+        {
+            if (localCerts.Count > 0)
+            {
+                return localCerts[0];
+            }
+
+            return remoteCert;
+        }
 
         /// <summary>
         /// Returns the user search results for the provided filter.
@@ -363,7 +441,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
             return null;
         }
 
-        private static LdapConnectionOptions GetConnectionOptions()
+        private LdapConnectionOptions GetConnectionOptions()
         {
             var connectionOptions = new LdapConnectionOptions();
             var configuration = LdapPlugin.Instance.Configuration;
@@ -374,7 +452,18 @@ namespace Jellyfin.Plugin.LDAP_Auth
 
             if (configuration.SkipSslVerify)
             {
+                connectionOptions.ConfigureRemoteCertificateValidationCallback(LdapClient_IgnoreCertDelegate);
+            }
+            else if (!string.IsNullOrEmpty(configuration.LdapRootCaPath))
+            {
                 connectionOptions.ConfigureRemoteCertificateValidationCallback(LdapClient_UserDefinedServerCertValidationDelegate);
+            }
+
+            if (!string.IsNullOrEmpty(configuration.LdapClientCertPath) && !string.IsNullOrEmpty(configuration.LdapClientKeyPath))
+            {
+                var cert = X509Certificate2.CreateFromPemFile(configuration.LdapClientCertPath, configuration.LdapClientKeyPath);
+                connectionOptions.ConfigureClientCertificates(new[] { cert });
+                connectionOptions.ConfigureLocalCertificateSelectionCallback(LdapClient_CertificateSelectorDelegate);
             }
 
             return connectionOptions;
