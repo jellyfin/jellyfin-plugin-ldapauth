@@ -62,6 +62,9 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api
             configuration.LdapBindPassword = body.LdapBindPassword;
             configuration.LdapBaseDn = body.LdapBaseDn;
             configuration.PasswordResetUrl = body.PasswordResetUrl;
+            configuration.LdapClientCertPath = body.LdapClientCertPath;
+            configuration.LdapClientKeyPath = body.LdapClientKeyPath;
+            configuration.LdapRootCaPath = body.LdapRootCaPath;
             LdapPlugin.Instance.UpdateConfiguration(configuration);
 
             return Ok(_ldapAuthenticationProvider.TestServerBind());

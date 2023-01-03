@@ -64,5 +64,20 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api.Models
         /// Gets or sets the password reset url.
         /// </summary>
         public string PasswordResetUrl { get; set; }
+
+        /// <summary>
+        /// Gets or sets the client cert name.
+        /// </summary>
+        public string LdapClientCertPath { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the client key name.
+        /// </summary>
+        public string LdapClientKeyPath { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the root ca chain cert name.
+        /// </summary>
+        public string LdapRootCaPath { get; set; } = string.Empty;
     }
 }

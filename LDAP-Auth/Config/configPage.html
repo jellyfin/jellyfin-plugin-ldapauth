@@ -38,6 +38,18 @@
                                     </label>
                                     <div class="fieldDescription checkboxFieldDescription">Use StartTLS for the LDAP connection.</div>
                                 </div>
+                                <div class="inputContainer fldExternalAddressFilter">
+                                    <input is="emby-input" type="text" id="txtLdapClientCertPath" label="LDAP Client Cert Path:" />
+                                    <div class="fieldDescription">Optional path to a TLS cert for LDAP client verification. </div>
+                                </div>
+                                <div class="inputContainer fldExternalAddressFilter">
+                                    <input is="emby-input" type="text" id="txtLdapClientKeyPath" label="LDAP Client Key Path:" />
+                                    <div class="fieldDescription">Optional path to a TLS key for LDAP client verification. </div>
+                                </div>
+                                <div class="inputContainer fldExternalAddressFilter">
+                                    <input is="emby-input" type="text" id="txtLdapRootCaPath" label="LDAP Root CA Path:" />
+                                    <div class="fieldDescription">Optional path to a cert bundle to use for LDAP server verification..</div>
+                                </div>
                                 <div class="checkboxContainer checkboxContainer-withDescription">
                                     <label>
                                         <input type="checkbox" is="emby-checkbox" id="chkSkipSslVerify" />
@@ -190,6 +202,9 @@
                 chkEnableCaseInsensitiveUsername: document.querySelector("#chkEnableCaseInsensitiveUsername"),
                 txtLdapSearchTest: document.querySelector("#txtLdapSearchTest"),
                 divSearchTestResults: document.querySelector("#divSearchTestResults"),
+                txtLdapClientCertPath: document.querySelector("#txtLdapClientCertPath"),
+                txtLdapClientKeyPath: document.querySelector("#txtLdapClientKeyPath"),
+                txtLdapRootCaPath: document.querySelector("#txtLdapRootCaPath"),
                 chkEnableUserCreation: document.querySelector("#chkEnableUserCreation"),
                 txtLdapUsernameAttribute: document.querySelector("#txtLdapUsernameAttribute"),
                 txtLdapPasswordAttribute: document.querySelector("#txtLdapPasswordAttribute"),
@@ -219,6 +234,9 @@
                     LdapConfigurationPage.txtLdapAdminFilter.value =
                         (config.LdapAdminFilter === '_disabled_') ? "" : config.LdapAdminFilter;
                     LdapConfigurationPage.txtLdapSearchAttributes.value = config.LdapSearchAttributes;
+                    LdapConfigurationPage.txtLdapClientCertPath.value = config.LdapClientCertPath || "";
+                    LdapConfigurationPage.txtLdapClientKeyPath.value = config.LdapClientKeyPath || "";
+                    LdapConfigurationPage.txtLdapRootCaPath.value = config.LdapRootCaPath || "";
                     LdapConfigurationPage.chkEnableCaseInsensitiveUsername.checked = config.EnableCaseInsensitiveUsername;
                     LdapConfigurationPage.chkEnableUserCreation.checked = config.CreateUsersFromLdap;
                     LdapConfigurationPage.txtLdapUsernameAttribute.value = config.LdapUsernameAttribute;
@@ -302,6 +320,9 @@
                     config.LdapAdminBaseDn = LdapConfigurationPage.txtLdapAdminBaseDn.value;
                     config.LdapAdminFilter = LdapConfigurationPage.txtLdapAdminFilter.value || '_disabled_';
                     config.LdapSearchAttributes = LdapConfigurationPage.txtLdapSearchAttributes.value;
+                    config.LdapClientCertPath = LdapConfigurationPage.txtLdapClientCertPath.value;
+                    config.LdapClientKeyPath = LdapConfigurationPage.txtLdapClientKeyPath.value;
+                    config.LdapRootCaPath = LdapConfigurationPage.txtLdapRootCaPath.value;
                     config.EnableCaseInsensitiveUsername = LdapConfigurationPage.chkEnableCaseInsensitiveUsername.checked;
                     config.CreateUsersFromLdap = LdapConfigurationPage.chkEnableUserCreation.checked;
                     config.LdapUsernameAttribute = LdapConfigurationPage.txtLdapUsernameAttribute.value;
@@ -339,6 +360,9 @@
                     LdapBindPassword: LdapConfigurationPage.txtLdapBindPassword.value,
                     LdapBaseDn: LdapConfigurationPage.txtLdapBaseDn.value,
                     PasswordResetUrl: LdapConfigurationPage.txtPasswordResetUrl.value,
+                    LdapClientCertPath: LdapConfigurationPage.txtLdapClientCertPath.value,
+                    LdapClientKeyPath: LdapConfigurationPage.txtLdapClientKeyPath.value,
+                    LdapRootCaPath: LdapConfigurationPage.txtLdapRootCaPath.value,
                 }
 
                 const handler = response => response.json().then(res => {
