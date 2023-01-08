@@ -109,6 +109,12 @@
                                         not change their active session permissions.
                                     </div>
                                 </div>
+                                <div class="checkboxContainer checkboxContainer">
+                                    <label>
+                                        <input type="checkbox" is="emby-checkbox" id="chkEnableLdapAdminFilterMemberUid" />
+                                        <span>Enable Admin Filter 'memberUid' mode</span>
+                                    </label>
+                                </div>
                                 <button id="btnTestFilters" is="emby-button" type="button" class="raised button block">
                                     <span>Save and Test LDAP Filter Settings</span>
                                 </button>
@@ -197,6 +203,7 @@
                 txtLdapSearchFilter: document.querySelector("#txtLdapSearchFilter"),
                 txtLdapAdminBaseDn: document.querySelector("#txtLdapAdminBaseDn"),
                 txtLdapAdminFilter: document.querySelector("#txtLdapAdminFilter"),
+                chkEnableLdapAdminFilterMemberUid: document.querySelector("#chkEnableLdapAdminFilterMemberUid"),
                 divFilterTestResults: document.querySelector("#divFilterTestResults"),
                 txtLdapSearchAttributes: document.querySelector("#txtLdapSearchAttributes"),
                 chkEnableCaseInsensitiveUsername: document.querySelector("#chkEnableCaseInsensitiveUsername"),
@@ -233,6 +240,7 @@
                     LdapConfigurationPage.txtLdapAdminBaseDn.value = config.LdapAdminBaseDn || "";
                     LdapConfigurationPage.txtLdapAdminFilter.value =
                         (config.LdapAdminFilter === '_disabled_') ? "" : config.LdapAdminFilter;
+                    LdapConfigurationPage.chkEnableLdapAdminFilterMemberUid.checked = config.EnableLdapAdminFilterMemberUid;
                     LdapConfigurationPage.txtLdapSearchAttributes.value = config.LdapSearchAttributes;
                     LdapConfigurationPage.txtLdapClientCertPath.value = config.LdapClientCertPath || "";
                     LdapConfigurationPage.txtLdapClientKeyPath.value = config.LdapClientKeyPath || "";
@@ -319,6 +327,7 @@
                     config.LdapSearchFilter = LdapConfigurationPage.txtLdapSearchFilter.value;
                     config.LdapAdminBaseDn = LdapConfigurationPage.txtLdapAdminBaseDn.value;
                     config.LdapAdminFilter = LdapConfigurationPage.txtLdapAdminFilter.value || '_disabled_';
+                    config.EnableLdapAdminFilterMemberUid = LdapConfigurationPage.chkEnableLdapAdminFilterMemberUid.checked;
                     config.LdapSearchAttributes = LdapConfigurationPage.txtLdapSearchAttributes.value;
                     config.LdapClientCertPath = LdapConfigurationPage.txtLdapClientCertPath.value;
                     config.LdapClientKeyPath = LdapConfigurationPage.txtLdapClientKeyPath.value;
