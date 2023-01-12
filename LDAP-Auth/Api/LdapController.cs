@@ -94,6 +94,7 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api
             var configuration = LdapPlugin.Instance.Configuration;
             configuration.LdapSearchFilter = body.LdapSearchFilter;
             configuration.LdapAdminFilter = body.LdapAdminFilter;
+            configuration.EnableLdapAdminFilterMemberUid = body.EnableLdapAdminFilterMemberUid;
             LdapPlugin.Instance.UpdateConfiguration(configuration);
 
             var usersComplete = false;

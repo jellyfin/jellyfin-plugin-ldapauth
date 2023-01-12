@@ -24,6 +24,7 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
             LdapSearchFilter = "(memberOf=CN=JellyfinUsers,DC=contoso,DC=com)";
             LdapAdminBaseDn = string.Empty;
             LdapAdminFilter = "(enabledService=JellyfinAdministrator)";
+            EnableLdapAdminFilterMemberUid = false;
             LdapSearchAttributes = "uid, cn, mail, displayName";
             LdapClientCertPath = string.Empty;
             LdapClientKeyPath = string.Empty;
@@ -90,6 +91,11 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
         /// Gets or sets the ldap admin search filter.
         /// </summary>
         public string LdapAdminFilter { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to enable admin filter based on memberUid.
+        /// </summary>
+        public bool EnableLdapAdminFilterMemberUid { get; set; }
 
         /// <summary>
         /// Gets or sets the ldap search attributes.
