@@ -158,7 +158,6 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api
         {
             var configuration = LdapPlugin.Instance.Configuration;
             configuration.LdapSearchAttributes = body.LdapSearchAttributes;
-            configuration.EnableCaseInsensitiveUsername = body.EnableCaseInsensitiveUsername;
             LdapPlugin.Instance.UpdateConfiguration(configuration);
 
             var response = new UserSearchResponse();

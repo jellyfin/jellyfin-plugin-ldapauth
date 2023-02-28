@@ -12,13 +12,7 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api.Models
         /// <summary>
         /// Gets or sets the ldap search attributes.
         /// </summary>
-        [Required]
         public string LdapSearchAttributes { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether to use case insensitive username comparison.
-        /// </summary>
-        public bool EnableCaseInsensitiveUsername { get; set; }
 
         /// <summary>
         /// Gets or sets the username to search for as a test.
