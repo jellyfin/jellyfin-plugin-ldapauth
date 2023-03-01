@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Threading.Tasks;
 using Jellyfin.Data.Entities;
 using Jellyfin.Data.Enums;
@@ -323,7 +324,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     LdapPlugin.Instance.Configuration.LdapBaseDn,
                     LdapConnection.ScopeSub,
                     filter,
-                    new string[] { UsernameAttr },
+                    new[] { UsernameAttr },
                     false);
 
                 // ToList to ensure enumeration is complete before the connection is closed
@@ -358,22 +359,36 @@ namespace Jellyfin.Plugin.LDAP_Auth
 
             string realSearchFilter;
 
-            if (SearchFilter.Contains("{username}"))
+            if (SearchFilter.Contains("{username}", StringComparison.OrdinalIgnoreCase))
             {
-                realSearchFilter = SearchFilter.Replace("{username}", username);
+                realSearchFilter = SearchFilter.Replace("{username}", username, StringComparison.OrdinalIgnoreCase);
             }
             else
             {
-                realSearchFilter = "(&" + SearchFilter + "(|";
+                var searchFilterBuilder = new StringBuilder()
+                    .Append("(&")
+                    .Append(SearchFilter)
+                    .Append("(|");
+
                 foreach (var attr in LdapUsernameAttributes)
                 {
-                    realSearchFilter += "(" + attr + "=" + username + ")";
+                    searchFilterBuilder
+                        .Append('(')
+                        .Append(attr)
+                        .Append('=')
+                        .Append(username)
+                        .Append(')');
                 }
 
-                realSearchFilter += "))";
+                searchFilterBuilder.Append("))");
+                realSearchFilter = searchFilterBuilder.ToString();
             }
 
-            _logger.LogDebug("LDAP Search: {BaseDn} {realSearchFilter} @ {LdapServer}", LdapPlugin.Instance.Configuration.LdapBaseDn, realSearchFilter, LdapPlugin.Instance.Configuration.LdapServer);
+            _logger.LogDebug(
+                "LDAP Search: {BaseDn} {realSearchFilter} @ {LdapServer}",
+                LdapPlugin.Instance.Configuration.LdapBaseDn,
+                realSearchFilter,
+                LdapPlugin.Instance.Configuration.LdapServer);
 
             ILdapSearchResults ldapUsers;
             try
@@ -382,7 +397,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     LdapPlugin.Instance.Configuration.LdapBaseDn,
                     LdapConnection.ScopeSub,
                     realSearchFilter,
-                    new string[] { UsernameAttr },
+                    new[] { UsernameAttr },
                     false);
             }
             catch (LdapException e)
