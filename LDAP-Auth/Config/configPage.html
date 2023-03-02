@@ -93,10 +93,37 @@
                         </div>
                         <div class="verticalSection" is="emby-collapse" title="LDAP User Settings">
                             <div class="collapseContent">
+                                <h4 style="margin-top:-0.3em">Users</h4>
+                                <p>There are two possible methods to search for users:</p>
+                                <ul>
+                                    <li>The {username} variable can be placed directly into the LDAP Search Filter. This variable will be replaced during the search with the entered username. If you use this method, the LDAP Search Attributes value is optional and will be ignored, and you must implement the attribute comparison(s) manually in your filter.<br/><i>For example, "(&(objectclass=mailUser)(|(uid={username})(mail={username})))" will explicitly look for the username in either the "uid" or "mail" entries, and the user must be part of "objectclass=mailUser".</i></li>
+                                    <li>The LDAP Search Filter can be used as a subcomponent of a larger search filter constructed at runtime. This is the default if the LDAP Search Filter does not include the {username} variable at least once. For each LDAP Search Attributes entry, the entered username will be used with the attribute as an 'or' condition search filter. If you use this method, the LDAP Search Filter is optional and may be empty.<br/><i>For example, "(objectclass=mailUser)" as the Search Filter and "uid, mail" as the Search Attributes will generate "(&(objectclass=mailUser)(|(uid={username})(mail={username})))" during lookup, functionally identical to the above example.</i></li>
+                                </ul>
+                                <p>At least one method must be chosen and configured below. If upgrading from plugin version 16 or older, the second option will be used by default.</p>
+                                <p>Note: Usernames are treated case-insensitive in both cases, as an LDAP search is not case-sensitive.</p>
+                                <br/>
                                 <div class="inputContainer fldExternalAddressFilter">
-                                    <input is="emby-input" type="text" id="txtLdapSearchFilter" required placeholder="(memberOf=CN=JellyfinUsers,DC=contoso,DC=com)" label="LDAP User Filter:" />
-                                    <div class="fieldDescription">The LDAP search filter to find users for Jellyfin, e.g. (objectClass=inetOrgPerson).</div>
+                                    <input is="emby-input" type="text" id="txtLdapSearchFilter" placeholder="(memberOf=CN=JellyfinUsers,DC=contoso,DC=com)" label="LDAP Search Filter:" />
+                                    <div class="fieldDescription">
+                                        LDAP search filter to limit user searches.<br/>
+                                    </div>
                                 </div>
+                                <div class="inputContainer fldExternalAddressFilter">
+                                    <input is="emby-input" type="text" id="txtLdapSearchAttributes" placeholder="uid, cn, mail, displayName" label="LDAP Search Attributes:" />
+                                    <div class="fieldDescription">
+                                        A comma-separated list of attributes to search for the username.<br/>
+                                    </div>
+                                </div>
+                                <div class="inputContainer fldExternalAddressFilter">
+                                    <input is="emby-input" type="text" id="txtLdapUsernameAttribute" required placeholder="uid" label="LDAP Username Attribute:" />
+                                    <div class="fieldDescription">The LDAP attribute to use as the Jellyfin username.<br/><i>For example, 'uid' means we will use the LDAP 'uid' attribute as the Jellyfin username.</i></div>
+                                </div>
+                                <div class="inputContainer fldExternalAddressFilter">
+                                    <input is="emby-input" type="text" id="txtLdapPasswordAttribute" label="LDAP Password Attribute:" />
+                                    <div class="fieldDescription">The LDAP attribute for the user password; only required if Allow Password Change is enabled.</div>
+                                </div>
+                                <hr>
+                                <h4>Administrators</h4>
                                 <div class="inputContainer fldExternalAddressFilter">
                                     <input is="emby-input" type="text" id="txtLdapAdminBaseDn" label="LDAP Admin Base DN:" />
                                     <div class="fieldDescription">The LDAP search base dn to find administrative users for Jellyfin, e.g. (cn=admins,dc=contoso,dc=com). Defaults to user dn if empty</div>
@@ -115,22 +142,14 @@
                                         <span>Enable Admin Filter 'memberUid' mode</span>
                                     </label>
                                 </div>
+                                <hr>
+
+                                <h4>Testing</h4>
                                 <button id="btnTestFilters" is="emby-button" type="button" class="raised button block">
                                     <span>Save and Test LDAP Filter Settings</span>
                                 </button>
                                 <div id="divFilterTestResults"></div>
-                                <hr>
-                                <div class="inputContainer fldExternalAddressFilter">
-                                    <input is="emby-input" type="text" id="txtLdapSearchAttributes" required placeholder="uid, cn, mail, displayName" label="LDAP Attributes:" />
-                                    <div class="fieldDescription">A comma-separated list of LDAP attributes to compare with entered usernames.</div>
-                                </div>
-                                <div class="checkboxContainer checkboxContainer-withDescription">
-                                    <label>
-                                        <input type="checkbox" is="emby-checkbox" id="chkEnableCaseInsensitiveUsername" />
-                                        <span>Enable Case Insensitive Username</span>
-                                    </label>
-                                    <div class="fieldDescription checkboxFieldDescription">Enable case insensitive username comparison</div>
-                                </div>
+                                <br/>
                                 <div class="inputContainer fldExternalAddressFilter">
                                     <input is="emby-input" type="text" id="txtLdapSearchTest" label="Test Login Name:" />
                                     <div class="fieldDescription">A user login to search the LDAP for to test attribute configuration.</div>
@@ -149,14 +168,6 @@
                                         <span>Enable User Creation</span>
                                     </label>
                                     <div class="fieldDescription checkboxFieldDescription">Enable user creation in Jellyfin on successful LDAP authentication. User must first exist in LDAP.</div>
-                                </div>
-                                <div class="inputContainer fldExternalAddressFilter">
-                                    <input is="emby-input" type="text" id="txtLdapUsernameAttribute" label="LDAP Name Attribute:" />
-                                    <div class="fieldDescription">The LDAP attribute to create Jellyfin user names from.</div>
-                                </div>
-                                <div class="inputContainer fldExternalAddressFilter">
-                                    <input is="emby-input" type="text" id="txtLdapPasswordAttribute" label="LDAP Password Attribute:" />
-                                    <div class="fieldDescription">The LDAP attribute to change passwords with (only applies to password change toggle).</div>
                                 </div>
                                 <div class="folderAccessContainer">
                                     <h2>${HeaderLibraryAccess}</h2>
@@ -206,7 +217,6 @@
                 chkEnableLdapAdminFilterMemberUid: document.querySelector("#chkEnableLdapAdminFilterMemberUid"),
                 divFilterTestResults: document.querySelector("#divFilterTestResults"),
                 txtLdapSearchAttributes: document.querySelector("#txtLdapSearchAttributes"),
-                chkEnableCaseInsensitiveUsername: document.querySelector("#chkEnableCaseInsensitiveUsername"),
                 txtLdapSearchTest: document.querySelector("#txtLdapSearchTest"),
                 divSearchTestResults: document.querySelector("#divSearchTestResults"),
                 txtLdapClientCertPath: document.querySelector("#txtLdapClientCertPath"),
@@ -245,7 +255,6 @@
                     LdapConfigurationPage.txtLdapClientCertPath.value = config.LdapClientCertPath || "";
                     LdapConfigurationPage.txtLdapClientKeyPath.value = config.LdapClientKeyPath || "";
                     LdapConfigurationPage.txtLdapRootCaPath.value = config.LdapRootCaPath || "";
-                    LdapConfigurationPage.chkEnableCaseInsensitiveUsername.checked = config.EnableCaseInsensitiveUsername;
                     LdapConfigurationPage.chkEnableUserCreation.checked = config.CreateUsersFromLdap;
                     LdapConfigurationPage.txtLdapUsernameAttribute.value = config.LdapUsernameAttribute;
                     LdapConfigurationPage.txtLdapPasswordAttribute.value = config.LdapPasswordAttribute;
@@ -332,7 +341,6 @@
                     config.LdapClientCertPath = LdapConfigurationPage.txtLdapClientCertPath.value;
                     config.LdapClientKeyPath = LdapConfigurationPage.txtLdapClientKeyPath.value;
                     config.LdapRootCaPath = LdapConfigurationPage.txtLdapRootCaPath.value;
-                    config.EnableCaseInsensitiveUsername = LdapConfigurationPage.chkEnableCaseInsensitiveUsername.checked;
                     config.CreateUsersFromLdap = LdapConfigurationPage.chkEnableUserCreation.checked;
                     config.LdapUsernameAttribute = LdapConfigurationPage.txtLdapUsernameAttribute.value;
                     config.LdapPasswordAttribute = LdapConfigurationPage.txtLdapPasswordAttribute.value;
@@ -473,7 +481,6 @@
 
                 const configUpdate = {
                     LdapSearchAttributes: LdapConfigurationPage.txtLdapSearchAttributes.value,
-                    EnableCaseInsensitiveUsername: LdapConfigurationPage.chkEnableCaseInsensitiveUsername.checked,
                     TestSearchUsername: LdapConfigurationPage.txtLdapSearchTest.value,
                 }
 

@@ -11,7 +11,6 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api.Models
         /// <summary>
         /// Gets or sets the ldap user search filter.
         /// </summary>
-        [Required]
         public string LdapSearchFilter { get; set; }
 
         /// <summary>
