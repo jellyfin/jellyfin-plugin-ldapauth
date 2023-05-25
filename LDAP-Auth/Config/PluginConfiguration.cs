@@ -175,6 +175,10 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
         /// <param name="ldapUid">The LDAP UID associated with the user.</param>
         public void AddUser(Guid userGuid, string ldapUid)
         {
+            // Ensure we do not have more than one entry for a given user
+            // This may happen if user's ldapUid changes
+            RemoveUser(userGuid);
+
             var ldapUsers = LdapUsers.ToList();
             var ldapUser = new LdapUser
             {
