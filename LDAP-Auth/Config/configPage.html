@@ -115,8 +115,12 @@
                                     </div>
                                 </div>
                                 <div class="inputContainer fldExternalAddressFilter">
-                                    <input is="emby-input" type="text" id="txtLdapUsernameAttribute" required placeholder="uid" label="LDAP Username Attribute:" />
-                                    <div class="fieldDescription">The LDAP attribute to use as the Jellyfin username.<br/><i>For example, 'uid' means we will use the LDAP 'uid' attribute as the Jellyfin username.</i></div>
+                                    <input is="emby-input" type="text" id="txtLdapUidAttribute" required placeholder="uid" label="LDAP Uid Attribute:" />
+                                    <div class="fieldDescription">The LDAP attribute to use to uniquely identify the user.<br/><i>For example, 'uid' means we will use the LDAP 'uid' attribute to uniquely identify the user.</i></div>
+                                </div>
+                                <div class="inputContainer fldExternalAddressFilter">
+                                    <input is="emby-input" type="text" id="txtLdapUsernameAttribute" required placeholder="cn" label="LDAP Username Attribute:" />
+                                    <div class="fieldDescription">The LDAP attribute to use as the Jellyfin username.<br/><i>For example, 'cn' means we will use the LDAP 'cn' attribute as the Jellyfin username.</i></div>
                                 </div>
                                 <div class="inputContainer fldExternalAddressFilter">
                                     <input is="emby-input" type="text" id="txtLdapPasswordAttribute" label="LDAP Password Attribute:" />
@@ -223,6 +227,7 @@
                 txtLdapClientKeyPath: document.querySelector("#txtLdapClientKeyPath"),
                 txtLdapRootCaPath: document.querySelector("#txtLdapRootCaPath"),
                 chkEnableUserCreation: document.querySelector("#chkEnableUserCreation"),
+                txtLdapUidAttribute: document.querySelector("#txtLdapUidAttribute"),
                 txtLdapUsernameAttribute: document.querySelector("#txtLdapUsernameAttribute"),
                 txtLdapPasswordAttribute: document.querySelector("#txtLdapPasswordAttribute"),
                 chkEnableAllFolders: document.querySelector('#chkEnableAllFolders'),
@@ -256,6 +261,7 @@
                     LdapConfigurationPage.txtLdapClientKeyPath.value = config.LdapClientKeyPath || "";
                     LdapConfigurationPage.txtLdapRootCaPath.value = config.LdapRootCaPath || "";
                     LdapConfigurationPage.chkEnableUserCreation.checked = config.CreateUsersFromLdap;
+                    LdapConfigurationPage.txtLdapUidAttribute.value = config.LdapUidAttribute;
                     LdapConfigurationPage.txtLdapUsernameAttribute.value = config.LdapUsernameAttribute;
                     LdapConfigurationPage.txtLdapPasswordAttribute.value = config.LdapPasswordAttribute;
                     config.EnableAllFolders = config.EnableAllFolders || false;
@@ -342,6 +348,7 @@
                     config.LdapClientKeyPath = LdapConfigurationPage.txtLdapClientKeyPath.value;
                     config.LdapRootCaPath = LdapConfigurationPage.txtLdapRootCaPath.value;
                     config.CreateUsersFromLdap = LdapConfigurationPage.chkEnableUserCreation.checked;
+                    config.LdapUidAttribute = LdapConfigurationPage.txtLdapUidAttribute.value;
                     config.LdapUsernameAttribute = LdapConfigurationPage.txtLdapUsernameAttribute.value;
                     config.LdapPasswordAttribute = LdapConfigurationPage.txtLdapPasswordAttribute.value;
                     /* Map the set of checked input items to an array of library Id's */

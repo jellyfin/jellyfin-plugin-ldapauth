@@ -1,5 +1,7 @@
 using System;
 
+using Jellyfin.Plugin.LDAP_Auth.Api.Models;
+
 namespace Jellyfin.Plugin.LDAP_Auth.Config
 {
     /// <summary>
@@ -30,7 +32,8 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
             LdapClientKeyPath = string.Empty;
             LdapRootCaPath = string.Empty;
             CreateUsersFromLdap = true;
-            LdapUsernameAttribute = "uid";
+            LdapUidAttribute = "uid";
+            LdapUsernameAttribute = "cn";
             LdapPasswordAttribute = "userPassword";
             EnableAllFolders = false;
             EnabledFolders = Array.Empty<string>();
@@ -125,6 +128,11 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
         /// Gets or sets a value indicating whether to allow password change (Requires privileged bind user).
         /// </summary>
         public bool AllowPassChange { get; set; }
+
+        /// <summary>
+        /// Gets or sets the ldap uid attribute.
+        /// </summary>
+        public string LdapUidAttribute { get; set; }
 
         /// <summary>
         /// Gets or sets the ldap username attribute.
