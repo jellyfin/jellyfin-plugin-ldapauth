@@ -176,8 +176,10 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
         public void AddUser(Guid userGuid, string ldapUid)
         {
             // Ensure we do not have more than one entry for a given user
-            // This may happen if user's ldapUid changes
+            // This may happen if a user tries to authenticate after their
+            // ldapUid has changed or if their Jellyfin account has been deleted
             RemoveUser(userGuid);
+            RemoveUser(ldapUid);
 
             var ldapUsers = LdapUsers.ToList();
             var ldapUser = new LdapUser
