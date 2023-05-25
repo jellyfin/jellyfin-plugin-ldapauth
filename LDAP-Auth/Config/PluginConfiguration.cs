@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 using Jellyfin.Plugin.LDAP_Auth.Api.Models;
 
@@ -37,7 +39,14 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
             LdapPasswordAttribute = "userPassword";
             EnableAllFolders = false;
             EnabledFolders = Array.Empty<string>();
+
+            LdapUsers = Array.Empty<LdapUser>();
         }
+
+        /// <summary>
+        /// Gets or sets the ldap users.
+        /// </summary>
+        public LdapUser[] LdapUsers { get; set; }
 
         /// <summary>
         /// Gets or sets the ldap server ip or url.
@@ -158,5 +167,53 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
         /// Gets or sets the password reset url.
         /// </summary>
         public string PasswordResetUrl { get; set; }
+
+        /// <summary>
+        /// Adds a user to the ldap users.
+        /// </summary>
+        /// <param name="userGuid">The user Guid.</param>
+        /// <param name="ldapUid">The LDAP UID associated with the user.</param>
+        public void AddUser(Guid userGuid, string ldapUid)
+        {
+            var ldapUsers = LdapUsers.ToList();
+            var ldapUser = new LdapUser
+            {
+                LinkedJfUserId = userGuid,
+                LdapUid = ldapUid
+            };
+            ldapUsers.Add(ldapUser);
+            LdapUsers = ldapUsers.ToArray();
+        }
+
+        /// <summary>
+        /// Removes a user from the LDAP users.
+        /// </summary>
+        /// <param name="userGuid">The user id.</param>
+        public void RemoveUser(Guid userGuid)
+        {
+            var ldapUsers = LdapUsers.ToList();
+            ldapUsers.RemoveAll(user => user.LinkedJfUserId == userGuid);
+            LdapUsers = ldapUsers.ToArray();
+        }
+
+        /// <summary>
+        /// Removes a user from the LDAP users.
+        /// </summary>
+        /// <param name="ldapUid">The LDAP uid of the user.</param>
+        public void RemoveUser(string ldapUid)
+        {
+            var ldapUsers = LdapUsers.ToList();
+            ldapUsers.RemoveAll(user => user.LdapUid == ldapUid);
+            LdapUsers = ldapUsers.ToArray();
+        }
+
+        /// <summary>
+        /// Gets a list of all LDAP users.
+        /// </summary>
+        /// <returns>IReadonlyList{LdapUser} with all LDAP users.</returns>
+        public IReadOnlyList<LdapUser> GetAllLdapUsers()
+        {
+            return LdapUsers.ToList();
+        }
     }
 }
