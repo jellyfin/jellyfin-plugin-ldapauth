@@ -184,7 +184,7 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
             var ldapUsers = LdapUsers.ToList();
             var ldapUser = new LdapUser
             {
-                LinkedJfUserId = userGuid,
+                LinkedJellyfinUserId = userGuid,
                 LdapUid = ldapUid
             };
             ldapUsers.Add(ldapUser);
@@ -197,7 +197,7 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
         /// <param name="userGuid">The user id.</param>
         public void RemoveUser(Guid userGuid)
         {
-            LdapUsers = LdapUsers.Where(user => user.LinkedJfUserId != userGuid).ToArray();
+            LdapUsers = LdapUsers.Where(user => user.LinkedJellyfinUserId != userGuid).ToArray();
         }
 
         /// <summary>

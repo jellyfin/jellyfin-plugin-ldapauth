@@ -76,7 +76,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
             _logger.LogDebug("Setting username: {LdapUsername}", ldapUsername);
             try
             {
-                user = userManager.GetUserById(UserHelper.GetLdapUser(ldapUid).LinkedJfUserId);
+                user = userManager.GetUserById(UserHelper.GetLdapUser(ldapUid).LinkedJellyfinUserId);
             }
             catch (Exception e)
             {

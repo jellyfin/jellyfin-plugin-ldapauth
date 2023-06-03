@@ -12,14 +12,14 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api.Models
         /// </summary>
         public LdapUser()
         {
-            LinkedJfUserId = Guid.Empty;
+            LinkedJellyfinUserId = Guid.Empty;
             LdapUid = string.Empty;
         }
 
         /// <summary>
         /// Gets or sets the linked Jellyfin user id.
         /// </summary>
-        public Guid LinkedJfUserId { get; set; }
+        public Guid LinkedJellyfinUserId { get; set; }
 
         /// <summary>
         /// Gets or sets the LDAP Uid associated with the user.

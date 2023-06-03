@@ -16,12 +16,12 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api.Helpers
 
             return ldapUsers.FirstOrDefault(user =>
             {
-                if (user.LinkedJfUserId == Guid.Empty)
+                if (user.LinkedJellyfinUserId == Guid.Empty)
                 {
                     return false;
                 }
 
-                if (user.LinkedJfUserId.Equals(userGuid))
+                if (user.LinkedJellyfinUserId.Equals(userGuid))
                 {
                     return true;
                 }
