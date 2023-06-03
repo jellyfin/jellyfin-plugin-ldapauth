@@ -45,7 +45,7 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api.Helpers
                     return false;
                 }
 
-                if (user.LdapUid.Equals(ldapUid))
+                if (string.Equals(user.LdapUid, ldapUid, StringComparison.Ordinal))
                 {
                     return true;
                 }
