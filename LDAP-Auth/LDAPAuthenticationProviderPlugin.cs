@@ -181,8 +181,9 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 if (!string.Equals(user.Username, ldapUsername, StringComparison.Ordinal))
                 {
                     _logger.LogDebug("Updating user {Username} username to: {LdapUsername}.", user.Username, ldapUsername);
-                    user.Username = ldapUsername;
-                    userNeedsUpdate = true;
+                    // userManager will take care of saving the new name to DB
+                    // no need to do it ourselves
+                    await userManager.RenameUser(user, ldapUsername);
                 }
 
                 // User exists; if the admin has enabled an AdminFilter, check if the user's
