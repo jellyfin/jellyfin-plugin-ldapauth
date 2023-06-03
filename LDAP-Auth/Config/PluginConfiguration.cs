@@ -206,9 +206,7 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
         /// <param name="ldapUid">The LDAP uid of the user.</param>
         public void RemoveUser(string ldapUid)
         {
-            var ldapUsers = LdapUsers.ToList();
-            ldapUsers.RemoveAll(user => user.LdapUid == ldapUid);
-            LdapUsers = ldapUsers.ToArray();
+            LdapUsers = LdapUsers.Where(user => !string.Equals(user.LdapUid, ldapUid, StringComparison.Ordinal)).ToArray();
         }
 
         /// <summary>
