@@ -197,9 +197,7 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
         /// <param name="userGuid">The user id.</param>
         public void RemoveUser(Guid userGuid)
         {
-            var ldapUsers = LdapUsers.ToList();
-            ldapUsers.RemoveAll(user => user.LinkedJfUserId == userGuid);
-            LdapUsers = ldapUsers.ToArray();
+            LdapUsers = LdapUsers.Where(user => user.LinkedJfUserId != userGuid).ToArray();
         }
 
         /// <summary>
