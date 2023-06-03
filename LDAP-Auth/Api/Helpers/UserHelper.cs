@@ -40,7 +40,7 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api.Helpers
 
             return ldapUsers.FirstOrDefault(user =>
             {
-                if (user.LdapUid == string.Empty)
+                if (string.IsNullOrEmpty(user.LdapUid))
                 {
                     return false;
                 }
