@@ -195,7 +195,7 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
         /// Removes a user from the LDAP users.
         /// </summary>
         /// <param name="userGuid">The user id.</param>
-        public void RemoveUser(Guid userGuid)
+        private void RemoveUser(Guid userGuid)
         {
             LdapUsers = LdapUsers.Where(user => user.LinkedJellyfinUserId != userGuid).ToArray();
         }
