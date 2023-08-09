@@ -72,15 +72,46 @@ namespace Jellyfin.Plugin.LDAP_Auth
             User user = null;
             var ldapUser = LocateLdapUser(username);
             var ldapUid = GetAttribute(ldapUser, UidAttr)?.StringValue;
+            _logger.LogDebug("Got ldapUid: {LdapUid}", ldapUid);
             var ldapUsername = GetAttribute(ldapUser, UsernameAttr)?.StringValue;
-            _logger.LogDebug("Setting username: {LdapUsername}", ldapUsername);
+            _logger.LogDebug("Got ldapUsername: {LdapUsername}", ldapUsername);
             try
             {
                 user = userManager.GetUserById(UserHelper.GetLdapUser(ldapUid).LinkedJellyfinUserId);
             }
             catch (Exception e)
             {
-                _logger.LogWarning("User Manager could not find a user for LDAP User, this may not be fatal", e);
+                _logger.LogWarning("User Manager could not find an user with such ldapUid, this may not be fatal", e);
+            }
+
+            if (user == null)
+            {
+                // Try to lookup the user by the ldapUsername in case it
+                // does not exist in the plugin config lookup table or the
+                // ldapUid has changed for some reason.
+                //
+                // XXX: This is not a foolproof solution. If both ldapUid and
+                // ldapUsername have changed since last login, the user will
+                // be treated as a new user.
+                try
+                {
+                    user = userManager.GetUserByName(ldapUsername);
+                    if (!string.Equals(user.AuthenticationProviderId, GetType().FullName!, StringComparison.OrdinalIgnoreCase))
+                    {
+                        // This user is not managed by us, ignore it
+                        user = null;
+                    }
+                    else
+                    {
+                        // Add the user to our Ldap users
+                        LdapPlugin.Instance.Configuration.AddUser(user.Id, ldapUid);
+                        LdapPlugin.Instance.SaveConfiguration();
+                    }
+                }
+                catch (Exception e)
+                {
+                    _logger.LogWarning("User Manager could not find an user with such ldapUsername, this may not be fatal", e);
+                }
             }
 
             using (var currentUserConnection = ConnectToLdap(ldapUser.Dn, password))
