@@ -81,7 +81,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
             }
             catch (Exception e)
             {
-                _logger.LogWarning("User Manager could not find an user with such ldapUid, this may not be fatal", e);
+                _logger.LogWarning(e, "User Manager could not find an user with such ldapUid, this may not be fatal");
             }
 
             if (user == null)
