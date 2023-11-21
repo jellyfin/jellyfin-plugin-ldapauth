@@ -5,8 +5,8 @@
 <img alt="Plugin Banner" src="https://raw.githubusercontent.com/jellyfin/jellyfin-ux/master/plugins/SVG/jellyfin-plugin-ldapauth.svg?sanitize=true"/>
 <br/>
 <br/>
-<a href="https://github.com/jellyfin/jellyfin-plugin-ldapauth/actions?query=workflow%3A%22Test+Build+Plugin%22">
-<img alt="GitHub Workflow Status" src="https://img.shields.io/github/workflow/status/jellyfin/jellyfin-plugin-ldapauth/Test%20Build%20Plugin.svg">
+<a href="https://github.com/jellyfin/jellyfin-plugin-ldapauth/actions/workflows/test.yaml">
+<img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/jellyfin/jellyfin-plugin-ldapauth/.github/workflows/test.yaml">
 </a>
 <a href="https://github.com/jellyfin/jellyfin-plugin-ldapauth">
 <img alt="MIT License" src="https://img.shields.io/github/license/jellyfin/jellyfin-plugin-ldapauth.svg"/>
