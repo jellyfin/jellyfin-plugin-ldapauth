@@ -6,7 +6,7 @@
 <br/>
 <br/>
 <a href="https://github.com/jellyfin/jellyfin-plugin-ldapauth/actions/workflows/test.yaml">
-<img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/jellyfin/jellyfin-plugin-ldapauth/.github/workflows/test.yaml">
+<img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/jellyfin/jellyfin-plugin-ldapauth/.github/workflows/test.yaml?branch=master">
 </a>
 <a href="https://github.com/jellyfin/jellyfin-plugin-ldapauth">
 <img alt="MIT License" src="https://img.shields.io/github/license/jellyfin/jellyfin-plugin-ldapauth.svg"/>
