@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Jellyfin.Data.Entities;
 using Jellyfin.Data.Enums;
 using Jellyfin.Plugin.LDAP_Auth.Api.Models;
+using Jellyfin.Plugin.LDAP_Auth.Helpers;
 using MediaBrowser.Common;
 using MediaBrowser.Controller.Authentication;
 using MediaBrowser.Controller.Library;
@@ -111,7 +112,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     var ldapUsers = ldapClient.Search(
                         adminBaseDn,
                         LdapConnection.ScopeSub,
-                        AdminFilter.Replace("{username}", username, StringComparison.OrdinalIgnoreCase),
+                        AdminFilter.Replace("{username}", LdapUtils.SanitizeFilter(username), StringComparison.OrdinalIgnoreCase),
                         Array.Empty<string>(),
                         false);
 
@@ -357,11 +358,13 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 LdapPlugin.Instance.Configuration.LdapBindUser,
                 LdapPlugin.Instance.Configuration.LdapBindPassword);
 
+            string sanitizedUsername = LdapUtils.SanitizeFilter(username);
+
             string realSearchFilter;
 
             if (SearchFilter.Contains("{username}", StringComparison.OrdinalIgnoreCase))
             {
-                realSearchFilter = SearchFilter.Replace("{username}", username, StringComparison.OrdinalIgnoreCase);
+                realSearchFilter = SearchFilter.Replace("{username}", sanitizedUsername, StringComparison.OrdinalIgnoreCase);
             }
             else
             {
@@ -376,7 +379,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                         .Append('(')
                         .Append(attr)
                         .Append('=')
-                        .Append(username)
+                        .Append(sanitizedUsername)
                         .Append(')');
                 }
 
