@@ -1,8 +1,8 @@
 name: "LDAP Authentication"
 guid: "958aad66-3784-4d2a-b89a-a7b6fab6e25c"
 imageUrl: "https://repo.jellyfin.org/releases/plugin/images/jellyfin-plugin-ldapauth.png"
-version: 17
-targetAbi: "10.8.9.0"
+version: 18
+targetAbi: "10.8.13.0"
 framework: "net6.0"
 owner: "jellyfin"
 overview: "Authenticate users against an LDAP database"
@@ -14,11 +14,14 @@ category: "Authentication"
 artifacts:
   - "LDAP-Auth.dll"
   - "Novell.Directory.Ldap.NETStandard.dll"
-changelog: |2-
-  ### New features and improvements ###
-  - Rework search flow to minimize LDAP search results (#140) @joshuaboniface
-  - admin memberUid feature flag (#138) @cyberb
-  - Expand certificate support for LDAP authentication (#135) @JoshuaHassler
+changelog: |-
+  - Implement proper input sanitization to prevent LDAP injection attacks (#153) @tam1m
 
-  ### Bug Fixes ###
-  - Rework search flow to minimize LDAP search results (#140) @joshuaboniface
+  ### New features and improvements ###
+  - Added  (#147) @sdimovv
+
+  ### Code or Repo Maintenance ###
+  - Update link to Jellyfin website (#150) @methbkts
+
+  ### Documentation updates ###
+  - Fix "build" shields badge (#152) @Radiicall
