@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Jellyfin.Data.Entities;
 using Jellyfin.Data.Enums;
+using Jellyfin.Plugin.LDAP_Auth.Api.Helpers;
 using Jellyfin.Plugin.LDAP_Auth.Api.Models;
 using Jellyfin.Plugin.LDAP_Auth.Helpers;
 using MediaBrowser.Common;
@@ -39,6 +40,8 @@ namespace Jellyfin.Plugin.LDAP_Auth
 
         private string[] LdapUsernameAttributes => LdapPlugin.Instance.Configuration.LdapSearchAttributes.Replace(" ", string.Empty, StringComparison.Ordinal).Split(',');
 
+        private string UidAttr => LdapPlugin.Instance.Configuration.LdapUidAttribute;
+
         private string UsernameAttr => LdapPlugin.Instance.Configuration.LdapUsernameAttribute;
 
         private string SearchFilter => LdapPlugin.Instance.Configuration.LdapSearchFilter;
@@ -69,15 +72,47 @@ namespace Jellyfin.Plugin.LDAP_Auth
             var userManager = _applicationHost.Resolve<IUserManager>();
             User user = null;
             var ldapUser = LocateLdapUser(username);
+            var ldapUid = GetAttribute(ldapUser, UidAttr)?.StringValue;
+            _logger.LogDebug("Got ldapUid: {LdapUid}", ldapUid);
             var ldapUsername = GetAttribute(ldapUser, UsernameAttr)?.StringValue;
-            _logger.LogDebug("Setting username: {LdapUsername}", ldapUsername);
+            _logger.LogDebug("Got ldapUsername: {LdapUsername}", ldapUsername);
             try
             {
-                user = userManager.GetUserByName(ldapUsername);
+                user = userManager.GetUserById(UserHelper.GetLdapUser(ldapUid).LinkedJellyfinUserId);
             }
             catch (Exception e)
             {
-                _logger.LogWarning("User Manager could not find a user for LDAP User, this may not be fatal", e);
+                _logger.LogWarning(e, "User Manager could not find an user with such ldapUid, this may not be fatal");
+            }
+
+            if (user == null)
+            {
+                // Try to lookup the user by the ldapUsername in case it
+                // does not exist in the plugin config lookup table or the
+                // ldapUid has changed for some reason.
+                //
+                // XXX: This is not a foolproof solution. If both ldapUid and
+                // ldapUsername have changed since last login, the user will
+                // be treated as a new user.
+                try
+                {
+                    user = userManager.GetUserByName(ldapUsername);
+                    if (!string.Equals(user.AuthenticationProviderId, GetType().FullName!, StringComparison.OrdinalIgnoreCase))
+                    {
+                        // This user is not managed by us, ignore it
+                        user = null;
+                    }
+                    else
+                    {
+                        // Add the user to our Ldap users
+                        LdapPlugin.Instance.Configuration.AddUser(user.Id, ldapUid);
+                        LdapPlugin.Instance.SaveConfiguration();
+                    }
+                }
+                catch (Exception e)
+                {
+                    _logger.LogWarning(e, "User Manager could not find an user with such ldapUsername, this may not be fatal");
+                }
             }
 
             using (var currentUserConnection = ConnectToLdap(ldapUser.Dn, password))
@@ -158,6 +193,10 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     }
 
                     await userManager.UpdateUserAsync(user).ConfigureAwait(false);
+
+                    // Add the user to our Ldap users
+                    LdapPlugin.Instance.Configuration.AddUser(user.Id, ldapUid);
+                    LdapPlugin.Instance.SaveConfiguration();
                 }
                 else
                 {
@@ -168,6 +207,17 @@ namespace Jellyfin.Plugin.LDAP_Auth
             }
             else
             {
+                var userNeedsUpdate = false;
+
+                // User exists; if needed update its username
+                if (!string.Equals(user.Username, ldapUsername, StringComparison.Ordinal))
+                {
+                    _logger.LogDebug("Updating user {Username} username to: {LdapUsername}.", user.Username, ldapUsername);
+                    // userManager will take care of saving the new name to DB
+                    // no need to do it ourselves
+                    await userManager.RenameUser(user, ldapUsername);
+                }
+
                 // User exists; if the admin has enabled an AdminFilter, check if the user's
                 // 'IsAdministrator' matches the LDAP configuration and update if there is a difference.
                 if (!string.IsNullOrEmpty(AdminFilter) && !string.Equals(AdminFilter, "_disabled_", StringComparison.Ordinal))
@@ -177,8 +227,13 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     {
                         _logger.LogDebug("Updating user {Username} admin status to: {LdapIsAdmin}.", ldapUsername, ldapIsAdmin);
                         user.SetPermission(PermissionKind.IsAdministrator, ldapIsAdmin);
-                        await userManager.UpdateUserAsync(user).ConfigureAwait(false);
+                        userNeedsUpdate = true;
                     }
+                }
+
+                if (userNeedsUpdate)
+                {
+                    await userManager.UpdateUserAsync(user).ConfigureAwait(false);
                 }
             }
 
@@ -325,7 +380,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     LdapPlugin.Instance.Configuration.LdapBaseDn,
                     LdapConnection.ScopeSub,
                     filter,
-                    new[] { UsernameAttr },
+                    new[] { UsernameAttr, UidAttr },
                     false);
 
                 // ToList to ensure enumeration is complete before the connection is closed
@@ -400,7 +455,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     LdapPlugin.Instance.Configuration.LdapBaseDn,
                     LdapConnection.ScopeSub,
                     realSearchFilter,
-                    new[] { UsernameAttr },
+                    new[] { UsernameAttr, UidAttr },
                     false);
             }
             catch (LdapException e)

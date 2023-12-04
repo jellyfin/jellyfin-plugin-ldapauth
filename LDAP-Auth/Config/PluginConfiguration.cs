@@ -1,4 +1,8 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
+
+using Jellyfin.Plugin.LDAP_Auth.Api.Models;
 
 namespace Jellyfin.Plugin.LDAP_Auth.Config
 {
@@ -30,11 +34,19 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
             LdapClientKeyPath = string.Empty;
             LdapRootCaPath = string.Empty;
             CreateUsersFromLdap = true;
-            LdapUsernameAttribute = "uid";
+            LdapUidAttribute = "uid";
+            LdapUsernameAttribute = "cn";
             LdapPasswordAttribute = "userPassword";
             EnableAllFolders = false;
             EnabledFolders = Array.Empty<string>();
+
+            LdapUsers = Array.Empty<LdapUser>();
         }
+
+        /// <summary>
+        /// Gets or sets the ldap users.
+        /// </summary>
+        public LdapUser[] LdapUsers { get; set; }
 
         /// <summary>
         /// Gets or sets the ldap server ip or url.
@@ -127,6 +139,11 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
         public bool AllowPassChange { get; set; }
 
         /// <summary>
+        /// Gets or sets the ldap uid attribute.
+        /// </summary>
+        public string LdapUidAttribute { get; set; }
+
+        /// <summary>
         /// Gets or sets the ldap username attribute.
         /// </summary>
         public string LdapUsernameAttribute { get; set; }
@@ -150,5 +167,55 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
         /// Gets or sets the password reset url.
         /// </summary>
         public string PasswordResetUrl { get; set; }
+
+        /// <summary>
+        /// Adds a user to the ldap users.
+        /// </summary>
+        /// <param name="userGuid">The user Guid.</param>
+        /// <param name="ldapUid">The LDAP UID associated with the user.</param>
+        public void AddUser(Guid userGuid, string ldapUid)
+        {
+            // Ensure we do not have more than one entry for a given user
+            // This may happen if a user tries to authenticate after their
+            // ldapUid has changed or if their Jellyfin account has been deleted
+            RemoveUser(userGuid);
+            RemoveUser(ldapUid);
+
+            var ldapUsers = LdapUsers.ToList();
+            var ldapUser = new LdapUser
+            {
+                LinkedJellyfinUserId = userGuid,
+                LdapUid = ldapUid
+            };
+            ldapUsers.Add(ldapUser);
+            LdapUsers = ldapUsers.ToArray();
+        }
+
+        /// <summary>
+        /// Removes a user from the LDAP users.
+        /// </summary>
+        /// <param name="userGuid">The user id.</param>
+        private void RemoveUser(Guid userGuid)
+        {
+            LdapUsers = LdapUsers.Where(user => user.LinkedJellyfinUserId != userGuid).ToArray();
+        }
+
+        /// <summary>
+        /// Removes a user from the LDAP users.
+        /// </summary>
+        /// <param name="ldapUid">The LDAP uid of the user.</param>
+        private void RemoveUser(string ldapUid)
+        {
+            LdapUsers = LdapUsers.Where(user => !string.Equals(user.LdapUid, ldapUid, StringComparison.Ordinal)).ToArray();
+        }
+
+        /// <summary>
+        /// Gets a list of all LDAP users.
+        /// </summary>
+        /// <returns>IReadonlyList{LdapUser} with all LDAP users.</returns>
+        public IReadOnlyList<LdapUser> GetAllLdapUsers()
+        {
+            return LdapUsers.ToList();
+        }
     }
 }
