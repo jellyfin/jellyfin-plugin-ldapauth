@@ -126,6 +126,19 @@
                                     <input is="emby-input" type="text" id="txtLdapPasswordAttribute" label="LDAP Password Attribute:" />
                                     <div class="fieldDescription">The LDAP attribute for the user password; only required if Allow Password Change is enabled.</div>
                                 </div>
+                                <div class="inputContainer fldExternalAddressFilter">
+                                    <label>
+                                        <input type="checkbox" is="emby-checkbox" id="chkEnableProfileImageSync" />
+                                        <span>Enable profile image synchronization</span>
+                                    </label>
+                                    <div class="fieldDescription checkboxFieldDescription">
+                                        Note that this is a one way sync. If a user changes their profile image in Jellyfin it won't be updated unless the profile image changes in LDAP or the user deletes it in Jellyfin.</div>
+                                </div>
+                                <div class="inputContainer fldExternalAddressFilter">
+                                    <input is="emby-input" type="text" id="txtLdapProfileImageAttribute" label="LDAP Profile Image Attribute:" />
+                                    <div class="fieldDescription">
+                                        The LDAP attribute for synchronizing profile images.
+                                </div>
                                 <hr>
                                 <h4>Administrators</h4>
                                 <div class="inputContainer fldExternalAddressFilter">
@@ -230,6 +243,8 @@
                 txtLdapUidAttribute: document.querySelector("#txtLdapUidAttribute"),
                 txtLdapUsernameAttribute: document.querySelector("#txtLdapUsernameAttribute"),
                 txtLdapPasswordAttribute: document.querySelector("#txtLdapPasswordAttribute"),
+                chkEnableProfileImageSync: document.querySelector("#chkEnableProfileImageSync"),
+                txtLdapProfileImageAttribute: document.querySelector("#txtLdapProfileImageAttribute"),
                 chkEnableAllFolders: document.querySelector('#chkEnableAllFolders'),
                 folderAccessList: document.querySelector('.folderAccess'),
                 txtPasswordResetUrl: document.querySelector("#txtLdapPasswordResetUrl")
@@ -264,6 +279,8 @@
                     LdapConfigurationPage.txtLdapUidAttribute.value = config.LdapUidAttribute;
                     LdapConfigurationPage.txtLdapUsernameAttribute.value = config.LdapUsernameAttribute;
                     LdapConfigurationPage.txtLdapPasswordAttribute.value = config.LdapPasswordAttribute;
+                    LdapConfigurationPage.chkEnableProfileImageSync.checked = config.EnableLdapProfileImageSync;
+                    LdapConfigurationPage.txtLdapProfileImageAttribute.value = config.LdapProfileImageAttribute;
                     config.EnableAllFolders = config.EnableAllFolders || false;
                     LdapConfigurationPage.chkEnableAllFolders.checked = config.EnableAllFolders;
                     /* Default to empty array if Enabled Folders is not set */
@@ -351,6 +368,8 @@
                     config.LdapUidAttribute = LdapConfigurationPage.txtLdapUidAttribute.value;
                     config.LdapUsernameAttribute = LdapConfigurationPage.txtLdapUsernameAttribute.value;
                     config.LdapPasswordAttribute = LdapConfigurationPage.txtLdapPasswordAttribute.value;
+                    config.EnableLdapProfileImageSync = LdapConfigurationPage.chkEnableProfileImageSync.checked;
+                    config.LdapProfileImageAttribute = LdapConfigurationPage.txtLdapProfileImageAttribute.value;
                     /* Map the set of checked input items to an array of library Id's */
                     config.EnableAllFolders = LdapConfigurationPage.chkEnableAllFolders.checked || false;
                     let folders = document.querySelectorAll('#folderList input');
