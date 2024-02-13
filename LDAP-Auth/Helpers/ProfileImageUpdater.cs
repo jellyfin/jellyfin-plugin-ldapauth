@@ -1,4 +1,5 @@
 using System.IO;
+using System.Net.Mime;
 using System.Threading.Tasks;
 using Jellyfin.Data.Entities;
 using MediaBrowser.Controller.Configuration;
@@ -26,11 +27,11 @@ namespace Jellyfin.Plugin.LDAP_Auth.Helpers
             IProviderManager providerManager)
         {
             var userDataPath = Path.Combine(serverConfigurationManager.ApplicationPaths.UserConfigurationDirectoryPath, user.Username);
-            user.ProfileImage = new ImageInfo(Path.Combine(userDataPath, $"profile.jpg"));
+            user.ProfileImage = new ImageInfo(Path.Combine(userDataPath, "profile.jpg"));
 
             using var profileImageMemoryStream = new MemoryStream(ldapProfileImage);
             await providerManager
-                .SaveImage(profileImageMemoryStream, "image/jpeg", user.ProfileImage.Path)
+                .SaveImage(profileImageMemoryStream, MediaTypeNames.Image.Jpeg, user.ProfileImage.Path)
                 .ConfigureAwait(false);
         }
     }

@@ -205,8 +205,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     var ldapProfileImageHash = string.Empty;
                     if (ldapProfileImage is not null && EnableProfileImageSync)
                     {
-                        using var md5Algo = MD5.Create();
-                        ldapProfileImageHash = Convert.ToBase64String(md5Algo.ComputeHash(ldapProfileImage));
+                        ldapProfileImageHash = Convert.ToBase64String(MD5.HashData(ldapProfileImage));
 
                         await ProfileImageUpdater.SetProfileImage(user, ldapProfileImage, serverConfigurationManager, providerManager).ConfigureAwait(false);
                     }
