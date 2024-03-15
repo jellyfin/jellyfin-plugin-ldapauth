@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Security;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,7 +13,9 @@ using Jellyfin.Plugin.LDAP_Auth.Api.Models;
 using Jellyfin.Plugin.LDAP_Auth.Helpers;
 using MediaBrowser.Common;
 using MediaBrowser.Controller.Authentication;
+using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Library;
+using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Users;
 using Microsoft.Extensions.Logging;
 using Novell.Directory.Ldap;
@@ -43,6 +46,10 @@ namespace Jellyfin.Plugin.LDAP_Auth
         private string UidAttr => LdapPlugin.Instance.Configuration.LdapUidAttribute;
 
         private string UsernameAttr => LdapPlugin.Instance.Configuration.LdapUsernameAttribute;
+
+        private bool EnableProfileImageSync => LdapPlugin.Instance.Configuration.EnableLdapProfileImageSync;
+
+        private string ProfileImageAttr => LdapPlugin.Instance.Configuration.LdapProfileImageAttribute;
 
         private string SearchFilter => LdapPlugin.Instance.Configuration.LdapSearchFilter;
 
@@ -105,7 +112,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     else
                     {
                         // Add the user to our Ldap users
-                        LdapPlugin.Instance.Configuration.AddUser(user.Id, ldapUid);
+                        LdapPlugin.Instance.Configuration.AddUser(user.Id, ldapUid, string.Empty);
                         LdapPlugin.Instance.SaveConfiguration();
                     }
                 }
@@ -192,10 +199,21 @@ namespace Jellyfin.Plugin.LDAP_Auth
                         user.SetPreference(PreferenceKind.EnabledFolders, LdapPlugin.Instance.Configuration.EnabledFolders);
                     }
 
+                    var providerManager = _applicationHost.Resolve<IProviderManager>();
+                    var serverConfigurationManager = _applicationHost.Resolve<IServerConfigurationManager>();
+                    var ldapProfileImage = GetAttribute(ldapUser, ProfileImageAttr)?.ByteValue;
+                    var ldapProfileImageHash = string.Empty;
+                    if (ldapProfileImage is not null && EnableProfileImageSync)
+                    {
+                        ldapProfileImageHash = Convert.ToBase64String(MD5.HashData(ldapProfileImage));
+
+                        await ProfileImageUpdater.SetProfileImage(user, ldapProfileImage, serverConfigurationManager, providerManager).ConfigureAwait(false);
+                    }
+
                     await userManager.UpdateUserAsync(user).ConfigureAwait(false);
 
                     // Add the user to our Ldap users
-                    LdapPlugin.Instance.Configuration.AddUser(user.Id, ldapUid);
+                    LdapPlugin.Instance.Configuration.AddUser(user.Id, ldapUid, ldapProfileImageHash);
                     LdapPlugin.Instance.SaveConfiguration();
                 }
                 else
@@ -455,7 +473,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     LdapPlugin.Instance.Configuration.LdapBaseDn,
                     LdapConnection.ScopeSub,
                     realSearchFilter,
-                    new[] { UsernameAttr, UidAttr },
+                    new[] { UsernameAttr, UidAttr, ProfileImageAttr },
                     false);
             }
             catch (LdapException e)
@@ -512,7 +530,13 @@ namespace Jellyfin.Plugin.LDAP_Auth
             throw new NotImplementedException();
         }
 
-        private LdapAttribute GetAttribute(LdapEntry userEntry, string attr)
+        /// <summary>
+        /// Retrieves the requested attribute from a <see cref="LdapEntry" />.
+        /// </summary>
+        /// <param name="userEntry">The <see cref="LdapEntry" /> to retrieve the attribute from.</param>
+        /// <param name="attr">The attribute to retrieve from the <see cref="LdapEntry" />.</param>
+        /// <returns>The value of the <see cref="LdapEntry" /> or null if it does not exist.</returns>
+        public LdapAttribute GetAttribute(LdapEntry userEntry, string attr)
         {
             var attributeSet = userEntry.GetAttributeSet();
             if (attributeSet.ContainsKey(attr))

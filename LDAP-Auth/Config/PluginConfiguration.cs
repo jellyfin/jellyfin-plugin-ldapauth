@@ -37,6 +37,8 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
             LdapUidAttribute = "uid";
             LdapUsernameAttribute = "cn";
             LdapPasswordAttribute = "userPassword";
+            EnableLdapProfileImageSync = false;
+            LdapProfileImageAttribute = "jpegphoto";
             EnableAllFolders = false;
             EnabledFolders = Array.Empty<string>();
 
@@ -154,6 +156,16 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
         public string LdapPasswordAttribute { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether profile images are synchronized from LDAP.
+        /// </summary>
+        public bool EnableLdapProfileImageSync { get; set; }
+
+        /// <summary>
+        /// Gets or sets the ldap profile image attribute.
+        /// </summary>
+        public string LdapProfileImageAttribute { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating whether to enable access to all library folders.
         /// </summary>
         public bool EnableAllFolders { get; set; }
@@ -173,7 +185,8 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
         /// </summary>
         /// <param name="userGuid">The user Guid.</param>
         /// <param name="ldapUid">The LDAP UID associated with the user.</param>
-        public void AddUser(Guid userGuid, string ldapUid)
+        /// <param name="profileImageHash">The hash of the profile image provided by LDAP.</param>
+        public void AddUser(Guid userGuid, string ldapUid, string profileImageHash)
         {
             // Ensure we do not have more than one entry for a given user
             // This may happen if a user tries to authenticate after their
@@ -185,7 +198,8 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
             var ldapUser = new LdapUser
             {
                 LinkedJellyfinUserId = userGuid,
-                LdapUid = ldapUid
+                LdapUid = ldapUid,
+                ProfileImageHash = profileImageHash
             };
             ldapUsers.Add(ldapUser);
             LdapUsers = ldapUsers.ToArray();
