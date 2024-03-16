@@ -2,8 +2,8 @@ name: "LDAP Authentication"
 guid: "958aad66-3784-4d2a-b89a-a7b6fab6e25c"
 imageUrl: "https://repo.jellyfin.org/releases/plugin/images/jellyfin-plugin-ldapauth.png"
 version: 18
-targetAbi: "10.8.13.0"
-framework: "net6.0"
+targetAbi: "10.9.0.0"
+framework: "net8.0"
 owner: "jellyfin"
 overview: "Authenticate users against an LDAP database"
 description: |
@@ -15,13 +15,3 @@ artifacts:
   - "LDAP-Auth.dll"
   - "Novell.Directory.Ldap.NETStandard.dll"
 changelog: |-
-  - Implement proper input sanitization to prevent LDAP injection attacks (#153) @tam1m
-
-  ### New features and improvements ###
-  - Added  (#147) @sdimovv
-
-  ### Code or Repo Maintenance ###
-  - Update link to Jellyfin website (#150) @methbkts
-
-  ### Documentation updates ###
-  - Fix "build" shields badge (#152) @Radiicall
