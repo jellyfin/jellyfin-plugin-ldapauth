@@ -5,6 +5,7 @@ using System.Net.Mime;
 using System.Text.RegularExpressions;
 using Jellyfin.Plugin.LDAP_Auth.Api.Models;
 using MediaBrowser.Common;
+using MediaBrowser.Common.Api;
 using MediaBrowser.Controller.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -17,7 +18,7 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api
     /// The LDAP api controller.
     /// </summary>
     [ApiController]
-    [Authorize(Policy = "RequiresElevation")]
+    [Authorize(Policy = Policies.RequiresElevation)]
     [Route("[controller]")]
     [Produces(MediaTypeNames.Application.Json)]
     public class LdapController : ControllerBase
