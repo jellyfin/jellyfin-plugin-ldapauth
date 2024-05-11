@@ -1,7 +1,7 @@
 name: "LDAP Authentication"
 guid: "958aad66-3784-4d2a-b89a-a7b6fab6e25c"
 imageUrl: "https://repo.jellyfin.org/releases/plugin/images/jellyfin-plugin-ldapauth.png"
-version: 18
+version: 19
 targetAbi: "10.9.0.0"
 framework: "net8.0"
 owner: "jellyfin"
@@ -15,3 +15,7 @@ artifacts:
   - "LDAP-Auth.dll"
   - "Novell.Directory.Ldap.NETStandard.dll"
 changelog: |-
+  - Updates for 10.9 (#158) @crobibero
+
+  ### New features and improvements ###
+  - Add profile image synchronization (#154) @SanseroGames
