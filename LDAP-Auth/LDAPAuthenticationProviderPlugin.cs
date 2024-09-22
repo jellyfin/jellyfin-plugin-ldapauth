@@ -17,6 +17,7 @@ using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Users;
+using Microsoft.AspNetCore.Routing.Matching;
 using Microsoft.Extensions.Logging;
 using Novell.Directory.Ldap;
 
@@ -50,6 +51,8 @@ namespace Jellyfin.Plugin.LDAP_Auth
         private bool EnableProfileImageSync => LdapPlugin.Instance.Configuration.EnableLdapProfileImageSync;
 
         private string ProfileImageAttr => LdapPlugin.Instance.Configuration.LdapProfileImageAttribute;
+
+        private string ProfileImageAttrFormat => LdapPlugin.Instance.Configuration.LdapProfileImageAttributeFormat;
 
         private string SearchFilter => LdapPlugin.Instance.Configuration.LdapSearchFilter;
 
@@ -201,7 +204,20 @@ namespace Jellyfin.Plugin.LDAP_Auth
 
                     var providerManager = _applicationHost.Resolve<IProviderManager>();
                     var serverConfigurationManager = _applicationHost.Resolve<IServerConfigurationManager>();
-                    var ldapProfileImage = Convert.FromBase64String(GetAttribute(ldapUser, ProfileImageAttr).StringValue);
+                    byte[] ldapProfileImage = null;
+                    if (ProfileImageAttrFormat == "base64")
+                    {
+                        ldapProfileImage = Convert.FromBase64String(GetAttribute(ldapUser, ProfileImageAttr)?.StringValue);
+                    }
+                    else if (ProfileImageAttrFormat == "binary")
+                    {
+                        ldapProfileImage = GetAttribute(ldapUser, ProfileImageAttr)?.ByteValue;
+                    }
+                    else
+                    {
+                        _logger.LogError("Unknown profile image format: {Format}", ProfileImageAttrFormat);
+                    }
+
                     var ldapProfileImageHash = string.Empty;
                     if (ldapProfileImage is not null && EnableProfileImageSync)
                     {

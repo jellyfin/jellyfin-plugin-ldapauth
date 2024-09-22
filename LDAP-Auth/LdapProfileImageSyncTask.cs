@@ -59,6 +59,8 @@ namespace Jellyfin.Plugin.LDAP_Auth
 
         private string ProfileImageAttr => LdapPlugin.Instance.Configuration.LdapProfileImageAttribute;
 
+        private string ProfileImageAttrFormat => LdapPlugin.Instance.Configuration.LdapProfileImageAttributeFormat;
+
         /// <inheritdoc/>
         public string Name => "LDAP - Synchronize profile images";
 
@@ -97,7 +99,19 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     continue;
                 }
 
-                var ldapProfileImage = Convert.FromBase64String(ldapAuthProvider.GetAttribute(ldapUser, ProfileImageAttr).StringValue);
+                byte[] ldapProfileImage = null;
+                if (ProfileImageAttrFormat == "base64")
+                {
+                    ldapProfileImage = Convert.FromBase64String(ldapAuthProvider.GetAttribute(ldapUser, ProfileImageAttr)?.StringValue);
+                }
+                else if (ProfileImageAttrFormat == "binary")
+                {
+                    ldapProfileImage = ldapAuthProvider.GetAttribute(ldapUser, ProfileImageAttr)?.ByteValue;
+                }
+                else
+                {
+                    _logger.LogError("Unknown profile image format: {Format}", ProfileImageAttrFormat);
+                }
 
                 if (ldapProfileImage is not null)
                 {
