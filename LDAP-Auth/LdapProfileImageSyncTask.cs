@@ -97,7 +97,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     continue;
                 }
 
-                var ldapProfileImage = ldapAuthProvider.GetAttribute(ldapUser, ProfileImageAttr)?.ByteValue;
+                var ldapProfileImage = Convert.FromBase64String(ldapAuthProvider.GetAttribute(ldapUser, ProfileImageAttr).StringValue);
 
                 if (ldapProfileImage is not null)
                 {

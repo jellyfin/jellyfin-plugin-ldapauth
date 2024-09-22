@@ -201,7 +201,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
 
                     var providerManager = _applicationHost.Resolve<IProviderManager>();
                     var serverConfigurationManager = _applicationHost.Resolve<IServerConfigurationManager>();
-                    var ldapProfileImage = GetAttribute(ldapUser, ProfileImageAttr)?.ByteValue;
+                    var ldapProfileImage = Convert.FromBase64String(GetAttribute(ldapUser, ProfileImageAttr).StringValue);
                     var ldapProfileImageHash = string.Empty;
                     if (ldapProfileImage is not null && EnableProfileImageSync)
                     {
