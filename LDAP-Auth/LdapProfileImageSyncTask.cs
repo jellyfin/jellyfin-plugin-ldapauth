@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
@@ -107,6 +108,11 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 else if (ProfileImageAttrFormat == "binary")
                 {
                     ldapProfileImage = ldapAuthProvider.GetAttribute(ldapUser, ProfileImageAttr)?.ByteValue;
+                }
+                else if (ProfileImageAttrFormat == "url")
+                {
+                    using var client = new HttpClient();
+                    ldapProfileImage = await client.GetByteArrayAsync(ldapAuthProvider.GetAttribute(ldapUser, ProfileImageAttr)?.StringValue);
                 }
                 else
                 {
