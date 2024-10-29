@@ -467,13 +467,20 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 LdapPlugin.Instance.Configuration.LdapServer);
 
             ILdapSearchResults ldapUsers;
+
+            string[] attrs = [UsernameAttr, UidAttr];
+            if (EnableProfileImageSync)
+            {
+                attrs = [..attrs, ProfileImageAttr];
+            }
+
             try
             {
                 ldapUsers = ldapClient.Search(
                     LdapPlugin.Instance.Configuration.LdapBaseDn,
                     LdapConnection.ScopeSub,
                     realSearchFilter,
-                    new[] { UsernameAttr, UidAttr, ProfileImageAttr },
+                    attrs,
                     false);
             }
             catch (LdapException e)
