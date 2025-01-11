@@ -279,17 +279,34 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 throw new NotImplementedException();
             }
 
-            if (string.IsNullOrEmpty(LdapPlugin.Instance.Configuration.LdapPasswordAttribute))
+            var ldapUser = LocateLdapUser(user.Username);
+            var ldapClient = ConnectToLdap();
+            var rootDse = ldapClient.GetRootDseInfo();
+
+            // If supported, ask the server to change the password for us
+            if (rootDse.SupportsExtension(LdapKnownOids.Extensions.ModifyPassword))
+            {
+                var passMod = new PasswordModifyOperation(ldapUser.Dn, null, newPassword);
+
+                ldapClient.ExtendedOperation(passMod);
+            }
+
+            // Otherwise, try to write the to the password attribute manually
+            else if (!string.IsNullOrEmpty(LdapPlugin.Instance.Configuration.LdapPasswordAttribute))
+            {
+                var passAttr = LdapPlugin.Instance.Configuration.LdapPasswordAttribute;
+                var ldapAttr = new LdapAttribute(passAttr, newPassword);
+                var ldapMod = new LdapModification(LdapModification.Replace, ldapAttr);
+
+                ldapClient.Modify(ldapUser.Dn, ldapMod);
+            }
+
+            // If there is no attribute defined, then the administrator has not told us how to change passwords!
+            else
             {
                 throw new InvalidOperationException("Password attribute is not set");
             }
 
-            var passAttr = LdapPlugin.Instance.Configuration.LdapPasswordAttribute;
-            var ldapUser = LocateLdapUser(user.Username);
-            using var ldapClient = ConnectToLdap();
-            var ldapAttr = new LdapAttribute(passAttr, newPassword);
-            var ldapMod = new LdapModification(LdapModification.Replace, ldapAttr);
-            ldapClient.Modify(ldapUser.Dn, ldapMod);
             return Task.CompletedTask;
         }
 
