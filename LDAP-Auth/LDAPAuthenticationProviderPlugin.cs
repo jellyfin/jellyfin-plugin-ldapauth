@@ -1,15 +1,19 @@
 using System;
+using System.Buffers.Text;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Net.Security;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
+using ICU4N.Impl;
 using Jellyfin.Data.Entities;
 using Jellyfin.Data.Enums;
 using Jellyfin.Plugin.LDAP_Auth.Api.Helpers;
 using Jellyfin.Plugin.LDAP_Auth.Api.Models;
+using Jellyfin.Plugin.LDAP_Auth.Config;
 using Jellyfin.Plugin.LDAP_Auth.Helpers;
 using MediaBrowser.Common;
 using MediaBrowser.Controller.Authentication;
@@ -29,17 +33,22 @@ namespace Jellyfin.Plugin.LDAP_Auth
     {
         private readonly ILogger<LdapAuthenticationProviderPlugin> _logger;
         private readonly IApplicationHost _applicationHost;
+        private readonly Lazy<HttpClient> _httpClient;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LdapAuthenticationProviderPlugin"/> class.
         /// </summary>
         /// <param name="applicationHost">Instance of the <see cref="IApplicationHost"/> interface.</param>
         /// <param name="logger">Instance of the <see cref="ILogger{LdapAuthenticationProviderPlugin}"/> interface.</param>
-        public LdapAuthenticationProviderPlugin(IApplicationHost applicationHost, ILogger<LdapAuthenticationProviderPlugin> logger)
+        /// <param name="httpClientFactory">Instance of the <see cref="IHttpClientFactory"/> interface.</param>
+        public LdapAuthenticationProviderPlugin(IApplicationHost applicationHost, ILogger<LdapAuthenticationProviderPlugin> logger, IHttpClientFactory httpClientFactory)
         {
             _logger = logger;
             _applicationHost = applicationHost;
+            _httpClient = new(() => httpClientFactory.CreateClient());
         }
+
+        private HttpClient HttpClient => _httpClient.Value;
 
         private string[] LdapUsernameAttributes => LdapPlugin.Instance.Configuration.LdapSearchAttributes.Replace(" ", string.Empty, StringComparison.Ordinal).Split(',');
 
@@ -50,6 +59,8 @@ namespace Jellyfin.Plugin.LDAP_Auth
         private bool EnableProfileImageSync => LdapPlugin.Instance.Configuration.EnableLdapProfileImageSync;
 
         private string ProfileImageAttr => LdapPlugin.Instance.Configuration.LdapProfileImageAttribute;
+
+        private ProfileImageFormat ProfileImageFormat => LdapPlugin.Instance.Configuration.LdapProfileImageFormat;
 
         private string SearchFilter => LdapPlugin.Instance.Configuration.LdapSearchFilter;
 
@@ -201,13 +212,25 @@ namespace Jellyfin.Plugin.LDAP_Auth
 
                     var providerManager = _applicationHost.Resolve<IProviderManager>();
                     var serverConfigurationManager = _applicationHost.Resolve<IServerConfigurationManager>();
-                    var ldapProfileImage = GetAttribute(ldapUser, ProfileImageAttr)?.ByteValue;
-                    var ldapProfileImageHash = string.Empty;
-                    if (ldapProfileImage is not null && EnableProfileImageSync)
-                    {
-                        ldapProfileImageHash = Convert.ToBase64String(MD5.HashData(ldapProfileImage));
 
-                        await ProfileImageUpdater.SetProfileImage(user, ldapProfileImage, serverConfigurationManager, providerManager).ConfigureAwait(false);
+                    var ldapProfileImageHash = string.Empty;
+                    if (EnableProfileImageSync && GetAttribute(ldapUser, ProfileImageAttr) is LdapAttribute profileImageAttr)
+                    {
+                        var profileImageFormat = ProfileImageFormat switch {
+                            ProfileImageFormat.Default => TryDetermineFormat(profileImageAttr),
+                            { } format => format,
+                        };
+
+                        byte[] profileImage = profileImageFormat switch {
+                            ProfileImageFormat.Binary => profileImageAttr.ByteValue,
+                            ProfileImageFormat.Base64 => Convert.FromBase64String(profileImageAttr.StringValue),
+                            ProfileImageFormat.Url => await HttpClient.GetByteArrayAsync(profileImageAttr.StringValue).ConfigureAwait(false),
+                            _ => throw new ArgumentOutOfRangeException("ProfileImageFormat wasn't in a valid format"),
+                        };
+
+                        ldapProfileImageHash = Convert.ToBase64String(MD5.HashData(profileImage));
+
+                        await ProfileImageUpdater.SetProfileImage(user, profileImage, serverConfigurationManager, providerManager).ConfigureAwait(false);
                     }
 
                     await userManager.UpdateUserAsync(user).ConfigureAwait(false);
@@ -256,6 +279,33 @@ namespace Jellyfin.Plugin.LDAP_Auth
             }
 
             return new ProviderAuthenticationResult { Username = ldapUsername };
+        }
+
+        private ProfileImageFormat TryDetermineFormat(LdapAttribute value)
+        {
+            _logger.LogDebug("Trying to determine ProfileImage Format based on Attribute value");
+            var stringValue = value.StringValue;
+            if (Uri.TryCreate(stringValue, UriKind.RelativeOrAbsolute, out var uri))
+            {
+                // We can handle Url schemes as long as its http or https
+                if (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp)
+                {
+                    _logger.LogDebug("Attribute value was valid URI and scheme was one of (http, https). ImageFormat Url");
+                    return ProfileImageFormat.Url;
+                }
+
+                throw new InvalidFormatException($"Image attribute was a valid URI but had an invalid Scheme");
+            }
+
+            // If the string is entirely valid Base64 we are gonna assume it is Base64
+            if (Base64.IsValid(stringValue))
+            {
+                _logger.LogDebug("Attribute value was valid Base64. ImageFormat Base64");
+                return ProfileImageFormat.Base64;
+            }
+
+            _logger.LogDebug("Attribute value wasn't valid Uri or Base64. ImageFormat Binary");
+            return ProfileImageFormat.Binary;
         }
 
         /// <inheritdoc />
