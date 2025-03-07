@@ -33,7 +33,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
     {
         private readonly ILogger<LdapAuthenticationProviderPlugin> _logger;
         private readonly IApplicationHost _applicationHost;
-        private readonly Lazy<HttpClient> _httpClient;
+        private readonly IHttpClientFactory _httpClientFactory;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LdapAuthenticationProviderPlugin"/> class.
@@ -45,10 +45,10 @@ namespace Jellyfin.Plugin.LDAP_Auth
         {
             _logger = logger;
             _applicationHost = applicationHost;
-            _httpClient = new(() => httpClientFactory.CreateClient());
+            _httpClientFactory = httpClientFactory;
         }
 
-        private HttpClient HttpClient => _httpClient.Value;
+        private HttpClient HttpClient => _httpClientFactory.CreateClient();
 
         private string[] LdapUsernameAttributes => LdapPlugin.Instance.Configuration.LdapSearchAttributes.Replace(" ", string.Empty, StringComparison.Ordinal).Split(',');
 
@@ -216,16 +216,18 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     var ldapProfileImageHash = string.Empty;
                     if (EnableProfileImageSync && GetAttribute(ldapUser, ProfileImageAttr) is LdapAttribute profileImageAttr)
                     {
-                        var profileImageFormat = ProfileImageFormat switch {
+                        var profileImageFormat = ProfileImageFormat switch
+                        {
                             ProfileImageFormat.Default => TryDetermineFormat(profileImageAttr),
                             { } format => format,
                         };
 
-                        byte[] profileImage = profileImageFormat switch {
+                        byte[] profileImage = profileImageFormat switch
+                        {
                             ProfileImageFormat.Binary => profileImageAttr.ByteValue,
                             ProfileImageFormat.Base64 => Convert.FromBase64String(profileImageAttr.StringValue),
                             ProfileImageFormat.Url => await HttpClient.GetByteArrayAsync(profileImageAttr.StringValue).ConfigureAwait(false),
-                            _ => throw new ArgumentOutOfRangeException("ProfileImageFormat wasn't in a valid format"),
+                            _ => throw new ArgumentOutOfRangeException(nameof(profileImageFormat), profileImageFormat, "ProfileImageFormat was outside the range of expected values"),
                         };
 
                         ldapProfileImageHash = Convert.ToBase64String(MD5.HashData(profileImage));
@@ -294,7 +296,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     return ProfileImageFormat.Url;
                 }
 
-                throw new InvalidFormatException($"Image attribute was a valid URI but had an invalid Scheme");
+                throw new InvalidFormatException($"ProfileImage Format detection failed. Attribute value was a valid URI but had an invalid Scheme, expected one of [http, https]. Got: {uri.Scheme}");
             }
 
             // If the string is entirely valid Base64 we are gonna assume it is Base64
