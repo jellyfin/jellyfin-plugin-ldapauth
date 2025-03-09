@@ -16,6 +16,7 @@ using Jellyfin.Plugin.LDAP_Auth.Api.Models;
 using Jellyfin.Plugin.LDAP_Auth.Config;
 using Jellyfin.Plugin.LDAP_Auth.Helpers;
 using MediaBrowser.Common;
+using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Authentication;
 using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Library;
@@ -48,7 +49,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
             _httpClientFactory = httpClientFactory;
         }
 
-        private HttpClient HttpClient => _httpClientFactory.CreateClient();
+        private HttpClient HttpClient => _httpClientFactory.CreateClient(NamedClient.Default);
 
         private string[] LdapUsernameAttributes => LdapPlugin.Instance.Configuration.LdapSearchAttributes.Replace(" ", string.Empty, StringComparison.Ordinal).Split(',');
 
