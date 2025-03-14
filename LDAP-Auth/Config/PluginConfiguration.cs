@@ -39,6 +39,7 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
             LdapPasswordAttribute = "userPassword";
             EnableLdapProfileImageSync = false;
             LdapProfileImageAttribute = "jpegphoto";
+            LdapProfileImageFormat = ProfileImageFormat.Default;
             EnableAllFolders = false;
             EnabledFolders = Array.Empty<string>();
 
@@ -164,6 +165,11 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
         /// Gets or sets the ldap profile image attribute.
         /// </summary>
         public string LdapProfileImageAttribute { get; set; }
+
+        /// <summary>
+        /// Gets or sets the format of the Profile Image.
+        /// </summary>
+        public ProfileImageFormat LdapProfileImageFormat { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether to enable access to all library folders.

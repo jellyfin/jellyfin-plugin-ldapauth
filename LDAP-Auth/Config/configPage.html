@@ -139,6 +139,17 @@
                                     <input is="emby-input" type="text" id="txtLdapProfileImageAttribute" label="LDAP Profile Image Attribute:" />
                                     <div class="fieldDescription">The LDAP attribute for synchronizing profile images.</div>
                                 </div>
+                                <div class="inputContainer fldExternalAddressFilter">
+                                    <select is="emby-select" id="selLdapProfileImageFormat">
+                                        <option value="Default">Default</option>
+                                        <option value="Binary">Binary</option>
+                                        <option value="Base64">Base64</option>
+                                        <option value="Url">URL</option>
+                                    </select>
+                                    <div class="fieldDescription">The value format of the Profile Image. (Default will try and determine it automatically)</div>
+                                    <br/>
+                                    <div class="fieldDescription">Default could fail under certain circumstances so if there are problems please select the format explicitly</div>
+                                </div>
                                 <hr>
                                 <h4>Administrators</h4>
                                 <div class="inputContainer fldExternalAddressFilter">
