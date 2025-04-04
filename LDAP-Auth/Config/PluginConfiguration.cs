@@ -38,6 +38,7 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
             LdapUsernameAttribute = "cn";
             LdapPasswordAttribute = "userPassword";
             EnableLdapProfileImageSync = false;
+            RemoveImagesNotInLdap = false;
             LdapProfileImageAttribute = "jpegphoto";
             LdapProfileImageFormat = ProfileImageFormat.Default;
             EnableAllFolders = false;
@@ -160,6 +161,11 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
         /// Gets or sets a value indicating whether profile images are synchronized from LDAP.
         /// </summary>
         public bool EnableLdapProfileImageSync { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating Whether to remove the profile image if it has been removed in LDAP.
+        /// </summary>
+        public bool RemoveImagesNotInLdap { get; set; }
 
         /// <summary>
         /// Gets or sets the ldap profile image attribute.

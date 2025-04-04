@@ -136,6 +136,15 @@
                                     </div>
                                 </div>
                                 <div class="inputContainer fldExternalAddressFilter">
+                                    <label>
+                                        <input type="checkbox" is="emby-checkbox" id="chkRemoveImagesNotInLdap" />
+                                        <span>Remove profile images not in LDAP</span>
+                                    </label>
+                                    <div class="fieldDescription checkboxFieldDescription">
+                                        Note that this will delete any ldap user profile picture that aren't in ldap. Keep off to retain previous profile pictures.
+                                    </div>
+                                </div>
+                                <div class="inputContainer fldExternalAddressFilter">
                                     <input is="emby-input" type="text" id="txtLdapProfileImageAttribute" label="LDAP Profile Image Attribute:" />
                                     <div class="fieldDescription">The LDAP attribute for synchronizing profile images.</div>
                                 </div>
@@ -255,7 +264,9 @@
                 txtLdapUsernameAttribute: document.querySelector("#txtLdapUsernameAttribute"),
                 txtLdapPasswordAttribute: document.querySelector("#txtLdapPasswordAttribute"),
                 chkEnableProfileImageSync: document.querySelector("#chkEnableProfileImageSync"),
+                chkRemoveImagesNotInLdap: document.querySelector("#chkRemoveImagesNotInLdap"),
                 txtLdapProfileImageAttribute: document.querySelector("#txtLdapProfileImageAttribute"),
+                selLdapProfileImageFormat: document.querySelector("#selLdapProfileImageFormat"),
                 chkEnableAllFolders: document.querySelector('#chkEnableAllFolders'),
                 folderAccessList: document.querySelector('.folderAccess'),
                 txtPasswordResetUrl: document.querySelector("#txtLdapPasswordResetUrl")
@@ -291,7 +302,9 @@
                     LdapConfigurationPage.txtLdapUsernameAttribute.value = config.LdapUsernameAttribute;
                     LdapConfigurationPage.txtLdapPasswordAttribute.value = config.LdapPasswordAttribute;
                     LdapConfigurationPage.chkEnableProfileImageSync.checked = config.EnableLdapProfileImageSync;
+                    LdapConfigurationPage.chkRemoveImagesNotInLdap.checked = config.RemoveImagesNotInLdap;
                     LdapConfigurationPage.txtLdapProfileImageAttribute.value = config.LdapProfileImageAttribute;
+                    LdapConfigurationPage.selLdapProfileImageFormat.value = config.LdapProfileImageFormat;
                     config.EnableAllFolders = config.EnableAllFolders || false;
                     LdapConfigurationPage.chkEnableAllFolders.checked = config.EnableAllFolders;
                     /* Default to empty array if Enabled Folders is not set */
@@ -380,7 +393,9 @@
                     config.LdapUsernameAttribute = LdapConfigurationPage.txtLdapUsernameAttribute.value;
                     config.LdapPasswordAttribute = LdapConfigurationPage.txtLdapPasswordAttribute.value;
                     config.EnableLdapProfileImageSync = LdapConfigurationPage.chkEnableProfileImageSync.checked;
+                    config.RemoveImagesNotInLdap = LdapConfigurationPage.chkRemoveImagesNotInLdap.checked;
                     config.LdapProfileImageAttribute = LdapConfigurationPage.txtLdapProfileImageAttribute.value;
+                    config.LdapProfileImageFormat = LdapConfigurationPage.selLdapProfileImageFormat.value;
                     /* Map the set of checked input items to an array of library Id's */
                     config.EnableAllFolders = LdapConfigurationPage.chkEnableAllFolders.checked || false;
                     let folders = document.querySelectorAll('#folderList input');

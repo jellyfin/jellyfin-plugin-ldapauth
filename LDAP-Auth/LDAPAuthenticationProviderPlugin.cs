@@ -219,7 +219,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     {
                         var profileImageFormat = ProfileImageFormat switch
                         {
-                            ProfileImageFormat.Default => TryDetermineFormat(profileImageAttr),
+                            ProfileImageFormat.Default => LdapUtils.TryDetermineAttributeFormat(profileImageAttr, _logger),
                             { } format => format,
                         };
 
@@ -282,33 +282,6 @@ namespace Jellyfin.Plugin.LDAP_Auth
             }
 
             return new ProviderAuthenticationResult { Username = ldapUsername };
-        }
-
-        private ProfileImageFormat TryDetermineFormat(LdapAttribute value)
-        {
-            _logger.LogDebug("Trying to determine ProfileImage Format based on Attribute value");
-            var stringValue = value.StringValue;
-            if (Uri.TryCreate(stringValue, UriKind.RelativeOrAbsolute, out var uri))
-            {
-                // We can handle Url schemes as long as its http or https
-                if (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp)
-                {
-                    _logger.LogDebug("Attribute value was valid URI and scheme was one of (http, https). ImageFormat Url");
-                    return ProfileImageFormat.Url;
-                }
-
-                throw new InvalidFormatException($"ProfileImage Format detection failed. Attribute value was a valid URI but had an invalid Scheme, expected one of [http, https]. Got: {uri.Scheme}");
-            }
-
-            // If the string is entirely valid Base64 we are gonna assume it is Base64
-            if (Base64.IsValid(stringValue))
-            {
-                _logger.LogDebug("Attribute value was valid Base64. ImageFormat Base64");
-                return ProfileImageFormat.Base64;
-            }
-
-            _logger.LogDebug("Attribute value wasn't valid Uri or Base64. ImageFormat Binary");
-            return ProfileImageFormat.Binary;
         }
 
         /// <inheritdoc />
