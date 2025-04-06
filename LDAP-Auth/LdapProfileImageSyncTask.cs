@@ -2,11 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
+using Jellyfin.Plugin.LDAP_Auth.Config;
 using Jellyfin.Plugin.LDAP_Auth.Helpers;
 using MediaBrowser.Common;
+using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Authentication;
 using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Library;
@@ -29,6 +32,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
         private readonly IUserManager _userManager;
         private readonly IProviderManager _providerManager;
         private readonly IServerConfigurationManager _serverConfigurationManager;
+        private readonly IHttpClientFactory _httpClientFactory;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LdapProfileImageSyncTask"/> class.
@@ -39,13 +43,15 @@ namespace Jellyfin.Plugin.LDAP_Auth
         /// <param name="serverConfigurationManager">Instance of the <see cref="IServerConfigurationManager"/> interface.</param>
         /// <param name="logger">Instance of the <see cref="ILogger{LDAPImageSyncScheduledTask}"/> interface.</param>
         /// <param name="localization">Instance of the <see cref="ILocalizationManager"/> interface.</param>
+        /// <param name="httpClientFactory">Instance of the <see cref="IHttpClientFactory"/> interface.</param>
         public LdapProfileImageSyncTask(
             IApplicationHost applicationHost,
             IUserManager userManager,
             IProviderManager providerManager,
             IServerConfigurationManager serverConfigurationManager,
             ILogger<LdapProfileImageSyncTask> logger,
-            ILocalizationManager localization)
+            ILocalizationManager localization,
+            IHttpClientFactory httpClientFactory)
         {
             _logger = logger;
             _localization = localization;
@@ -53,11 +59,18 @@ namespace Jellyfin.Plugin.LDAP_Auth
             _userManager = userManager;
             _providerManager = providerManager;
             _serverConfigurationManager = serverConfigurationManager;
+            _httpClientFactory = httpClientFactory;
         }
+
+        private HttpClient HttpClient => _httpClientFactory.CreateClient(NamedClient.Default);
 
         private bool EnableProfileImageSync => LdapPlugin.Instance.Configuration.EnableLdapProfileImageSync;
 
+        private bool RemoveImagesNotInLdap => LdapPlugin.Instance.Configuration.RemoveImagesNotInLdap;
+
         private string ProfileImageAttr => LdapPlugin.Instance.Configuration.LdapProfileImageAttribute;
+
+        private ProfileImageFormat ProfileImageFormat => LdapPlugin.Instance.Configuration.LdapProfileImageFormat;
 
         /// <inheritdoc/>
         public string Name => "LDAP - Synchronize profile images";
@@ -97,31 +110,44 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     continue;
                 }
 
-                var ldapProfileImage = ldapAuthProvider.GetAttribute(ldapUser, ProfileImageAttr)?.ByteValue;
-
-                if (ldapProfileImage is not null)
+                if (ldapAuthProvider.GetAttribute(ldapUser, ProfileImageAttr) is LdapAttribute profileImageAttr)
                 {
-                    // Found a profile image in LDAP data. Check if image changed since last synchronization and update if so
-                    var ldapProfileImageHash = Convert.ToBase64String(MD5.HashData(ldapProfileImage));
-
-                    if (user.ProfileImage is null ||
-                        !string.Equals(ldapProfileImageHash, configUser.ProfileImageHash, StringComparison.Ordinal))
+                    var profileImageFormat = ProfileImageFormat switch
                     {
-                        _logger.LogDebug("Updating profile image for user {Username}", configUser.LdapUid);
+                        ProfileImageFormat.Default => LdapUtils.TryDetermineAttributeFormat(profileImageAttr, _logger),
+                        { } format => format,
+                    };
 
-                        if (user.ProfileImage is not null)
-                        {
-                            await _userManager.ClearProfileImageAsync(user).ConfigureAwait(false);
-                        }
+                    byte[] profileImage = profileImageFormat switch
+                    {
+                        ProfileImageFormat.Binary => profileImageAttr.ByteValue,
+                        ProfileImageFormat.Base64 => Convert.FromBase64String(profileImageAttr.StringValue),
+                        ProfileImageFormat.Url => await HttpClient.GetByteArrayAsync(profileImageAttr.StringValue).ConfigureAwait(false),
+                        _ => throw new ArgumentOutOfRangeException(nameof(profileImageFormat), profileImageFormat, "ProfileImageFormat was outside the range of expected values"),
+                    };
 
-                        await ProfileImageUpdater.SetProfileImage(user, ldapProfileImage, _serverConfigurationManager, _providerManager).ConfigureAwait(false);
-                        configUser.ProfileImageHash = ldapProfileImageHash;
-                        updatePluginConfig = true;
+                    string ldapProfileImageHash = Convert.ToBase64String(MD5.HashData(profileImage));
 
-                        await _userManager.UpdateUserAsync(user).ConfigureAwait(false);
+                    if (user.ProfileImage is not null && string.Equals(ldapProfileImageHash, configUser.ProfileImageHash, StringComparison.Ordinal))
+                    {
+                        _logger.LogDebug($"Profile image for user {user.Username} is already up to date", configUser.LdapUid);
+                        continue;
                     }
+
+                    if (user.ProfileImage is not null)
+                    {
+                        await _userManager.ClearProfileImageAsync(user).ConfigureAwait(false);
+                    }
+
+                    await ProfileImageUpdater.SetProfileImage(user, profileImage, _serverConfigurationManager, _providerManager).ConfigureAwait(false);
+                    configUser.ProfileImageHash = ldapProfileImageHash;
+                    updatePluginConfig = true;
+
+                    await _userManager.UpdateUserAsync(user).ConfigureAwait(false);
+                    continue;
                 }
-                else if (user.ProfileImage is not null)
+
+                if (RemoveImagesNotInLdap && user.ProfileImage is not null)
                 {
                     // Did not find a profile image in LDAP data but user still has a profile image set. Reset it.
                     _logger.LogDebug("Removing profile image for user {Username}", configUser.LdapUid);
