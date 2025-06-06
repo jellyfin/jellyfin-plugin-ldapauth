@@ -57,6 +57,12 @@ public static class LdapUtils
         var stringValue = value.StringValue;
         if (Uri.TryCreate(stringValue, UriKind.RelativeOrAbsolute, out var uri))
         {
+            // URI must be absolute for it to contain the Scheme
+            if (!uri.IsAbsoluteUri)
+            {
+                throw new InvalidFormatException($"ProfileImage Format detection failed. Expected absolute URI but attribute value appears to be a relative path. Got: {uri}");
+            }
+
             // We can handle Url schemes as long as its http or https
             if (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp)
             {
