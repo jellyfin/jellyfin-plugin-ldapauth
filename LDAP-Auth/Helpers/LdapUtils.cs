@@ -55,6 +55,16 @@ public static class LdapUtils
     {
         logger.LogDebug("Trying to determine ProfileImage Format based on Attribute value");
         var stringValue = value.StringValue;
+
+        foreach (char c in stringValue)
+        {
+            if (c == 0x7F || (c < 0x20 && c != '\n' && c != '\r' && c != '\t'))
+            {
+                logger.LogDebug("Attribute value contains non-printable control char 0x{cInt:X}. ImageFormat Binary", Convert.ToInt32(c));
+                return ProfileImageFormat.Binary;
+            }
+        }
+
         if (Uri.TryCreate(stringValue, UriKind.RelativeOrAbsolute, out var uri))
         {
             // URI must be absolute for it to contain the Scheme
