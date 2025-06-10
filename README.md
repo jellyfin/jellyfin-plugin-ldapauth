@@ -30,7 +30,7 @@ Allows the administrator to customize most aspects of the LDAP authentication pr
 
 ## Build
 
-1. To build this plugin you will need [.Net 6.x](https://dotnet.microsoft.com/download/dotnet/6.0).
+1. To build this plugin you will need [.Net 9.x SDK](https://dotnet.microsoft.com/download/dotnet/9.0).
 
 2. Build plugin with following command
   ```
