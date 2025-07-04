@@ -217,6 +217,27 @@
                                         </div>
                                         <div class="fieldDescription">${LibraryAccessHelp}</div>
                                     </div>
+                                    <div class="folderMappingListContainer">
+                                        <h3>Library access group mapping</h3>
+                                        <div class="checkboxContainer checkboxContainer-withDescription">
+                                            <label>
+                                                <input type="checkbox" is="emby-checkbox" id="chkAlwaysUpdateFolderAccess" />
+                                                <span>Always update library access on authentication</span>
+                                            </label>
+                                            <div class="fieldDescription">Either reapply mapping uppon authentication or only on first login, if enabled when a user groups change in the ldap, library access will be updated on next user login (any changes by an admin would be overwritten)</div>
+                                        </div>
+                                        <div class="inputContainer fldExternalAddressFilter">
+                                            <input is="emby-input" type="text" id="txtLdapGroupsAttr" label="Groups attribute:" placeholder="memberOf" />
+                                            <div class="fieldDescription">Attribute containing the user groups (usually 'memberOf')</div>
+                                        </div>
+                                        <div class="inputContainer fldExternalAddressFilter">
+                                            <input is="emby-input" type="text" id="txtLdapGroupsBaseDn" label="Groups base Dn:" placeholder="ou=groups,dc=example,dc=com" />
+                                            <div class="fieldDescription">The ldap base DN for the groups: groups will be searched as 'cn=exampleGroup,ou=groups,dc=example,dc=com' (while 'exampleGroup' would be the value in mapping below)</div>
+                                        </div>
+                                        <div class="folderMappingAccess">
+                                        </div>
+                                        <div class="fieldDescription">Comma separated list of ldap groups allowed to access the library, for example given libraries 'shows' and 'movies' if we put 'group1, group2' in 'shows' and 'group1' in 'movies' a user having 'group1' will have access to shows and movies while a user having 'group2' whill only have acces to shows </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -269,6 +290,10 @@
                 selLdapProfileImageFormat: document.querySelector("#selLdapProfileImageFormat"),
                 chkEnableAllFolders: document.querySelector('#chkEnableAllFolders'),
                 folderAccessList: document.querySelector('.folderAccess'),
+                chkAlwaysUpdateFolderAccess: document.querySelector('#chkAlwaysUpdateFolderAccess'),
+                txtLdapGroupsAttr: document.querySelector("#txtLdapGroupsAttr"),
+                txtLdapGroupsBaseDn: document.querySelector("#txtLdapGroupsBaseDn"),
+                folderMappingAccessList: document.querySelector('.folderMappingAccess'),
                 txtPasswordResetUrl: document.querySelector("#txtLdapPasswordResetUrl")
             };
 
@@ -307,17 +332,36 @@
                     LdapConfigurationPage.selLdapProfileImageFormat.value = config.LdapProfileImageFormat;
                     config.EnableAllFolders = config.EnableAllFolders || false;
                     LdapConfigurationPage.chkEnableAllFolders.checked = config.EnableAllFolders;
+                    LdapConfigurationPage.chkAlwaysUpdateFolderAccess.checked = config.AlwaysUpdateFolderAccess
                     /* Default to empty array if Enabled Folders is not set */
                     config.EnabledFolders = config.EnabledFolders || [];
+                    config.FoldersMapping = config.FoldersMapping || {};
                     LdapConfigurationPage.txtPasswordResetUrl.value = config.PasswordResetUrl || '';
                     loadMediaFolders(config).then(() => {
                       Dashboard.hideLoadingMsg();
                     });
+                    LdapConfigurationPage.txtLdapGroupsAttr.value = config.LdapGroupsAttr;
+                    LdapConfigurationPage.txtLdapGroupsBaseDn.value = config.LdapGroupsBaseDn;
                 });
 
                 const updateFolderListVisibility = () => {
                     document.querySelector('.folderAccessContainer').style.display =
                         LdapConfigurationPage.chkEnableUserCreation.checked ? 'block' : 'none';
+                }
+
+                const getFolderMapping = (foldersMapping, folder) => {
+                    console.log("getting folderMapping");
+                    if(folder == null){
+                        return [];
+                    }
+                    if(Array.isArray(foldersMapping)){
+                        for(const mapping of foldersMapping){
+                            if(mapping.Folder === folder) {
+                                return mapping.Groups || [] ;
+                            }
+                        }
+                    }
+                    return [];
                 }
 
                 function loadMediaFolders(config) {
@@ -329,21 +373,31 @@
                     IsHidden: false
                   })).then((mediaFolders) => {
                     let html = '';
+                    let mappingHtml = '';
                     html += '<h3 class="checkboxListLabel">${HeaderLibraries}</h3>';
                     html += '<div id="folderList" class="checkboxList paperList checkboxList-paperList">';
+
+                    mappingHtml += '<h3 class="checkboxListLabel">Libraries groups mapping</h3>';
+                    mappingHtml += '<div id="folderMappingList" class="paperList checkboxList-paperList">';
 
                     if (Array.isArray(mediaFolders.Items)) {
                       mediaFolders.Items.forEach((folder) => {
                         const isChecked = config.EnableAllFolders || config.EnabledFolders.indexOf(folder.Id) != -1;
                         const checkedAttribute = isChecked ? ' checked' : '';
+                        const folderMapping = getFolderMapping(config.FoldersMapping, folder.Id);
                         html += '<label><input type="checkbox" is="emby-checkbox" class="chkFolder" data-id="' +
                           folder.Id + '" ' + checkedAttribute + '><span>' + folder.Name +
                             '</span></label>';
+                        mappingHtml += '<label><span>'+folder.Name+':</span></label> <input is="emby-input" type="text" data-label="' + folder.Name + ':" data-id="' +
+                          folder.Id + '" value="' + folderMapping.join(', ') +'" placeholder="group1, group2....."/>';
                       });
                     }
 
                     html += '</div>';
+                    mappingHtml += '</div>';
                     LdapConfigurationPage.folderAccessList.innerHTML = html;
+                    LdapConfigurationPage.folderMappingAccessList.innerHTML = mappingHtml;
+
                     /* Only show these options if Jellyfin user creation is enabled on successful LDAP authentication */
                     updateFolderListVisibility();
                     LdapConfigurationPage.chkEnableUserCreation.addEventListener('change', updateFolderListVisibility);
@@ -398,10 +452,20 @@
                     config.LdapProfileImageFormat = LdapConfigurationPage.selLdapProfileImageFormat.value;
                     /* Map the set of checked input items to an array of library Id's */
                     config.EnableAllFolders = LdapConfigurationPage.chkEnableAllFolders.checked || false;
+                    config.AlwaysUpdateFolderAccess = LdapConfigurationPage.chkAlwaysUpdateFolderAccess.checked || false;
                     let folders = document.querySelectorAll('#folderList input');
                     folders = Array.prototype.filter.call(folders, folder => folder.checked)
                       .map(folder => folder.getAttribute("data-id"));
                     config.EnabledFolders = folders;
+                    let foldersMapping = document.querySelectorAll('#folderMappingList input');
+                    foldersMapping = 
+                    Array.prototype.filter.call(foldersMapping, folder => folder.value != "")
+                      .map(folder =>  { 
+                        return {'Folder': folder.getAttribute("data-id"),
+                            'Groups': folder.value.split(',').map(group => group.trim())
+                        }
+                    });
+                    config.FoldersMapping = foldersMapping;
                     config.PasswordResetUrl = LdapConfigurationPage.txtPasswordResetUrl.value;
                     window.ApiClient.updatePluginConfiguration(LdapConfigurationPage.pluginUniqueId, config).then(Dashboard.processPluginConfigurationUpdateResult);
                 });

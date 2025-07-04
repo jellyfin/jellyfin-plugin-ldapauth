@@ -43,6 +43,10 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
             LdapProfileImageFormat = ProfileImageFormat.Default;
             EnableAllFolders = false;
             EnabledFolders = Array.Empty<string>();
+            LdapGroupsAttr = string.Empty;
+            LdapGroupsBaseDn = string.Empty;
+            AlwaysUpdateFolderAccess = false;
+            FoldersMapping = Array.Empty<FolderGroupMapping>();
 
             LdapUsers = Array.Empty<LdapUser>();
         }
@@ -186,6 +190,26 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
         /// Gets or sets a list of folder Ids which are enabled for access by default.
         /// </summary>
         public string[] EnabledFolders { get; set; }
+
+        /// <summary>
+        /// Gets or sets The ldap attribute name for groups.
+        /// </summary>
+        public string LdapGroupsAttr { get; set; }
+
+        /// <summary>
+        /// Gets or sets Ldap group base dn (example ou=groups,dc=example,dc=com).
+        /// </summary>
+        public string LdapGroupsBaseDn { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether user folder access should be always updated upon authentication or not.
+        /// </summary>
+        public bool AlwaysUpdateFolderAccess { get; set; }
+
+        /// <summary>
+        /// Gets or sets folder mapping to ldap groups.
+        /// </summary>
+        public FolderGroupMapping[] FoldersMapping { get; set; }
 
         /// <summary>
         /// Gets or sets the password reset url.
