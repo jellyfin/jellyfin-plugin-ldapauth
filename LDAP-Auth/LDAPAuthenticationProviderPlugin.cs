@@ -645,23 +645,30 @@ namespace Jellyfin.Plugin.LDAP_Auth
             }
 
             // not using `using` for the ability to return ldapClient, need to dispose this manually on exception
-            var ldapClient = new LdapConnection(GetConnectionOptions());
+            var ldapClient = new LdapConnection(GetConnectionOptions())
+            {
+                ConnectionTimeout = LdapPlugin.Instance.Configuration.LdapConnectionTimeout * 1000
+            };
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
             try
             {
+                _logger.LogDebug("Attempting to connect to LDAP server {Server}:{Port} with a {Timeout}s timeout.", LdapPlugin.Instance.Configuration.LdapServer, LdapPlugin.Instance.Configuration.LdapPort, LdapPlugin.Instance.Configuration.LdapConnectionTimeout);
                 ldapClient.Connect(LdapPlugin.Instance.Configuration.LdapServer, LdapPlugin.Instance.Configuration.LdapPort);
                 if (LdapPlugin.Instance.Configuration.UseStartTls)
                 {
                     ldapClient.StartTls();
                 }
 
-                _logger.LogDebug("Trying bind as user {UserDn}", userDn);
+                _logger.LogDebug("LDAP connect took {ElapsedMilliseconds} ms. Trying bind as user {UserDn}", stopwatch.ElapsedMilliseconds, userDn);
                 ldapClient.Bind(userDn, userPassword);
+                stopwatch.Stop();
+                _logger.LogInformation("LDAP connect and bind successful for {UserDn}, total time: {ElapsedMilliseconds} ms", userDn, stopwatch.ElapsedMilliseconds);
             }
             catch (Exception e)
             {
+                stopwatch.Stop();
+                _logger.LogError(e, "Failed to Connect or Bind to server as user {UserDn}. Total time before failure: {ElapsedMilliseconds} ms", userDn, stopwatch.ElapsedMilliseconds);
                 ldapClient.Dispose();
-
-                _logger.LogError(e, "Failed to Connect or Bind to server as user {UserDn}", userDn);
                 var message = initialConnection
                     ? "Failed to Connect or Bind to server."
                     : "Error completing LDAP login. Invalid username or password.";

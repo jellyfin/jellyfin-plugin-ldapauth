@@ -63,6 +63,11 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
         public int LdapPort { get; set; }
 
         /// <summary>
+        /// Gets or sets the ldap connection timeout in seconds.
+        /// </summary>
+        public int LdapConnectionTimeout { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating whether to use ssl when connecting to the ldap server.
         /// </summary>
         public bool UseSsl { get; set; }
