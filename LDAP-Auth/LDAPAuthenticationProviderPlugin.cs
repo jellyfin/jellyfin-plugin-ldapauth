@@ -690,13 +690,20 @@ namespace Jellyfin.Plugin.LDAP_Auth
             var configuration = LdapPlugin.Instance.Configuration;
             var connectionOptions = GetConnectionOptions();
             var response = new ServerTestResponse();
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
             try
             {
                 response.Connect = Started;
-                using var ldapClient = new LdapConnection(connectionOptions);
+                using var ldapClient = new LdapConnection(connectionOptions)
+                {
+                    ConnectionTimeout = configuration.LdapConnectionTimeout * 1000
+                };
+
+                _logger.LogDebug("Testing LDAP server connection to {Server}:{Port} with a {Timeout}s timeout.", configuration.LdapServer, configuration.LdapPort, configuration.LdapConnectionTimeout);
                 ldapClient.Connect(configuration.LdapServer, configuration.LdapPort);
                 response.Connect = Success;
+                _logger.LogDebug("LDAP test connection successful after {ElapsedMilliseconds} ms.", stopwatch.ElapsedMilliseconds);
 
                 if (configuration.UseStartTls)
                 {
@@ -708,6 +715,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 response.Bind = Started;
                 ldapClient.Bind(configuration.LdapBindUser, configuration.LdapBindPassword);
                 response.Bind = ldapClient.Bound ? Success : "Anonymous";
+                _logger.LogDebug("LDAP test bind successful. Total time: {ElapsedMilliseconds} ms.", stopwatch.ElapsedMilliseconds);
 
                 response.BaseSearch = Started;
                 var entries = ldapClient.Search(
@@ -726,10 +734,13 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 }
 
                 response.BaseSearch = $"Found {count} Entities";
+                stopwatch.Stop();
+                _logger.LogInformation("LDAP server test completed successfully in {ElapsedMilliseconds} ms.", stopwatch.ElapsedMilliseconds);
             }
             catch (Exception e)
             {
-                _logger.LogWarning(e, "Ldap Test Failed to Connect or Bind to server");
+                stopwatch.Stop();
+                _logger.LogWarning(e, "Ldap Test Failed to Connect or Bind to server. Failure after {ElapsedMilliseconds} ms.", stopwatch.ElapsedMilliseconds);
                 response.Error = e.Message;
             }
 

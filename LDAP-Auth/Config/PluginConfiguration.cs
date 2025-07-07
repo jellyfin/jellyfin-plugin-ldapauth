@@ -18,6 +18,7 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
         {
             LdapServer = "ldap-server.contoso.com";
             LdapPort = 389;
+            LdapConnectionTimeout = 10;
             AllowPassChange = false;
             UseSsl = true;
             UseStartTls = false;
