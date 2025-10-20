@@ -1,7 +1,7 @@
 name: "LDAP Authentication"
 guid: "958aad66-3784-4d2a-b89a-a7b6fab6e25c"
 imageUrl: "https://repo.jellyfin.org/releases/plugin/images/jellyfin-plugin-ldapauth.png"
-version: 20
+version: 21
 targetAbi: "10.11.0.0"
 framework: "net9.0"
 owner: "jellyfin"
@@ -15,8 +15,6 @@ artifacts:
   - "LDAP-Auth.dll"
   - "Novell.Directory.Ldap.NETStandard.dll"
 changelog: |-
-  - Added ProfileImageFormat support (#174) @CEbbinghaus
-  - Removed jpegphoto attribute when photo sync isn't enabled (#168) @CEbbinghaus
-
-  ### New features and improvements ###
-  - Implement Password Modify Extended Operation (#172) @Zeault
+  - Jellyfin 10.11 support (#182) @crobibero
+  - Improve binary/uri ProfileImage handling (#183) @dshoreman
+  - Fixed ProfileImage ServiceTask and Format Sync (#177) @CEbbinghaus
