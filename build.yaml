@@ -1,8 +1,8 @@
 name: "LDAP Authentication"
 guid: "958aad66-3784-4d2a-b89a-a7b6fab6e25c"
 imageUrl: "https://repo.jellyfin.org/releases/plugin/images/jellyfin-plugin-ldapauth.png"
-version: 21
-targetAbi: "10.11.0.0"
+version: 22
+targetAbi: "10.11.2.0"
 framework: "net9.0"
 owner: "jellyfin"
 overview: "Authenticate users against an LDAP database"
@@ -15,6 +15,4 @@ artifacts:
   - "LDAP-Auth.dll"
   - "Novell.Directory.Ldap.NETStandard.dll"
 changelog: |-
-  - Jellyfin 10.11 support (#182) @crobibero
-  - Improve binary/uri ProfileImage handling (#183) @dshoreman
-  - Fixed ProfileImage ServiceTask and Format Sync (#177) @CEbbinghaus
+  - Fix 10.11.2 support (#195) @crobibero
