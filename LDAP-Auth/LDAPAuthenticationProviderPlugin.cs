@@ -15,6 +15,7 @@ using Jellyfin.Plugin.LDAP_Auth.Api.Models;
 using Jellyfin.Plugin.LDAP_Auth.Config;
 using Jellyfin.Plugin.LDAP_Auth.Helpers;
 using MediaBrowser.Common;
+using MediaBrowser.Common.Extensions;
 using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Authentication;
 using MediaBrowser.Controller.Configuration;
@@ -552,7 +553,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
         }
 
         /// <inheritdoc />
-        public Task<ForgotPasswordResult> StartForgotPasswordProcess(User user, bool isInNetwork)
+        public Task<ForgotPasswordResult> StartForgotPasswordProcess(User user, string enteredUsername, bool isInNetwork)
         {
             var resetUrl = LdapPlugin.Instance.Configuration.PasswordResetUrl;
             if (string.IsNullOrEmpty(resetUrl))
@@ -560,9 +561,10 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 throw new NotImplementedException();
             }
 
+            var userId = (user?.Id ?? enteredUsername.GetMD5()).ToString();
             resetUrl = resetUrl
-                .Replace("$userId", user.Id.ToString(), StringComparison.OrdinalIgnoreCase)
-                .Replace("$userName", user.Username, StringComparison.OrdinalIgnoreCase);
+                .Replace("$userId", userId, StringComparison.OrdinalIgnoreCase)
+                .Replace("$userName", enteredUsername.ToLowerInvariant(), StringComparison.OrdinalIgnoreCase);
 
             var result = new ForgotPasswordResult
             {
