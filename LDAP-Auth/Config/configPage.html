@@ -73,6 +73,13 @@
                                         </br>- $userName
                                     </div>
                                 </div>
+                                <div class="selectContainer">
+                                    <label class="selectLabel" for="selectLdapBindMethod">Bind Method</label>
+                                    <select is="emby-select" id="selectLdapBindMethod">
+                                        <option id="optSimple" value="Simple">Simple</option>
+                                        <option id="optExternal" value="External">External</option>
+                                    </select>
+                                </div>
                                 <div class="inputContainer fldExternalAddressFilter">
                                     <input is="emby-input" type="text" id="txtLdapBindUser" label="LDAP Bind User:" />
                                     <div class="fieldDescription">A bind user for LDAP search queries, required if your LDAP doesn't support anonymous bind.</div>
@@ -244,6 +251,7 @@
                 chkUseStartTls: document.querySelector("#chkUseStartTls"),
                 chkSkipSslVerify: document.querySelector("#chkSkipSslVerify"),
                 chkAllowPassChange: document.querySelector("#chkAllowPassChange"),
+                selectLdapBindMethod: document.querySelector("#selectLdapBindMethod"),
                 txtLdapBindUser: document.querySelector("#txtLdapBindUser"),
                 txtLdapBindPassword: document.querySelector("#txtLdapBindPassword"),
                 txtLdapBaseDn: document.querySelector("#txtLdapBaseDn"),
@@ -285,6 +293,7 @@
                     LdapConfigurationPage.chkUseStartTls.checked = config.UseStartTls;
                     LdapConfigurationPage.chkSkipSslVerify.checked = config.SkipSslVerify;
                     LdapConfigurationPage.chkAllowPassChange.checked = config.AllowPassChange;
+                    LdapConfigurationPage.selectLdapBindMethod.value = config.LdapBindMethod;
                     LdapConfigurationPage.txtLdapBindUser.value = config.LdapBindUser;
                     LdapConfigurationPage.txtLdapBindPassword.value = config.LdapBindPassword;
                     LdapConfigurationPage.txtLdapBaseDn.value = config.LdapBaseDn;
@@ -313,6 +322,8 @@
                     loadMediaFolders(config).then(() => {
                       Dashboard.hideLoadingMsg();
                     });
+
+                    toggleBindUserEnabled(LdapConfigurationPage);
                 });
 
                 const updateFolderListVisibility = () => {
@@ -365,6 +376,12 @@
                 }
             });
 
+            function toggleBindUserEnabled(config) {
+                const disableInputs = config.selectLdapBindMethod.value != "Simple";
+                config.txtLdapBindUser.disabled = disableInputs;
+                config.txtLdapBindPassword.disabled = disableInputs;
+            }
+
             var form = document.querySelector(".esqConfigurationForm");
             form.addEventListener("submit", function(e){
                 e.preventDefault();
@@ -377,6 +394,7 @@
                     config.UseStartTls = LdapConfigurationPage.chkUseStartTls.checked;
                     config.AllowPassChange = LdapConfigurationPage.chkAllowPassChange.checked;
                     config.SkipSslVerify = LdapConfigurationPage.chkSkipSslVerify.checked;
+                    config.LdapBindMethod = LdapConfigurationPage.selectLdapBindMethod.value;
                     config.LdapBindUser = LdapConfigurationPage.txtLdapBindUser.value;
                     config.LdapBindPassword = LdapConfigurationPage.txtLdapBindPassword.value;
                     config.LdapBaseDn = LdapConfigurationPage.txtLdapBaseDn.value;
@@ -425,6 +443,7 @@
                     AllowPassChange: LdapConfigurationPage.chkAllowPassChange.checked,
                     UseStartTls: LdapConfigurationPage.chkUseStartTls.checked,
                     SkipSslVerify: LdapConfigurationPage.chkSkipSslVerify.checked,
+                    LdapBindMethod: LdapConfigurationPage.selectLdapBindMethod.value,
                     LdapBindUser: LdapConfigurationPage.txtLdapBindUser.value,
                     LdapBindPassword: LdapConfigurationPage.txtLdapBindPassword.value,
                     LdapBaseDn: LdapConfigurationPage.txtLdapBaseDn.value,
@@ -560,6 +579,10 @@
                 let url = ApiClient.getUrl('ldap/LdapUserSearch');
                 let data = JSON.stringify(configUpdate);
                 ApiClient.ajax({ type: 'POST', url, data, contentType: 'application/json' }).then(handler).catch(handler);
+            });
+
+            document.querySelector("#selectLdapBindMethod").addEventListener("change", function (e) {
+                toggleBindUserEnabled(LdapConfigurationPage);
             });
         </script>
     </div>

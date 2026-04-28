@@ -24,6 +24,7 @@ using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Users;
 using Microsoft.Extensions.Logging;
 using Novell.Directory.Ldap;
+using Novell.Directory.Ldap.Sasl;
 
 namespace Jellyfin.Plugin.LDAP_Auth
 {
@@ -639,11 +640,6 @@ namespace Jellyfin.Plugin.LDAP_Auth
         private LdapConnection ConnectToLdap(string userDn = null, string userPassword = null)
         {
             bool initialConnection = userDn == null;
-            if (initialConnection)
-            {
-                userDn = LdapPlugin.Instance.Configuration.LdapBindUser;
-                userPassword = LdapPlugin.Instance.Configuration.LdapBindPassword;
-            }
 
             // not using `using` for the ability to return ldapClient, need to dispose this manually on exception
             var ldapClient = new LdapConnection(GetConnectionOptions());
@@ -655,8 +651,14 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     ldapClient.StartTls();
                 }
 
-                _logger.LogDebug("Trying bind as user {UserDn}", userDn);
-                ldapClient.Bind(userDn, userPassword);
+                if (initialConnection)
+                {
+                    InitialBind(ldapClient);
+                }
+                else
+                {
+                    ldapClient.Bind(userDn, userPassword);
+                }
             }
             catch (Exception e)
             {
@@ -670,6 +672,23 @@ namespace Jellyfin.Plugin.LDAP_Auth
             }
 
             return ldapClient;
+        }
+
+        private void InitialBind(LdapConnection ldapClient)
+        {
+            switch (LdapPlugin.Instance.Configuration.LdapBindMethod)
+            {
+                case BindMethod.Simple:
+                    string userDn = LdapPlugin.Instance.Configuration.LdapBindUser;
+                    _logger.LogDebug("Trying bind as user {UserDn}", userDn);
+                    ldapClient.Bind(userDn, LdapPlugin.Instance.Configuration.LdapBindPassword);
+                    break;
+
+                case BindMethod.External:
+                    _logger.LogDebug("Trying external bind");
+                    ldapClient.Bind(new SaslExternalRequest());
+                    break;
+            }
         }
 
         /// <summary>
@@ -700,7 +719,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 }
 
                 response.Bind = Started;
-                ldapClient.Bind(configuration.LdapBindUser, configuration.LdapBindPassword);
+                InitialBind(ldapClient);
                 response.Bind = ldapClient.Bound ? Success : "Anonymous";
 
                 response.BaseSearch = Started;
