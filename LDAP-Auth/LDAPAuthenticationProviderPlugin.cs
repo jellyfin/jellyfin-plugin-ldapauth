@@ -284,12 +284,6 @@ namespace Jellyfin.Plugin.LDAP_Auth
             return new ProviderAuthenticationResult { Username = ldapUsername };
         }
 
-        /// <inheritdoc />
-        public bool HasPassword(User user)
-        {
-            return true;
-        }
-
         /// <summary>
         /// Changes the users password (Requires privileged bind user).
         /// </summary>
