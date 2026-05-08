@@ -8,7 +8,7 @@ on:
 
 jobs:
   call:
-    uses: jellyfin/jellyfin-meta-plugins/.github/workflows/publish-unstable.yaml@master
+    uses: jellyfin/jellyfin-meta-plugins/.github/workflows/publish-unstable.yaml@c253bb2877fe640646e18ceeee30441659ac0775 # master
     secrets:
       deploy-host: ${{ secrets.REPO_HOST }}
       deploy-user: ${{ secrets.REPO_USER }}
