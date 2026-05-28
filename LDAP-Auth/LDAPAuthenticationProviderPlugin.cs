@@ -166,7 +166,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     var ldapUsers = ldapClient.Search(
                         adminBaseDn,
                         LdapConnection.ScopeSub,
-                        AdminFilter.Replace("{username}", LdapUtils.SanitizeFilter(username), StringComparison.OrdinalIgnoreCase),
+                        AdminFilter.Replace("{username}", LdapUtils.SanitizeFilter(ldapUsername), StringComparison.OrdinalIgnoreCase),
                         Array.Empty<string>(),
                         false);
 
@@ -190,7 +190,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 }
                 catch (LdapException e)
                 {
-                    _logger.LogError(e, "Failed to check for admin with: {Filter}", SearchFilter);
+                    _logger.LogError(e, "Failed to check for admin with: {Filter}", AdminFilter);
                     throw new AuthenticationException("Error completing LDAP login while applying admin filter.");
                 }
             }
