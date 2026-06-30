@@ -80,6 +80,11 @@ namespace Jellyfin.Plugin.LDAP_Auth
         public bool IsEnabled => true;
 
         /// <summary>
+        /// Gets a value indicating whether an LDAP admin filter is configured.
+        /// </summary>
+        public bool IsAdminFilterEnabled => !string.IsNullOrEmpty(AdminFilter) && !string.Equals(AdminFilter, "_disabled_", StringComparison.Ordinal);
+
+        /// <summary>
         /// Authenticate user against the ldap server.
         /// </summary>
         /// <param name="username">Username to authenticate.</param>
@@ -144,56 +149,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
             }
 
             // Determine if the user should be an administrator
-            var ldapIsAdmin = false;
-
-            if (!string.IsNullOrEmpty(AdminFilter) && !string.Equals(AdminFilter, "_disabled_", StringComparison.Ordinal))
-            {
-                using var ldapClient = ConnectToLdap();
-
-                ldapClient.Constraints = GetSearchConstraints(
-                    ldapClient,
-                    LdapPlugin.Instance.Configuration.LdapBindUser,
-                    LdapPlugin.Instance.Configuration.LdapBindPassword);
-
-                try
-                {
-                    var adminBaseDn = LdapPlugin.Instance.Configuration.LdapAdminBaseDn;
-                    if (string.IsNullOrEmpty(adminBaseDn))
-                    {
-                        adminBaseDn = LdapPlugin.Instance.Configuration.LdapBaseDn;
-                    }
-
-                    var ldapUsers = ldapClient.Search(
-                        adminBaseDn,
-                        LdapConnection.ScopeSub,
-                        AdminFilter.Replace("{username}", LdapUtils.SanitizeFilter(username), StringComparison.OrdinalIgnoreCase),
-                        Array.Empty<string>(),
-                        false);
-
-                    if (EnableAdminFilterMemberUid)
-                    {
-                        ldapIsAdmin = ldapUsers.HasMore();
-                    }
-                    else
-                    {
-                        var foundUser = false;
-                        while (ldapUsers.HasMore() && !foundUser)
-                        {
-                            var currentUser = ldapUsers.Next();
-                            if (string.Equals(ldapUser.Dn, currentUser.Dn, StringComparison.Ordinal))
-                            {
-                                ldapIsAdmin = true;
-                                foundUser = true;
-                            }
-                        }
-                    }
-                }
-                catch (LdapException e)
-                {
-                    _logger.LogError(e, "Failed to check for admin with: {Filter}", SearchFilter);
-                    throw new AuthenticationException("Error completing LDAP login while applying admin filter.");
-                }
-            }
+            var ldapIsAdmin = IsLdapUserAdmin(ldapUser, username);
 
             if (user == null)
             {
@@ -451,6 +407,107 @@ namespace Jellyfin.Plugin.LDAP_Auth
             {
                 _logger.LogWarning(e, "Failed to filter users with: {Filter}", filter);
                 throw;
+            }
+        }
+
+        /// <summary>
+        /// Determines whether the given LDAP user is an administrator according to the configured admin filter.
+        /// </summary>
+        /// <param name="ldapUser">The LDAP user entry to check.</param>
+        /// <param name="username">The username, used to substitute the {username} placeholder in the admin filter.</param>
+        /// <returns><c>true</c> if the user matches the admin filter; <c>false</c> if no admin filter is configured or the user does not match.</returns>
+        /// <exception cref="AuthenticationException">Thrown on failure to execute the admin filter search.</exception>
+        public bool IsLdapUserAdmin(LdapEntry ldapUser, string username)
+        {
+            if (!IsAdminFilterEnabled)
+            {
+                return false;
+            }
+
+            using var ldapClient = ConnectToLdap();
+
+            ldapClient.Constraints = GetSearchConstraints(
+                ldapClient,
+                LdapPlugin.Instance.Configuration.LdapBindUser,
+                LdapPlugin.Instance.Configuration.LdapBindPassword);
+
+            try
+            {
+                var adminBaseDn = LdapPlugin.Instance.Configuration.LdapAdminBaseDn;
+                if (string.IsNullOrEmpty(adminBaseDn))
+                {
+                    adminBaseDn = LdapPlugin.Instance.Configuration.LdapBaseDn;
+                }
+
+                var ldapUsers = ldapClient.Search(
+                    adminBaseDn,
+                    LdapConnection.ScopeSub,
+                    AdminFilter.Replace("{username}", LdapUtils.SanitizeFilter(username), StringComparison.OrdinalIgnoreCase),
+                    Array.Empty<string>(),
+                    false);
+
+                if (EnableAdminFilterMemberUid)
+                {
+                    return ldapUsers.HasMore();
+                }
+
+                while (ldapUsers.HasMore())
+                {
+                    var currentUser = ldapUsers.Next();
+                    if (string.Equals(ldapUser.Dn, currentUser.Dn, StringComparison.Ordinal))
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+            catch (LdapException e)
+            {
+                _logger.LogError(e, "Failed to check for admin with: {Filter}", SearchFilter);
+                throw new AuthenticationException("Error completing LDAP login while applying admin filter.");
+            }
+        }
+
+        /// <summary>
+        /// Returns all LDAP users matching the configured search filter.
+        /// </summary>
+        /// <returns>The matching LDAP entries.</returns>
+        /// <exception cref="AuthenticationException">Thrown on failure to connect or bind to LDAP server.</exception>
+        public IEnumerable<LdapEntry> GetLdapUsers()
+        {
+            using var ldapClient = ConnectToLdap();
+
+            if (!ldapClient.Connected)
+            {
+                return Array.Empty<LdapEntry>();
+            }
+
+            ldapClient.Constraints = GetSearchConstraints(
+                ldapClient,
+                LdapPlugin.Instance.Configuration.LdapBindUser,
+                LdapPlugin.Instance.Configuration.LdapBindPassword);
+
+            // The search filter may contain a {username} placeholder for per-user
+            // lookups; replace it with a wildcard so every user is matched.
+            var searchFilter = SearchFilter.Replace("{username}", "*", StringComparison.OrdinalIgnoreCase);
+
+            try
+            {
+                var ldapUsers = ldapClient.Search(
+                    LdapPlugin.Instance.Configuration.LdapBaseDn,
+                    LdapConnection.ScopeSub,
+                    searchFilter,
+                    new[] { UsernameAttr, UidAttr },
+                    false);
+
+                // ToList to ensure enumeration is complete before the connection is closed
+                return ldapUsers.ToList();
+            }
+            catch (LdapException e)
+            {
+                _logger.LogError(e, "Failed to filter users with: {Filter}", searchFilter);
+                throw new AuthenticationException("Error completing LDAP user sync while applying user filter.");
             }
         }
 
