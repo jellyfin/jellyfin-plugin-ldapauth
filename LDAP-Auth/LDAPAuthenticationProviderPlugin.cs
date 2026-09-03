@@ -55,6 +55,10 @@ namespace Jellyfin.Plugin.LDAP_Auth
 
         private string UidAttr => LdapPlugin.Instance.Configuration.LdapUidAttribute;
 
+        private string GroupsAttr => LdapPlugin.Instance.Configuration.LdapGroupsAttr;
+
+        private string GroupsBaseDn => LdapPlugin.Instance.Configuration.LdapGroupsBaseDn;
+
         private string UsernameAttr => LdapPlugin.Instance.Configuration.LdapUsernameAttribute;
 
         private bool EnableProfileImageSync => LdapPlugin.Instance.Configuration.EnableLdapProfileImageSync;
@@ -208,7 +212,9 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     user.SetPermission(PermissionKind.EnableAllFolders, LdapPlugin.Instance.Configuration.EnableAllFolders);
                     if (!LdapPlugin.Instance.Configuration.EnableAllFolders)
                     {
-                        user.SetPreference(PreferenceKind.EnabledFolders, LdapPlugin.Instance.Configuration.EnabledFolders);
+                        var foldersFromMapping = GetUserAuthorizedFolders(ldapUser);
+                        foldersFromMapping = foldersFromMapping.Concat(LdapPlugin.Instance.Configuration.EnabledFolders).Distinct().ToArray();
+                        user.SetPreference(PreferenceKind.EnabledFolders, foldersFromMapping);
                     }
 
                     var providerManager = _applicationHost.Resolve<IProviderManager>();
@@ -275,6 +281,19 @@ namespace Jellyfin.Plugin.LDAP_Auth
                     }
                 }
 
+                if (LdapPlugin.Instance.Configuration.AlwaysUpdateFolderAccess)
+                {
+                    var foldersFromMapping = GetUserAuthorizedFolders(ldapUser);
+                    foldersFromMapping = foldersFromMapping.Concat(LdapPlugin.Instance.Configuration.EnabledFolders).Distinct().ToArray();
+                    var userFolder = user.GetPreferenceValues<string>(PreferenceKind.EnabledFolders);
+                    if (userFolder.Length != foldersFromMapping.Length)
+                    {
+                        _logger.LogDebug("Updating user {Username} folder access to.", ldapUsername);
+                        user.SetPreference(PreferenceKind.EnabledFolders, foldersFromMapping);
+                        userNeedsUpdate = true;
+                    }
+                }
+
                 if (userNeedsUpdate)
                 {
                     await userManager.UpdateUserAsync(user).ConfigureAwait(false);
@@ -282,6 +301,33 @@ namespace Jellyfin.Plugin.LDAP_Auth
             }
 
             return new ProviderAuthenticationResult { Username = ldapUsername };
+        }
+
+        private string[] GetUserAuthorizedFolders(LdapEntry ldapUser)
+        {
+            _logger.LogInformation("Getting authorized Folder for user {ldapUser}", ldapUser);
+            var ldapGroups = GetAttribute(ldapUser, GroupsAttr)?.StringValueArray;
+            _logger.LogInformation("Getting authorized Folder for groups {LdapGroups} of size {size}", ldapGroups, ldapGroups.Length);
+            if (ldapGroups.Length == 0)
+            {
+                return [];
+            }
+
+            List<string> folders = new List<string>();
+            foreach (FolderGroupMapping mapping in LdapPlugin.Instance.Configuration.FoldersMapping)
+            {
+                foreach (string group in mapping.Groups)
+                {
+                    if (ldapGroups.Contains("cn=" + group + "," + LdapPlugin.Instance.Configuration.LdapGroupsBaseDn))
+                    {
+                        folders.Add(mapping.Folder);
+                        break;
+                    }
+                }
+            }
+
+            _logger.LogInformation("user {username} is allowed {folders}", GetAttribute(ldapUser, UsernameAttr)?.StringValue, folders);
+            return [.. folders];
         }
 
         /// <inheritdoc />
@@ -511,7 +557,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
 
             ILdapSearchResults ldapUsers;
 
-            string[] attrs = [UsernameAttr, UidAttr];
+            string[] attrs = [UsernameAttr, UidAttr, GroupsAttr];
             if (EnableProfileImageSync)
             {
                 attrs = [..attrs, ProfileImageAttr];
