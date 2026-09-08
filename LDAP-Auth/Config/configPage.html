@@ -353,7 +353,9 @@
                         const folders = document.querySelectorAll('#folderList input');
                         let count = 0;
                         Array.prototype.forEach.call(folders, folder => folder.checked && count++);
-                        LdapConfigurationPage.chkEnableAllFolders.checked = count == folders.length;
+                        if (count < folders.length) {
+                          LdapConfigurationPage.chkEnableAllFolders.checked = false;
+                        }
                       });
                     });
                     LdapConfigurationPage.chkEnableAllFolders.addEventListener('change', (event) => {
