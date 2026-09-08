@@ -1,7 +1,7 @@
 name: "LDAP Authentication"
 guid: "958aad66-3784-4d2a-b89a-a7b6fab6e25c"
 imageUrl: "https://repo.jellyfin.org/releases/plugin/images/jellyfin-plugin-ldapauth.png"
-version: 23
+version: 24
 targetAbi: "12.0.0.0"
 framework: "net10.0"
 owner: "jellyfin"
@@ -15,4 +15,5 @@ artifacts:
   - "LDAP-Auth.dll"
   - "Novell.Directory.Ldap.NETStandard.dll"
 changelog: |-
-  - Backport "Fix IUserManager.RenameUser signature for Jellyfin 12.x" for Jellyfin 10.11.9 (#215) @tam1m
+  - Unstable: Update to latest Jellyfin preview packages (#213) @crobibero, @jellyfin-bot
+  - Fix LDAP admin filter username resolution (#223) @ddwalias
