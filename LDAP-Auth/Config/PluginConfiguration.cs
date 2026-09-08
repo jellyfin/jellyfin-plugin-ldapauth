@@ -7,6 +7,22 @@ using Jellyfin.Plugin.LDAP_Auth.Api.Models;
 namespace Jellyfin.Plugin.LDAP_Auth.Config
 {
     /// <summary>
+    /// LDAP Bind Method.
+    /// </summary>
+    public enum BindMethod
+    {
+        /// <summary>
+        /// Simple user/password bind.
+        /// </summary>
+        Simple,
+
+        /// <summary>
+        /// SASL External bind.
+        /// </summary>
+        External
+    }
+
+    /// <summary>
     /// Plugin Configuration.
     /// </summary>
     public class PluginConfiguration : MediaBrowser.Model.Plugins.BasePluginConfiguration
@@ -22,6 +38,7 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
             UseSsl = true;
             UseStartTls = false;
             SkipSslVerify = false;
+            LdapBindMethod = BindMethod.Simple;
             LdapBindUser = "CN=BindUser,DC=contoso,DC=com";
             LdapBindPassword = "password";
             LdapBaseDn = "o=domains,dc=contoso,dc=com";
@@ -76,6 +93,11 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
         /// Gets or sets a value indicating whether to skip ssl verification.
         /// </summary>
         public bool SkipSslVerify { get; set; }
+
+        /// <summary>
+        /// Gets or sets the ldap bind method.
+        /// </summary>
+        public BindMethod LdapBindMethod { get; set; }
 
         /// <summary>
         /// Gets or sets the ldap bind user dn.
