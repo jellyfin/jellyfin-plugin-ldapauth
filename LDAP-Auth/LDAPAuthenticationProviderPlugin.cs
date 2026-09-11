@@ -254,7 +254,9 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 var userNeedsUpdate = false;
 
                 // User exists; if needed update its username
-                if (!string.Equals(user.Username, ldapUsername, StringComparison.Ordinal))
+                // Jellyfin treats usernames case-insensitively and rejects a rename that only changes case,
+                // so only rename when the names really differ.
+                if (!string.Equals(user.Username, ldapUsername, StringComparison.OrdinalIgnoreCase))
                 {
                     _logger.LogDebug("Updating user {Username} username to: {LdapUsername}.", user.Username, ldapUsername);
                     // userManager will take care of saving the new name to DB
