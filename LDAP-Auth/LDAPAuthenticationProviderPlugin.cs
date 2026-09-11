@@ -315,7 +315,18 @@ namespace Jellyfin.Plugin.LDAP_Auth
             else if (!string.IsNullOrEmpty(LdapPlugin.Instance.Configuration.LdapPasswordAttribute))
             {
                 var passAttr = LdapPlugin.Instance.Configuration.LdapPasswordAttribute;
-                var ldapAttr = new LdapAttribute(passAttr, newPassword);
+                LdapAttribute ldapAttr;
+                if (string.Equals(passAttr, "unicodePwd", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Active Directory: the value must be the password in double quotes, UTF-16LE encoded,
+                    // and the connection must be encrypted (LDAPS or StartTLS) or AD refuses the write.
+                    ldapAttr = new LdapAttribute(passAttr, Encoding.Unicode.GetBytes("\"" + newPassword + "\""));
+                }
+                else
+                {
+                    ldapAttr = new LdapAttribute(passAttr, newPassword);
+                }
+
                 var ldapMod = new LdapModification(LdapModification.Replace, ldapAttr);
 
                 ldapClient.Modify(ldapUser.Dn, ldapMod);
