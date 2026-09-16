@@ -211,6 +211,9 @@ namespace Jellyfin.Plugin.LDAP_Auth
                         user.SetPreference(PreferenceKind.EnabledFolders, LdapPlugin.Instance.Configuration.EnabledFolders);
                     }
 
+                    user.SetPermission(PermissionKind.EnableLiveTvAccess, LdapPlugin.Instance.Configuration.EnableLiveTvAccess);
+                    user.SetPermission(PermissionKind.EnableLiveTvManagement, LdapPlugin.Instance.Configuration.EnableLiveTvManagement);
+
                     var providerManager = _applicationHost.Resolve<IProviderManager>();
                     var serverConfigurationManager = _applicationHost.Resolve<IServerConfigurationManager>();
 
