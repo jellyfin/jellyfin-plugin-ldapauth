@@ -627,6 +627,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
             var constraints = ldapClient.SearchConstraints;
             constraints.ReferralFollowing = true;
             constraints.setReferralHandler(new LdapAuthHandler(_logger, dn, password));
+            LdapConnectionFactory.ApplyOperationTimeout(constraints, LdapPlugin.Instance.Configuration);
             return constraints;
         }
 
@@ -639,24 +640,41 @@ namespace Jellyfin.Plugin.LDAP_Auth
                 userPassword = LdapPlugin.Instance.Configuration.LdapBindPassword;
             }
 
+            var configuration = LdapPlugin.Instance.Configuration;
+
             // not using `using` for the ability to return ldapClient, need to dispose this manually on exception
-            var ldapClient = new LdapConnection(GetConnectionOptions());
+            var ldapClient = LdapConnectionFactory.Create(GetConnectionOptions(), configuration);
+            var stopwatch = LdapConnectionFactory.StartTiming();
             try
             {
-                ldapClient.Connect(LdapPlugin.Instance.Configuration.LdapServer, LdapPlugin.Instance.Configuration.LdapPort);
-                if (LdapPlugin.Instance.Configuration.UseStartTls)
+                ldapClient.Connect(configuration.LdapServer, configuration.LdapPort);
+                if (configuration.UseStartTls)
                 {
                     ldapClient.StartTls();
                 }
 
-                _logger.LogDebug("Trying bind as user {UserDn}", userDn);
+                _logger.LogDebug(
+                    "Trying bind as user {UserDn} after {ElapsedMs}ms (connectTimeout={ConnectTimeoutMs}ms operationTimeout={OperationTimeoutMs}ms)",
+                    userDn,
+                    stopwatch.ElapsedMilliseconds,
+                    LdapConnectionFactory.ResolveTimeout(configuration.LdapConnectTimeoutMs, LdapConnectionFactory.DefaultConnectTimeoutMs),
+                    LdapConnectionFactory.ResolveTimeout(configuration.LdapOperationTimeoutMs, LdapConnectionFactory.DefaultOperationTimeoutMs));
                 ldapClient.Bind(userDn, userPassword);
+                _logger.LogDebug(
+                    "LDAP bind as {UserDn} succeeded in {ElapsedMs}ms",
+                    userDn,
+                    stopwatch.ElapsedMilliseconds);
             }
             catch (Exception e)
             {
-                ldapClient.Dispose();
+                _logger.LogError(
+                    e,
+                    "Failed to Connect or Bind to server as user {UserDn} after {ElapsedMs}ms",
+                    userDn,
+                    stopwatch.ElapsedMilliseconds);
 
-                _logger.LogError(e, "Failed to Connect or Bind to server as user {UserDn}", userDn);
+                ReleaseFailedConnection(ldapClient);
+
                 var message = initialConnection
                     ? "Failed to Connect or Bind to server."
                     : "Error completing LDAP login. Invalid username or password.";
@@ -664,6 +682,52 @@ namespace Jellyfin.Plugin.LDAP_Auth
             }
 
             return ldapClient;
+        }
+
+        /// <summary>
+        /// Releases a connection that failed during Connect/StartTLS/Bind without blocking the auth path.
+        /// </summary>
+        /// <param name="ldapClient">The failed connection.</param>
+        /// <remarks>
+        /// Novell 3.6 <c>Dispose()</c> and <c>Disconnect()</c> share the same teardown path.
+        /// After StartTLS, that path can block for tens of seconds on SslStream close / reader Join
+        /// when the peer does not complete TLS shutdown cleanly
+        /// (dsbenghe/Novell.Directory.Ldap.NETStandard#101, #168). Prefer LDAPS (<c>UseSsl</c>) so
+        /// this branch is unused. For StartTLS failures, dispose on a background thread so login
+        /// denial is not held behind library teardown.
+        /// </remarks>
+        private void ReleaseFailedConnection(LdapConnection ldapClient)
+        {
+            if (ldapClient == null)
+            {
+                return;
+            }
+
+            if (ldapClient.Tls)
+            {
+                var doomed = ldapClient;
+                _ = Task.Run(() =>
+                {
+                    try
+                    {
+                        doomed.Dispose();
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogDebug(ex, "Background dispose of failed StartTLS LDAP connection");
+                    }
+                });
+                return;
+            }
+
+            try
+            {
+                ldapClient.Dispose();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Dispose of failed LDAP connection");
+            }
         }
 
         /// <summary>
@@ -682,7 +746,7 @@ namespace Jellyfin.Plugin.LDAP_Auth
             try
             {
                 response.Connect = Started;
-                using var ldapClient = new LdapConnection(connectionOptions);
+                using var ldapClient = LdapConnectionFactory.Create(connectionOptions, configuration);
                 ldapClient.Connect(configuration.LdapServer, configuration.LdapPort);
                 response.Connect = Success;
 

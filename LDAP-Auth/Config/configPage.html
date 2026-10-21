@@ -24,19 +24,27 @@
                                     <input is="emby-input" type="number" id="txtLdapPort" required min="0" label="LDAP Port:" />
                                     <div class="fieldDescription">The port to communicate with LDAP.</div>
                                 </div>
+                                <div class="inputContainer fldExternalAddressFilter">
+                                    <input is="emby-input" type="number" id="txtLdapConnectTimeoutMs" required min="1" label="LDAP Connect Timeout (ms):" />
+                                    <div class="fieldDescription">Maximum time to establish the TCP connection. Default 10000. Prevents auth threads from hanging on a dead LDAP host.</div>
+                                </div>
+                                <div class="inputContainer fldExternalAddressFilter">
+                                    <input is="emby-input" type="number" id="txtLdapOperationTimeoutMs" required min="1" label="LDAP Operation Timeout (ms):" />
+                                    <div class="fieldDescription">Maximum time for bind and search operations after connect. Default 30000. Covers StartTLS and bind as well as searches.</div>
+                                </div>
                                 <div class="checkboxContainer checkboxContainer-withDescription">
                                     <label>
                                         <input type="checkbox" is="emby-checkbox" id="chkUseSsl" />
                                         <span>Secure LDAP</span>
                                     </label>
-                                    <div class="fieldDescription checkboxFieldDescription">Use SSL for the LDAP connection.</div>
+                                    <div class="fieldDescription checkboxFieldDescription">Use LDAPS (typically port 636). Preferred over StartTLS.</div>
                                 </div>
                                 <div class="checkboxContainer checkboxContainer-withDescription">
                                     <label>
                                         <input type="checkbox" is="emby-checkbox" id="chkUseStartTls" />
                                         <span>StartTLS</span>
                                     </label>
-                                    <div class="fieldDescription checkboxFieldDescription">Use StartTLS for the LDAP connection.</div>
+                                    <div class="fieldDescription checkboxFieldDescription">Upgrade a plaintext LDAP session with StartTLS. Prefer Secure LDAP instead: after a failed bind, some LDAP servers leave Novell Dispose/Disconnect blocked for tens of seconds.</div>
                                 </div>
                                 <div class="inputContainer fldExternalAddressFilter">
                                     <input is="emby-input" type="text" id="txtLdapClientCertPath" label="LDAP Client Cert Path:" />
@@ -238,9 +246,11 @@
             var LdapConfigurationPage = {
                 pluginUniqueId: "958aad66-3784-4d2a-b89a-a7b6fab6e25c",
 
-                txtLdapServer: document.querySelector("#txtLdapServer"),
-                txtLdapPort: document.querySelector("#txtLdapPort"),
-                chkUseSsl: document.querySelector("#chkUseSsl"),
+            txtLdapServer: document.querySelector("#txtLdapServer"),
+            txtLdapPort: document.querySelector("#txtLdapPort"),
+            txtLdapConnectTimeoutMs: document.querySelector("#txtLdapConnectTimeoutMs"),
+            txtLdapOperationTimeoutMs: document.querySelector("#txtLdapOperationTimeoutMs"),
+            chkUseSsl: document.querySelector("#chkUseSsl"),
                 chkUseStartTls: document.querySelector("#chkUseStartTls"),
                 chkSkipSslVerify: document.querySelector("#chkSkipSslVerify"),
                 chkAllowPassChange: document.querySelector("#chkAllowPassChange"),
@@ -279,9 +289,11 @@
                 Dashboard.showLoadingMsg();
 
                 window.ApiClient.getPluginConfiguration(LdapConfigurationPage.pluginUniqueId).then(function (config) {
-                    LdapConfigurationPage.txtLdapServer.value = config.LdapServer;
-                    LdapConfigurationPage.txtLdapPort.value = config.LdapPort;
-                    LdapConfigurationPage.chkUseSsl.checked = config.UseSsl;
+                LdapConfigurationPage.txtLdapServer.value = config.LdapServer;
+                LdapConfigurationPage.txtLdapPort.value = config.LdapPort;
+                LdapConfigurationPage.txtLdapConnectTimeoutMs.value = config.LdapConnectTimeoutMs || 10000;
+                LdapConfigurationPage.txtLdapOperationTimeoutMs.value = config.LdapOperationTimeoutMs || 30000;
+                LdapConfigurationPage.chkUseSsl.checked = config.UseSsl;
                     LdapConfigurationPage.chkUseStartTls.checked = config.UseStartTls;
                     LdapConfigurationPage.chkSkipSslVerify.checked = config.SkipSslVerify;
                     LdapConfigurationPage.chkAllowPassChange.checked = config.AllowPassChange;
@@ -371,9 +383,11 @@
                 Dashboard.showLoadingMsg();
 
                 window.ApiClient.getPluginConfiguration(LdapConfigurationPage.pluginUniqueId).then(function (config) {
-                    config.LdapServer = LdapConfigurationPage.txtLdapServer.value;
-                    config.LdapPort = parseInt(LdapConfigurationPage.txtLdapPort.value);
-                    config.UseSsl = LdapConfigurationPage.chkUseSsl.checked;
+                config.LdapServer = LdapConfigurationPage.txtLdapServer.value;
+                config.LdapPort = parseInt(LdapConfigurationPage.txtLdapPort.value);
+                config.LdapConnectTimeoutMs = parseInt(LdapConfigurationPage.txtLdapConnectTimeoutMs.value);
+                config.LdapOperationTimeoutMs = parseInt(LdapConfigurationPage.txtLdapOperationTimeoutMs.value);
+                config.UseSsl = LdapConfigurationPage.chkUseSsl.checked;
                     config.UseStartTls = LdapConfigurationPage.chkUseStartTls.checked;
                     config.AllowPassChange = LdapConfigurationPage.chkAllowPassChange.checked;
                     config.SkipSslVerify = LdapConfigurationPage.chkSkipSslVerify.checked;
@@ -418,21 +432,23 @@
                 Dashboard.showLoadingMsg();
                 LdapConfigurationPage.divServerTestResults.innerText = "";
 
-                const configUpdate = {
-                    LdapServer: LdapConfigurationPage.txtLdapServer.value,
-                    LdapPort: parseInt(LdapConfigurationPage.txtLdapPort.value),
-                    UseSsl: LdapConfigurationPage.chkUseSsl.checked,
-                    AllowPassChange: LdapConfigurationPage.chkAllowPassChange.checked,
-                    UseStartTls: LdapConfigurationPage.chkUseStartTls.checked,
-                    SkipSslVerify: LdapConfigurationPage.chkSkipSslVerify.checked,
-                    LdapBindUser: LdapConfigurationPage.txtLdapBindUser.value,
-                    LdapBindPassword: LdapConfigurationPage.txtLdapBindPassword.value,
-                    LdapBaseDn: LdapConfigurationPage.txtLdapBaseDn.value,
-                    PasswordResetUrl: LdapConfigurationPage.txtPasswordResetUrl.value,
-                    LdapClientCertPath: LdapConfigurationPage.txtLdapClientCertPath.value,
-                    LdapClientKeyPath: LdapConfigurationPage.txtLdapClientKeyPath.value,
-                    LdapRootCaPath: LdapConfigurationPage.txtLdapRootCaPath.value,
-                }
+            const configUpdate = {
+                LdapServer: LdapConfigurationPage.txtLdapServer.value,
+                LdapPort: parseInt(LdapConfigurationPage.txtLdapPort.value),
+                UseSsl: LdapConfigurationPage.chkUseSsl.checked,
+                AllowPassChange: LdapConfigurationPage.chkAllowPassChange.checked,
+                UseStartTls: LdapConfigurationPage.chkUseStartTls.checked,
+                SkipSslVerify: LdapConfigurationPage.chkSkipSslVerify.checked,
+                LdapBindUser: LdapConfigurationPage.txtLdapBindUser.value,
+                LdapBindPassword: LdapConfigurationPage.txtLdapBindPassword.value,
+                LdapBaseDn: LdapConfigurationPage.txtLdapBaseDn.value,
+                PasswordResetUrl: LdapConfigurationPage.txtPasswordResetUrl.value,
+                LdapClientCertPath: LdapConfigurationPage.txtLdapClientCertPath.value,
+                LdapClientKeyPath: LdapConfigurationPage.txtLdapClientKeyPath.value,
+                LdapRootCaPath: LdapConfigurationPage.txtLdapRootCaPath.value,
+                LdapConnectTimeoutMs: parseInt(LdapConfigurationPage.txtLdapConnectTimeoutMs.value),
+                LdapOperationTimeoutMs: parseInt(LdapConfigurationPage.txtLdapOperationTimeoutMs.value),
+            }
 
                 const handler = response => response.json().then(res => {
                     if (response.ok) {

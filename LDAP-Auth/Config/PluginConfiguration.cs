@@ -44,6 +44,10 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
             EnableAllFolders = false;
             EnabledFolders = Array.Empty<string>();
 
+            // Keep in sync with Helpers.LdapConnectionFactory defaults.
+            LdapConnectTimeoutMs = 10_000;
+            LdapOperationTimeoutMs = 30_000;
+
             LdapUsers = Array.Empty<LdapUser>();
         }
 
@@ -191,6 +195,24 @@ namespace Jellyfin.Plugin.LDAP_Auth.Config
         /// Gets or sets the password reset url.
         /// </summary>
         public string PasswordResetUrl { get; set; }
+
+        /// <summary>
+        /// Gets or sets the TCP connect timeout in milliseconds for LDAP connections.
+        /// </summary>
+        /// <remarks>
+        /// Maps to <c>Novell.Directory.Ldap.LdapConnection.ConnectionTimeout</c>.
+        /// Values that are not positive fall back to 10000 ms.
+        /// </remarks>
+        public int LdapConnectTimeoutMs { get; set; }
+
+        /// <summary>
+        /// Gets or sets the maximum time in milliseconds to wait for LDAP bind and search operations.
+        /// </summary>
+        /// <remarks>
+        /// Maps to <c>Novell.Directory.Ldap.LdapConstraints.TimeLimit</c> (client-enforced).
+        /// Values that are not positive fall back to 30000 ms.
+        /// </remarks>
+        public int LdapOperationTimeoutMs { get; set; }
 
         /// <summary>
         /// Adds a user to the ldap users.

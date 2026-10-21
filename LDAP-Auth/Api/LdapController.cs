@@ -66,6 +66,8 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api
             configuration.LdapClientCertPath = body.LdapClientCertPath;
             configuration.LdapClientKeyPath = body.LdapClientKeyPath;
             configuration.LdapRootCaPath = body.LdapRootCaPath;
+            configuration.LdapConnectTimeoutMs = body.LdapConnectTimeoutMs;
+            configuration.LdapOperationTimeoutMs = body.LdapOperationTimeoutMs;
             LdapPlugin.Instance.UpdateConfiguration(configuration);
 
             return Ok(_ldapAuthenticationProvider.TestServerBind());

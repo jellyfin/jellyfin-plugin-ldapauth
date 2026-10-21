@@ -79,5 +79,15 @@ namespace Jellyfin.Plugin.LDAP_Auth.Api.Models
         /// Gets or sets the root ca chain cert name.
         /// </summary>
         public string LdapRootCaPath { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the TCP connect timeout in milliseconds.
+        /// </summary>
+        public int LdapConnectTimeoutMs { get; set; }
+
+        /// <summary>
+        /// Gets or sets the LDAP bind/search operation timeout in milliseconds.
+        /// </summary>
+        public int LdapOperationTimeoutMs { get; set; }
     }
 }
